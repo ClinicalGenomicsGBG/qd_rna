@@ -7,8 +7,10 @@ A library for creating wrappers with SLIMS integration.
 Add cellophane as a subtree at the base of your project. A generic project structure can be generated with `cellophane init`.
 
 ```shell
-git subtree add https://github.com/dodslaser/cellophane main
-python -m cellophane init my_awesome_wrapper
+git remote add -f cellophane https://github.com/dodslaser/cellophane
+git subtree add --prefix cellophane cellophane main --squash
+
+python -m cellophane --path . init my_awesome_wrapper
 ```
 
 A wrapper directory structure should look something like this:
