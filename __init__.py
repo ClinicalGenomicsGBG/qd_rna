@@ -12,7 +12,7 @@ import rich_click as click
 import yaml
 from jsonschema.exceptions import ValidationError
 
-from .src import cfg, logs, modules, sge, slims, util
+from .src import cfg, logs, modules, slims, util
 
 _MP_MANAGER = mp.Manager()
 _LOG_QUEUE = logs.get_log_queue(_MP_MANAGER)
