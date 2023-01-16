@@ -10,7 +10,7 @@ Add cellophane as a subtree at the base of your project. A generic project struc
 git remote add -f cellophane https://github.com/dodslaser/cellophane
 git subtree add --prefix cellophane cellophane main --squash
 
-python -m cellophane --path . init my_awesome_wrapper
+python -m cellophane init my_awesome_wrapper --path .
 ```
 
 A wrapper directory structure should look something like this:
