@@ -15,6 +15,7 @@ drmaa = "^0.7.9"
 humanfriendly = "^10.0"
 jsonschema = "^4.17.3"
 ngpiris = "^4.2.0"
+pyaml = "^21.10.1"
 
 
 [tool.poetry.group.dev.dependencies]
