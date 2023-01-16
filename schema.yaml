@@ -1,0 +1,215 @@
+type: object
+required:
+  - modules_init
+  - nextflow
+  - rnaseq
+  - rnafusion
+  - iris
+  - petasuite
+
+properties:
+  modules_init:
+    type: path
+    description: Path to modules init script
+
+  iris:
+    type: object
+    properties:
+      credentials:
+        type: path
+        description: IRIS credentials file
+      fastq_temp:
+        type: path
+        description: Temporary directory for fastq files
+    required:
+      - credentials
+      - fastq_temp
+
+  petasuite:
+    type: object
+    properties:
+      sge_queue:
+        type: string
+        description: SGE queue for petasuite
+      sge_pe:
+        type: string
+        description: SGE parallel environment for petasuite
+      sge_slots:
+        type: integer
+        description: SGE slots (threads) for petasuite
+    required:
+      - sge_queue
+      - sge_pe
+      - sge_slots
+
+  nextflow:
+    type: object
+    properties:
+      sge_queue:
+        type: string
+        description: SGE queue for nextflow manager
+      sge_pe:
+        type: string
+        description: SGE parallel environment for nextflow manager
+      sge_slots:
+        type: integer
+        description: SGE slots (threads) for nextflow manager
+      config:
+        type: path
+        description: Nextflow config file
+      profile:
+        type: string
+        description: Nextflow profile
+      resume:
+        type: boolean
+        default: false
+        description: Resume previous nextflow run
+      workdir:
+        type: path
+        description: Nextflow work directory
+      cluster_options:
+        type: string
+        description: Nextflow cluster options
+    required:
+      - sge_queue
+      - sge_pe
+      - sge_slots
+      - profile
+      - workdir
+
+  rnaseq:
+    type: object
+    properties:
+      skip:
+        type: boolean
+        default: false
+        description: Skip nf-core/rnaseq
+      
+      force:
+        type: boolean
+        default: false
+        description: Overwrite any existing nf-core/rnaseq output
+
+      nf_main:
+        type: path
+        description: Path to nf-core/rnaseq main.nf
+
+      genome:
+        type: string
+        description: Genome reference
+
+      fasta:
+        type: path
+        description: Path to genome fasta file
+
+      gtf:
+        type: path
+        description: Path to genome gtf file
+
+      gene_bed:
+        type: path
+        description: Path to genome gene bed file
+
+      index:
+        type: path
+        description: Path to genome index (STAR or RSEM)
+
+      aligner:
+        type: string
+        description: RNA-seq aligner
+        enum:
+          - star_salmon
+          - star_rsem
+      
+      strandedness:
+        type: string
+        description: Strandedness of RNA-seq library
+        enum:
+          - unstranded
+          - forward
+          - reverse
+        default: unstranded
+    if:
+      properties:
+        skip:
+          const: false
+    then:
+      anyOf:
+        - required:
+          - nf_main
+          - genome
+          - aligner
+          - index
+          - strandedness
+        - required:
+          - nf_main
+          - fasta
+          - gtf
+          - gene_bed
+          - index
+          - aligner
+          - strandedness
+
+  rnafusion:
+    type: object
+    properties:
+      skip:
+        type: boolean
+        description: Skip nf-core/rnafusion
+        default: false
+
+      force:
+        type: boolean
+        default: false
+        description: Overwrite any existing nf-core/rnaseq output
+
+      nf_main:
+        type: path
+        description: Path to nf-core/rnafusion main.nf
+
+      genomes_base:
+        type: path
+        description: Path to rnafusion references
+
+      arriba_ref:
+        type: path
+        description: Path to arriba references
+
+      arriba_blacklist:
+        type: path
+        description: Path to arriba blacklist file
+
+      arriba_protein_domain:
+        type: path
+        description: Path to arriba protein domains file
+
+      fusionreport_tool_cutoff:
+        type: integer
+        description: Minimum number of callers for fusion to be reported
+        default: 1
+
+      read_length:
+        type: integer
+        description: Sample read length
+      
+      strandedness:
+        type: string
+        description: Strandedness of RNA-seq library
+        enum:
+          - unstranded
+          - forward
+          - reverse
+        default: unstranded
+    
+    if:
+      properties:
+        skip:
+          const: false
+    then:
+      required:
+        - nf_main
+        - genomes_base
+        - arriba_blacklist
+        - arriba_protein_domain
+        - read_length
+        - strandedness
