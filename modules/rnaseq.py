@@ -44,13 +44,8 @@ def rnaseq(
     timestamp = time.strftime("%y%m%d-%H%M%S")
     outdir = config.outdir / timestamp / label
     outdir.mkdir(parents=True, exist_ok=True)
-    output = get_output(config.rnaseq.aligner, outdir)
 
-    if not config.rnaseq.skip and not config.rnaseq.force and any(output.values()):
-        logger.error(f"Found existing nf-core/rnaseq output for {samples[0].id}")
-        raise SystemExit(1)
-
-    if not config.rnaseq.skip:
+    if "rnaseq" in config:
         if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
             logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
 

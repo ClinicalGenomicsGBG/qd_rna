@@ -4,7 +4,8 @@ import time
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import cfg, slims, modules, sge
+from cellophane import cfg, modules, sge
+from .slims import SlimsSamples
 
 def get_output(outdir: Path, config: cfg.Config):
     """Return a dictionary of output files for the rnafusion module."""
@@ -22,7 +23,7 @@ def get_output(outdir: Path, config: cfg.Config):
 @modules.runner()
 def rnafusion(
     label: str,
-    samples: slims.Samples,
+    samples: SlimsSamples,
     config: cfg.Config,
     logger: LoggerAdapter,
     scripts_path: Path,
@@ -32,7 +33,7 @@ def rnafusion(
     outdir = config.outdir / timestamp / label
     
 
-    if not config.rnafusion.skip:
+    if "rnafusion" in config:
         logger.info("Running nf-core/rnafusion")
         logger.debug(f"Output will be written to {outdir}")
 

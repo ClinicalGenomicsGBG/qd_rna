@@ -10,7 +10,7 @@ from typing import Optional
 
 from NGPIris import hcp
 
-from cellophane import slims, cfg, modules, sge
+from cellophane import data, cfg, modules, sge
 
 
 def _fetch(
@@ -72,7 +72,7 @@ def _fetch(
 @modules.pre_hook(label="HCP", priority=10)
 def hcp_fetch(
     config: cfg.Config,
-    samples: slims.Samples,
+    samples: samples.Samples,
     logger: LoggerAdapter,
     scripts_path: Path,
 ) -> slims.Samples:
