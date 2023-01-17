@@ -3,7 +3,7 @@
 from copy import deepcopy
 from functools import reduce
 from pathlib import Path
-from typing import Any, Callable, Iterable, Optional
+from typing import Iterable, Optional
 
 import rich_click as click
 from jsonschema import Draft7Validator, Validator, validators
@@ -11,7 +11,7 @@ from yaml import safe_load
 
 from functools import wraps
 
-from . import util
+from . import data
 
 
 def _set_options(cls: Validator) -> Validator:
@@ -20,7 +20,7 @@ def _set_options(cls: Validator) -> Validator:
 
     def _is_object_or_container(_, instance):
         return cls.TYPE_CHECKER.is_type(instance, "object") or isinstance(
-            instance, util.Container
+            instance, data.Container
         )
 
     def _is_array(_, instance):
@@ -148,7 +148,7 @@ class Schema(util.Container):
         return _config
 
 
-class Config(util.Container):
+class Config(data.Container):
     """Configuration file"""
 
     def __init__(self, path: Optional[Path | click.Path], schema: Schema, **kwargs):
