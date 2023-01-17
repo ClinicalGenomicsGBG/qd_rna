@@ -11,7 +11,7 @@ from yaml import safe_load
 
 from functools import wraps
 
-from . import data
+from . import data, util
 
 
 def _set_options(cls: Validator) -> Validator:
@@ -106,7 +106,7 @@ def _get_options(cls: Validator) -> Validator:
     )
 
 
-class Schema(util.Container):
+class Schema(data.Container):
     """Schema for validating configuration files"""
 
     @classmethod
@@ -141,7 +141,7 @@ class Schema(util.Container):
             )
             yield flag, key, default, description, _type
 
-    def validate(self, config: util.Container) -> util.Container:
+    def validate(self, config: data.Container) -> data.Container:
         """Validate configuration"""
         _config = deepcopy(config)
         _set_options(Draft7Validator)({**self.data}).validate(_config)
@@ -155,9 +155,9 @@ class Config(data.Container):
 
         if path is not None:
             with open(str(path), "r", encoding="utf-8") as handle:
-                _data = util.Container(safe_load(handle))
+                _data = data.Container(safe_load(handle))
         else:
-            _data = util.Container({})
+            _data = data.Container({})
 
         for flag, key, *_ in schema.flags:
             if flag not in _data and kwargs[flag] is not None:
