@@ -17,7 +17,6 @@ def _fetch(
     local_path: Path,
     config: cfg.Config,
     pipe: Connection,
-    scripts_path: Path,
     remote_key: Optional[str] = None,
 ) -> None:
     sys.stdout = open(os.devnull, "w", encoding="utf-8")
@@ -52,7 +51,7 @@ def _fetch(
         and not local_path.with_suffix(".fastq.gz").exists()
     ):
         sge.submit(
-            str(scripts_path / "petasuite.sh"),
+            str(Path(__file__).parent / "scripts" / "petasuite.sh"),
             f"-d -f -t {config.petasuite.sge_slots} {local_path}",
             env={"_MODULES_INIT": config.modules_init},
             queue=config.petasuite.sge_queue,
@@ -74,7 +73,7 @@ def hcp_fetch(
     config: cfg.Config,
     samples: data.SamplesType,
     logger: LoggerAdapter,
-    scripts_path: Path,
+    **_,
 ) -> data.SamplesType:
     """Fetch files from HCP."""
 

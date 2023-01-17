@@ -26,7 +26,7 @@ def rnafusion(
     samples: SlimsSamples,
     config: cfg.Config,
     logger: LoggerAdapter,
-    scripts_path: Path,
+    root: Path,
 ) -> None:
     """Run nf-core/rnafusion."""
     timestamp = time.strftime("%y%m%d-%H%M%S")
@@ -48,7 +48,7 @@ def rnafusion(
         if "workdir" in config.nextflow:
             config.nextflow.workdir.mkdir(parents=True, exist_ok=True)
         sge.submit(
-            str(scripts_path / "nextflow.sh"),
+            str(root / "scripts" / "nextflow.sh"),
             f"-log {outdir / 'logs' / 'rnafusion.log'}",
             (
                 f"-config {config.nextflow.config}"

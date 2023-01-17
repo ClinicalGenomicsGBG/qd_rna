@@ -7,6 +7,7 @@ from pathlib import Path
 from cellophane import cfg, modules, sge
 from modules.slims import SlimsSamples
 
+
 def get_output(aligner: str, outdir: Path):
     """Return a dictionary of output files for the rnaseq module."""
     return {
@@ -37,7 +38,7 @@ def rnaseq(
     logger: LoggerAdapter,
     samples: SlimsSamples,
     config: cfg.Config,
-    scripts_path: Path,
+    root: Path,
 ) -> None:
     """Run nf-core/rnaseq."""
 
@@ -59,7 +60,7 @@ def rnaseq(
         )
 
         sge.submit(
-            str(scripts_path / "nextflow.sh"),
+            str(root / "scripts" / "nextflow.sh"),
             f"-log {outdir / 'logs' / 'rnaseq.log'}",
             (
                 f"-config {config.nextflow.config}"
