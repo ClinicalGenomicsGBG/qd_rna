@@ -4,9 +4,8 @@ import time
 from logging import LoggerAdapter
 from pathlib import Path
 
-from slims import SlimsSamples
 from cellophane import cfg, modules, sge
-
+from modules.slims import SlimsSamples
 
 def get_output(aligner: str, outdir: Path):
     """Return a dictionary of output files for the rnaseq module."""
