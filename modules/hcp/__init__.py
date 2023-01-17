@@ -72,14 +72,14 @@ def _fetch(
 @modules.pre_hook(label="HCP", priority=10)
 def hcp_fetch(
     config: cfg.Config,
-    samples: samples.Samples,
+    samples: data.SamplesType,
     logger: LoggerAdapter,
     scripts_path: Path,
-) -> slims.Samples:
+) -> data.SamplesType:
     """Fetch files from HCP."""
 
     _procs: list[tuple[mp.Process, int, int, Connection]] = []
-
+    
     for s_idx, sample in enumerate(samples):
         if all(Path(p).exists() for p in sample.fastq_paths):
             logger.debug(
@@ -118,4 +118,4 @@ def hcp_fetch(
         else:
             samples[s_idx].fastq_paths[f_idx] = pipe.recv()
 
-    return slims.Samples([s for s in samples if s is not None])
+    return samples.__class__([s for s in samples if s is not None])

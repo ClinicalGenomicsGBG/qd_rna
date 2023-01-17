@@ -18,7 +18,8 @@ from slims.criteria import (
 )
 from slims.slims import Record, Slims
 
-from cellophane import slims, cfg, modules, data
+from cellophane import data, cfg, modules, data
+
 
 class Content:
     """Content types"""
@@ -107,7 +108,7 @@ def get_derived_records(
     """Get derived records from SLIMS"""
     match derived_from:
         case record if isinstance(record, Record):
-            original = {record.pk(): record}
+            original = {record.pk(): record}  # type: ignore
         case [*records] if all(isinstance(r, Record) for r in records):
             original = {r.pk(): r for r in records}
         case _:
@@ -121,11 +122,17 @@ def get_derived_records(
     }
 
 
-class SlimsSamples(samples.Samples):
+class SlimsSamples(data.Samples):
     """A list of sample containers"""
 
     @classmethod
-    def novel(cls, connection: Slims, analysis: int, content_type: int, create=False):
+    def novel(
+        cls,
+        connection: Slims,
+        analysis: int,
+        content_type: int,
+        create=False,
+    ) -> "SlimsSamples":
         """Get novel samples"""
         if content_type == Content.DNA:
             _dna = get_records(
@@ -182,7 +189,7 @@ class SlimsSamples(samples.Samples):
         )
 
     @classmethod
-    def from_slims(cls, connection: Slims, *args, **kwargs):
+    def from_slims(cls, connection: Slims, *args, **kwargs) -> "SlimsSamples":
         """Get samples from SLIMS"""
         _fastqs = get_records(connection, *args, **kwargs)
         _bioinformatics = get_derived_records(
@@ -193,7 +200,7 @@ class SlimsSamples(samples.Samples):
         return cls.from_records(_fastqs, [*_bioinformatics.values()])
 
     @classmethod
-    def from_ids(cls, connection: Slims, ids: list[str]) -> "Samples":
+    def from_ids(cls, connection: Slims, ids: list[str]) -> "SlimsSamples":
         """Get samples from SLIMS by ID"""
         _fastqs = get_records(connection, content_type=Content.FASTQ, slims_id=ids)
         _bioinformatics = get_derived_records(
@@ -236,14 +243,16 @@ def slims_samples(
     config: cfg.Config,
     samples: SlimsSamples,
     logger: LoggerAdapter,
-    scripts_path: Path,
+    **_,
 ) -> Optional[SlimsSamples]:
     """Load novel samples from SLIMS."""
 
     if samples:
         logger.info("Samples already loaded")
     elif config.slims is not None:
-        logger.info(f"Finding novel samples in SLIMS (analysis pk: {config.slims.analysis_pk})")
+        logger.info(
+            f"Finding novel samples in SLIMS (analysis pk: {config.slims.analysis_pk})"
+        )
         slims_connection = slims.Slims(name=__package__, **config.slims)
 
         if config.sample_id:

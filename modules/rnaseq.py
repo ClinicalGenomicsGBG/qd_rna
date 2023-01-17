@@ -4,7 +4,8 @@ import time
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import cfg, slims, modules, sge
+from .slims import SlimsSamples
+from cellophane import cfg, modules, sge
 
 
 def get_output(aligner: str, outdir: Path):
@@ -35,7 +36,7 @@ def get_output(aligner: str, outdir: Path):
 def rnaseq(
     label: str,
     logger: LoggerAdapter,
-    samples: slims.Samples,
+    samples: SlimsSamples,
     config: cfg.Config,
     scripts_path: Path,
 ) -> None:
