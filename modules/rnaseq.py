@@ -4,7 +4,7 @@ import time
 from logging import LoggerAdapter
 from pathlib import Path
 
-from .slims import SlimsSamples
+from slims import SlimsSamples
 from cellophane import cfg, modules, sge
 
 

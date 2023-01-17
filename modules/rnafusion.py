@@ -5,7 +5,7 @@ from logging import LoggerAdapter
 from pathlib import Path
 
 from cellophane import cfg, modules, sge
-from .slims import SlimsSamples
+from modules.slims import SlimsSamples
 
 def get_output(outdir: Path, config: cfg.Config):
     """Return a dictionary of output files for the rnafusion module."""

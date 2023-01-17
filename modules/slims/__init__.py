@@ -1,7 +1,6 @@
 """Module for getting samples from SLIMS"""
 
 from json import loads
-from pathlib import Path
 from time import time
 from typing import Optional
 from logging import LoggerAdapter
