@@ -1,4 +1,0 @@
-[submodule "cellophane"]
-	path = cellophane
-	url = https://github.com/dodslaser/cellophane
-	branch = main
