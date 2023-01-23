@@ -19,7 +19,7 @@ _MP_MANAGER = mp.Manager()
 _LOG_QUEUE = logs.get_log_queue(_MP_MANAGER)
 
 _RUNNERS: list[Type[modules.Runner]] = []
-_PROCS: list[tuple(modules.Runner, Queue)] = []
+_PROCS: list[modules.Runner] = []
 _HOOKS: list[modules.Hook] = []
 
 CELLOPHANE_ROOT = Path(__file__).parent
@@ -97,7 +97,7 @@ def _main(
                         samples=deepcopy(_samples),
                         log_queue=_LOG_QUEUE,
                         log_level=config.log_level,
-                        output_queue=_MP_MANAGER.Queue(),
+                        output_queue=mp.Queue(),
                         root=root,
                     )
                     _PROCS.append(proc)
