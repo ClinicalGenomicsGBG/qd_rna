@@ -111,7 +111,10 @@ def _main(
         logger.critical("Received SIGINT, shutting down...")
 
     except Exception as exception:
-        logger.critical(f"Unhandled exception: {exception}")
+        logger.critical(
+            f"Unhandled exception: {exception}",
+            exc_info=config.log_level <= logging.DEBUG,
+        )
 
     finally:
         results: dict[str, set[data.Sample]] = {r.name: set() for r in _RUNNERS}

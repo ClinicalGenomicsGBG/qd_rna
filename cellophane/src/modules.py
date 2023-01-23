@@ -5,7 +5,7 @@ import os
 import sys
 from copy import deepcopy
 from dataclasses import dataclass
-from logging import LoggerAdapter
+import logging
 from signal import SIGTERM, signal
 from typing import Callable, Optional, ClassVar
 from pathlib import Path
@@ -17,7 +17,7 @@ import psutil
 from . import cfg, data, logs
 
 
-def _cleanup(logger: LoggerAdapter):
+def _cleanup(logger: logging.LoggerAdapter):
     def inner(*_):
         for proc in psutil.Process().children(recursive=True):
             logger.debug(f"Waiting for {proc.name()} ({proc.pid})")
@@ -100,11 +100,16 @@ class Runner(mp.Process):
                 case data.Samples | None:
                     self._output_queue.put(returned_samples)
                 case _:
-                    logger.warning(f"Runner returned an unexpected type {type(returned_samples)}")
+                    logger.warning(
+                        f"Runner returned an unexpected type {type(returned_samples)}"
+                    )
                     self._output_queue.put(original_samples)
 
         except Exception as exception:
-            logger.critical("Caught an exception", exc_info=True)
+            logger.critical(
+                "Caught an exception",
+                exc_info=config.log_level <= logging.DEBUG,
+            )
             raise SystemExit(1) from exception
 
     @cached_property

@@ -35,12 +35,12 @@ class Container(UserDict):
                 raise TypeError("Key must be hashble or a sequence of hashables")
 
     def __getattr__(self, key: str) -> Any:
-        try:
+        if "data" in self.__dict__ and key in self.data:
             return self.data[key]
-        except KeyError as exception:
+        else:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{key}'"
-            ) from exception
+            )
 
 
 class Sample(Container):
