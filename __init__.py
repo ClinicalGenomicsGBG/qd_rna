@@ -40,7 +40,7 @@ def _main(
     _log_handlers = logging.root.handlers.copy()
     for path in [*modules_path.glob("*.py"), *modules_path.glob("*/__init__.py")]:
         name = path.stem if path.stem != "__init__" else path.parent.name
-        spec = spec_from_file_location(name, path)
+        spec = spec_from_file_location(f"_mod_{name}", path)
         if spec is not None:
             try:
                 module = module_from_spec(spec)
