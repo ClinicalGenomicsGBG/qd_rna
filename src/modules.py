@@ -112,6 +112,8 @@ class Runner(mp.Process):
                 exc_info=config.log_level <= logging.DEBUG,
             )
             self.output.put(None)
+            self.output.close()
+            self.output.join_thread()
             raise SystemExit(1) from exception
 
     @staticmethod
