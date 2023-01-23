@@ -142,8 +142,8 @@ def _main(
 
         for name, processed in results.items():
             if processed:
-                _n_processed = sum(p in [s.id for s in samples] for p in processed)
-                _n_failed = sum(s.id not in processed for s in samples)
+                _n_processed = sum(p.id in [s.id for s in samples] for p in processed)
+                _n_failed = sum(s.id not in [p.id for p in processed] for s in samples)
                 _n_extra = len(processed) - _n_processed
                 if _n_processed:
                     logger.info(f"Runner {name} completed {_n_processed} samples")
