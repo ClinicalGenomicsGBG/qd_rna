@@ -115,7 +115,7 @@ def _main(
     except Exception as exception:
         logger.critical(
             f"Unhandled exception: {exception}",
-            exc_info=config.log_level == "debug",
+            exc_info=config.log_level == "DEBUG",
         )
 
     finally:
