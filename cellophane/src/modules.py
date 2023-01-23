@@ -53,7 +53,6 @@ class Runner(mp.Process):
         output_queue: Queue,
         root: Path,
     ):
-        self._output_queue = output_queue
         super().__init__(
             target=self._main,
             kwargs={
@@ -62,6 +61,7 @@ class Runner(mp.Process):
                 "samples": samples,
                 "log_queue": log_queue,
                 "log_level": log_level,
+                "output_queue": output_queue,
                 "root": root,
             },
         )
@@ -73,6 +73,7 @@ class Runner(mp.Process):
         samples: data.Samples,
         log_queue: Queue,
         log_level: int,
+        output_queue: Queue,
         root: Path,
     ) -> None:
         logger = logs.get_logger(
@@ -84,8 +85,8 @@ class Runner(mp.Process):
         sys.stdout = open(os.devnull, "w", encoding="utf-8")
         sys.stderr = open(os.devnull, "w", encoding="utf-8")
         try:
-            original_samples = deepcopy(samples)
-            returned_samples = self.main(
+            original = deepcopy(samples)
+            returned = self.main(
                 samples=samples,
                 config=config,
                 label=label,
@@ -93,17 +94,17 @@ class Runner(mp.Process):
                 root=root,
             )
 
-            match returned_samples:
-                case None if all(s not in original_samples for s in samples):
+            match returned:
+                case None if any(s not in original for s in samples):
                     logger.warning("Runner returned None, but samples were modified")
-                    self._output_queue.put(original_samples)
+                    output_queue.put(original)
                 case data.Samples | None:
-                    self._output_queue.put(returned_samples)
+                    output_queue.put(returned)
                 case _:
                     logger.warning(
-                        f"Runner returned an unexpected type {type(returned_samples)}"
+                        f"Runner returned an unexpected type {type(returned)}"
                     )
-                    self._output_queue.put(original_samples)
+                    output_queue.put(original)
 
         except Exception as exception:
             logger.critical(
