@@ -109,7 +109,7 @@ class Runner(mp.Process):
         except Exception as exception:
             logger.critical(
                 "Caught an exception",
-                exc_info=config.log_level <= logging.DEBUG,
+                exc_info=config.log_level == "DEBUG",
             )
             self.output.put(None)
             self.output.close()
