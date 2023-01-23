@@ -111,5 +111,5 @@ class Samples(UserList[S]):
         return _path
 
 
-    def __reduce__(self) -> str | tuple[Any, ...]:
-        return self.__class__.__name__, (self.data,)
+    def __reduce__(self) -> Callable | tuple[Any, ...]:
+        return self.__class__, (self.data,)
