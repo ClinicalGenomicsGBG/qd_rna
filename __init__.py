@@ -119,22 +119,33 @@ def _main(
         )
 
     finally:
-        results: dict[str, data.Samples] = {r.label: samples.__class__() for r in _RUNNERS}
-
+        results: dict[str, data.Samples] = {
+            r.label: samples.__class__() for r in _RUNNERS
+        }
+        completed_samples: list[data.Sample] = []
         for proc in _PROCS:
             if proc.exitcode is None:
                 logger.debug(f"Terminating {proc.label}")
                 proc.terminate()
                 proc.join()
 
-            if (_ps := proc.output.get_nowait()) is not None:
-                results[proc.label].extend(_ps)
+            if (runner_samples := proc.output.get_nowait()) is not None:
+                for sample in runner_samples:
+                    sample.complete = True
+                results[proc.label].extend(runner_samples)
+                completed_samples.extend(runner_samples)
+
+        failed_samples = [
+            s for s in samples if s.id not in [c.id for c in completed_samples]
+        ]
+        for sample in failed_samples:
+            sample.complete = False
 
         for hook in [h for h in _HOOKS if h.when == "post"]:
             logger.info(f"Running post-hook {hook.label}")
             hook(
                 config=config,
-                samples=samples.__class__(s for r in results.values() for s in r),
+                samples=samples.__class__([*completed_samples, *failed_samples]),
                 log_queue=_LOG_QUEUE,
                 log_level=config.log_level,
                 root=root,
