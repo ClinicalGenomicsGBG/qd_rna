@@ -129,7 +129,9 @@ def _main(
                 try:
                     proc.terminate()
                     proc.join()
-                except AttributeError:
+                # Handle weird edge cases
+                except Exception as exception:
+                    logger.debug(f"Failed to terminate {proc.label}: {exception}")
                     pass
 
             if (runner_samples := proc.output.get_nowait()) is not None:
