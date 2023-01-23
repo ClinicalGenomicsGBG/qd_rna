@@ -40,7 +40,7 @@ def _main(
     _log_handlers = logging.root.handlers.copy()
     for path in [*modules_path.glob("*.py"), *modules_path.glob("*/__init__.py")]:
         base = path.stem if path.stem != "__init__" else path.parent.name
-        name = f"_cellophane_module_{name}"
+        name = f"_cellophane_module_{base}"
         spec = spec_from_file_location(name, path)
         if spec is not None:
             try:
