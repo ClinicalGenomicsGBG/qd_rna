@@ -113,11 +113,6 @@ class Runner(mp.Process):
             )
             raise SystemExit(1) from exception
 
-    @cached_property
-    def processed_samples(self) -> data.Samples | None:
-        """Return the processed samples of the runner."""
-        return self._output_queue.get_nowait()
-
     @staticmethod
     def main(*args, **kwargs) -> None:
         """Main function for the runner."""
