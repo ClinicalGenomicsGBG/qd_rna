@@ -126,8 +126,11 @@ def _main(
         for proc in _PROCS:
             if proc.exitcode is None:
                 logger.debug(f"Terminating {proc.label}")
-                proc.terminate()
-                proc.join()
+                try:
+                    proc.terminate()
+                    proc.join()
+                except AttributeError:
+                    pass
 
             if (runner_samples := proc.output.get_nowait()) is not None:
                 for sample in runner_samples:
