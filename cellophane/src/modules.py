@@ -10,7 +10,6 @@ from signal import SIGTERM, signal
 from typing import Callable, Optional, ClassVar
 from pathlib import Path
 from queue import Queue
-from functools import cached_property
 
 import psutil
 
@@ -50,37 +49,31 @@ class Runner(mp.Process):
         samples: data.Samples,
         log_queue: Queue,
         log_level: int,
-        output_queue: mp.Queue,
+        output: mp.Queue,
         root: Path,
     ):
-        self.output_queue = output_queue
+        self.output = output
+        self.log_queue = log_queue
+        self.log_level = log_level
         super().__init__(
             target=self._main,
             kwargs={
-                "label": self.label,
                 "config": config,
                 "samples": samples,
-                "log_queue": log_queue,
-                "log_level": log_level,
-                "output_queue": output_queue,
                 "root": root,
             },
         )
 
     def _main(
         self,
-        label: str,
         config: cfg.Config,
         samples: data.Samples,
-        log_queue: mp.Queue,
-        log_level: int,
-        output_queue: mp.Queue,
         root: Path,
     ) -> None:
         logger = logs.get_logger(
-            label=label,
-            level=log_level,
-            queue=log_queue,
+            label=self.label,
+            level=self.log_level,
+            queue=self.log_queue,
         )
         signal(SIGTERM, _cleanup(logger))
         sys.stdout = open(os.devnull, "w", encoding="utf-8")
@@ -90,7 +83,7 @@ class Runner(mp.Process):
             returned = self.main(
                 samples=samples,
                 config=config,
-                label=label,
+                label=self.label,
                 logger=logger,
                 root=root,
             )
@@ -98,20 +91,20 @@ class Runner(mp.Process):
             match returned:
                 case None if any(s.id not in [o.id for o in original] for s in samples):
                     logger.warning("Runner returned None, but samples were modified")
-                    output_queue.put(original)
+                    self.output.put(original)
                 case None:
                     logger.debug("Runner did not modify samples")
-                    output_queue.put(original)
+                    self.output.put(original)
                 case data.Samples:
-                    output_queue.put(returned)
+                    self.output.put(returned)
                 case _:
                     logger.warning(
                         f"Runner returned an unexpected type {type(returned)}"
                     )
-                    output_queue.put(original)
+                    self.output.put(original)
             
-            output_queue.close()
-            output_queue.join_thread()
+            self.output.close()
+            self.output.join_thread()
 
         except Exception as exception:
             logger.critical(

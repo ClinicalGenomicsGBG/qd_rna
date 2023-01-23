@@ -97,7 +97,7 @@ def _main(
                         samples=deepcopy(_samples),
                         log_queue=_LOG_QUEUE,
                         log_level=config.log_level,
-                        output_queue=mp.Queue(),
+                        output=mp.Queue(),
                         root=root,
                     )
                     _PROCS.append(proc)
@@ -126,7 +126,7 @@ def _main(
                 proc.terminate()
                 proc.join()
 
-            if (_ps := proc.output_queue.get_nowait()) is not None:
+            if (_ps := proc.output.get_nowait()) is not None:
                 results[proc.name].update({*_ps})
 
         for hook in [h for h in _HOOKS if h.when == "post"]:
