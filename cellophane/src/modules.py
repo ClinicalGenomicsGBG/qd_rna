@@ -85,7 +85,7 @@ class Runner(mp.Process):
         sys.stdout = open(os.devnull, "w", encoding="utf-8")
         sys.stderr = open(os.devnull, "w", encoding="utf-8")
         try:
-            original = deepcopy(samples)
+            original = [s.id for s in samples]
             returned = self.main(
                 samples=samples,
                 config=config,
@@ -95,7 +95,7 @@ class Runner(mp.Process):
             )
 
             match returned:
-                case None if any(s not in original for s in samples):
+                case None if any(s.id not in original for s in samples):
                     logger.warning("Runner returned None, but samples were modified")
                     output_queue.put(original)
                 case data.Samples | None:
