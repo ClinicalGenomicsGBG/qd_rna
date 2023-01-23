@@ -119,7 +119,7 @@ def _main(
         )
 
     finally:
-        results: dict[str, dict[str, data.Sample]] = {r.label: {} for r in _RUNNERS}
+        results: dict[str, data.Samples] = {r.label: samples.__class__() for r in _RUNNERS}
 
         for proc in _PROCS:
             if proc.exitcode is None:
@@ -128,13 +128,13 @@ def _main(
                 proc.join()
 
             if (_ps := proc.output.get_nowait()) is not None:
-                results[proc.label].update({s.id: s for s in _ps})
+                results[proc.label].extend(_ps)
 
         for hook in [h for h in _HOOKS if h.when == "post"]:
             logger.info(f"Running post-hook {hook.label}")
             hook(
                 config=config,
-                samples=samples.__class__([s for r in results.values() for s in r.values()]),
+                samples=samples.__class__(s for r in results.values() for s in r),
                 log_queue=_LOG_QUEUE,
                 log_level=config.log_level,
                 root=root,
