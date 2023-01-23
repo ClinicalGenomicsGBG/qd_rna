@@ -117,7 +117,7 @@ def _main(
         )
 
     finally:
-        results: dict[str, set[data.Sample]] = {r.name: set() for r in _RUNNERS}
+        results: dict[str, set[data.Sample]] = {r.label: set() for r in _RUNNERS}
 
         for proc in _PROCS:
             if proc.exitcode is None:
@@ -126,7 +126,7 @@ def _main(
                 proc.join()
 
             if (_ps := proc.output.get_nowait()) is not None:
-                results[proc.name].update({*_ps})
+                results[proc.label].update({*_ps})
 
         for hook in [h for h in _HOOKS if h.when == "post"]:
             logger.info(f"Running post-hook {hook.label}")
