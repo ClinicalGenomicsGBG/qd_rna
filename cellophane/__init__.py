@@ -1,5 +1,5 @@
 """Cellophane: A library for writing modular wrappers"""
-
+import sys
 import inspect
 import logging
 import multiprocessing as mp
@@ -39,12 +39,14 @@ def _main(
 
     _log_handlers = logging.root.handlers.copy()
     for path in [*modules_path.glob("*.py"), *modules_path.glob("*/__init__.py")]:
-        name = path.stem if path.stem != "__init__" else path.parent.name
-        spec = spec_from_file_location(f"_mod_{name}", path)
+        base = path.stem if path.stem != "__init__" else path.parent.name
+        name = f"_cellophane_module_{name}"
+        spec = spec_from_file_location(name, path)
         if spec is not None:
             try:
                 module = module_from_spec(spec)
                 if spec.loader is not None:
+                    sys.modules[name] = module
                     spec.loader.exec_module(module)
                     # Reset logging handlers to avoid duplicate messages
                     for handler in logging.root.handlers:
