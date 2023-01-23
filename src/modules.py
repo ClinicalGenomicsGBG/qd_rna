@@ -53,6 +53,7 @@ class Runner(mp.Process):
         output_queue: Queue,
         root: Path,
     ):
+        self.output_queue = output_queue
         super().__init__(
             target=self._main,
             kwargs={
