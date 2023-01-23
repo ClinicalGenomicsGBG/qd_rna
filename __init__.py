@@ -7,7 +7,6 @@ from copy import deepcopy
 from importlib.util import spec_from_file_location, module_from_spec
 from pathlib import Path
 from typing import Any, Optional, Type, Callable
-from queue import Queue
 
 import rich_click as click
 import yaml

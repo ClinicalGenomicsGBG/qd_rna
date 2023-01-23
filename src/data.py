@@ -3,7 +3,7 @@
 from collections import UserDict, UserList
 from functools import reduce
 from pathlib import Path
-from typing import Any, Hashable, Mapping, Optional, Sequence, TypeVar
+from typing import Any, Hashable, Mapping, Optional, Sequence, TypeVar, Callable
 
 from yaml import safe_load
 
@@ -109,3 +109,7 @@ class Samples(UserList[S]):
             handle.write(_samplesheet)
 
         return _path
+
+
+    def __reduce__(self) -> str | tuple[Any, ...]:
+        return self.__class__.__name__, (self.data,)
