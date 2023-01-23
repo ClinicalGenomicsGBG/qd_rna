@@ -134,7 +134,7 @@ def _main(
             logger.info(f"Running post-hook {hook.label}")
             hook(
                 config=config,
-                samples=samples[0].__class__([s for r in results.values() for s in r.values()]),
+                samples=samples.__class__([s for r in results.values() for s in r.values()]),
                 log_queue=_LOG_QUEUE,
                 log_level=config.log_level,
                 root=root,
