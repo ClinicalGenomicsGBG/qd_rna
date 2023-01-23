@@ -126,7 +126,7 @@ def _main(
                 proc.terminate()
                 proc.join()
 
-            if (_ps := proc.processed_samples) is not None:
+            if (_ps := proc.output_queue.get_nowait()) is not None:
                 results[proc.name].update({*_ps})
 
         for hook in [h for h in _HOOKS if h.when == "post"]:
