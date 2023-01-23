@@ -50,7 +50,7 @@ class Runner(mp.Process):
         samples: data.Samples,
         log_queue: Queue,
         log_level: int,
-        output_queue: Queue,
+        output_queue: mp.Queue,
         root: Path,
     ):
         self.output_queue = output_queue
@@ -72,9 +72,9 @@ class Runner(mp.Process):
         label: str,
         config: cfg.Config,
         samples: data.Samples,
-        log_queue: Queue,
+        log_queue: mp.Queue,
         log_level: int,
-        output_queue: Queue,
+        output_queue: mp.Queue,
         root: Path,
     ) -> None:
         logger = logs.get_logger(
@@ -109,6 +109,9 @@ class Runner(mp.Process):
                         f"Runner returned an unexpected type {type(returned)}"
                     )
                     output_queue.put(original)
+            
+            output_queue.close()
+            output_queue.join_thread()
 
         except Exception as exception:
             logger.critical(
