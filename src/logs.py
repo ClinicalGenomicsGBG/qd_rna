@@ -70,7 +70,7 @@ def handle_logging(
             try:
                 func(*args, logger=logger, **kwargs)
             except Exception as exception:  # pylint: disable=broad-except
-                logger.critical("Caught an exception", exc_info=True)
+                logger.critical("Caught an unhandeled exception", exc_info=True)
                 if propagate_exceptions:
                     raise Exception from exception
 
