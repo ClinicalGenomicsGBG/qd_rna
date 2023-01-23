@@ -98,7 +98,10 @@ class Runner(mp.Process):
                 case None if any(s.id not in [o.id for o in original] for s in samples):
                     logger.warning("Runner returned None, but samples were modified")
                     output_queue.put(original)
-                case data.Samples | None:
+                case None:
+                    logger.debug("Runner did not modify samples")
+                    output_queue.put(original)
+                case data.Samples:
                     output_queue.put(returned)
                 case _:
                     logger.warning(
