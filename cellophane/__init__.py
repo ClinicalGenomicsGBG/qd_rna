@@ -32,7 +32,6 @@ def _main(
 ) -> None:
     """Run cellophane"""
     logger.setLevel(config.log_level)
-    # FIXME: Make slims optional if a samples_file is provided
     if config.samples_file:
         samples = data.Samples.from_file(config.samples_file)
     else:
@@ -47,6 +46,7 @@ def _main(
                 module = module_from_spec(spec)
                 if spec.loader is not None:
                     spec.loader.exec_module(module)
+                    # Reset logging handlers to avoid duplicate messages
                     for handler in logging.root.handlers:
                         if handler not in _log_handlers:
                             handler.close()
@@ -59,9 +59,10 @@ def _main(
                         case modules.Hook() as hook:
                             logger.debug(f"Found hook {hook.label} ({name})")
                             _HOOKS.append(hook)
-                        case type() as runner if issubclass(
-                            runner, modules.Runner
-                        ) and runner != modules.Runner:
+                        case type() as runner if (
+                            issubclass(runner, modules.Runner)
+                            and runner != modules.Runner
+                        ):
                             logger.debug(f"Found runner {runner.label} ({name})")
                             _RUNNERS.append(obj)
                         case _:
@@ -69,24 +70,22 @@ def _main(
 
     _HOOKS.sort(key=lambda h: h.priority)
 
-    for hook in [h for h in _HOOKS if h.when == "pre"]:
-        logger.info(f"Running pre-hook {hook.label}")
-        result = hook(
-            config=config,
-            samples=samples,
-            log_queue=_LOG_QUEUE,
-            log_level=config.log_level,
-            root=root,
-        )
+    try:
+        for hook in [h for h in _HOOKS if h.when == "pre"]:
+            logger.info(f"Running pre-hook {hook.label}")
+            result = hook(
+                config=config,
+                samples=samples,
+                log_queue=_LOG_QUEUE,
+                log_level=config.log_level,
+                root=root,
+            )
 
-        if issubclass(type(result), data.Samples):
-            samples = result
+            if issubclass(type(result), data.Samples):
+                samples = result
 
-    if samples and _RUNNERS:
-        try:
+        if samples:
             for runner in _RUNNERS:
-                logger.info(f"Starting {runner.label} for {len(samples)} samples")
-
                 for _samples in (
                     [data.Samples([s]) for s in samples]
                     if runner.individual_samples
@@ -94,45 +93,59 @@ def _main(
                 ):
                     proc = runner(
                         config=deepcopy(config),
-                        kwargs={
-                            "log_queue": _LOG_QUEUE,
-                            "log_level": config.log_level,
-                            "samples": deepcopy(_samples),
-                            "root": root,
-                        },
+                        samples=deepcopy(_samples),
+                        log_queue=_LOG_QUEUE,
+                        log_level=config.log_level,
+                        output_queue=_MP_MANAGER.Queue(),
+                        root=root,
                     )
-                    proc.start()
                     _PROCS.append(proc)
 
             for proc in _PROCS:
-                proc.join()
-        except KeyboardInterrupt:
-            logger.critical("Received SIGINT, shutting down...")
+                logger.info(f"Starting {proc.label} for {len(samples)} samples")
+                proc.start()
             for proc in _PROCS:
+                proc.join()
+
+    except KeyboardInterrupt:
+        logger.critical("Received SIGINT, shutting down...")
+
+    except Exception as exception:
+        logger.critical(f"Unhandled exception: {exception}")
+
+    finally:
+        results: dict[str, set[data.Sample]] = {r.name: set() for r in _RUNNERS}
+
+        for proc in _PROCS:
+            if proc.exitcode is None:
                 logger.debug(f"Terminating {proc.label}")
                 proc.terminate()
                 proc.join()
-        finally:
-            for runner in _RUNNERS:
-                n_ok = sum(p.exitcode == 0 for p in _PROCS if p.label == runner.label)
-                n_fail = sum(p.exitcode != 0 for p in _PROCS if p.label == runner.label)
 
-                if n_ok:
-                    logger.info(f"{n_ok} {runner.label} jobs completed successfully")
-                if n_fail:
-                    logger.warning(f"{n_fail} {runner.label} jobs failed")
+            if (_ps := proc.processed_samples) is not None:
+                results[proc.name].update({*_ps})
 
-    for hook in [h for h in _HOOKS if h.when == "post"]:
-        logger.info(f"Running post-hook {hook.label}")
-        hook(
-            config=config,
-            samples=samples,
-            log_queue=_LOG_QUEUE,
-            log_level=config.log_level,
-            root=root,
-        )
+        for hook in [h for h in _HOOKS if h.when == "post"]:
+            logger.info(f"Running post-hook {hook.label}")
+            hook(
+                config=config,
+                samples=samples[0].__class__([*results.values()]),
+                log_queue=_LOG_QUEUE,
+                log_level=config.log_level,
+                root=root,
+            )
 
-
+        for name, processed in results.items():
+            if processed:
+                _n_processed = sum(p in samples for p in processed)
+                _n_failed = sum(s not in processed for s in samples)
+                _n_extra = len(processed) - _n_processed
+                if _n_processed:
+                    logger.info(f"Runner {name} completed {_n_processed} samples")
+                if _n_extra:
+                    logger.info(f"Runner {name} introduced {_n_extra} extra samples")
+                if _n_failed:
+                    logger.info(f"Runner {name} failed for {_n_failed} samples")
 def cellophane(
     label: str,
     wrapper_log: Optional[Path] = None,

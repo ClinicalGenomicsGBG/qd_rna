@@ -3,12 +3,14 @@
 import multiprocessing as mp
 import os
 import sys
+from copy import deepcopy
 from dataclasses import dataclass
 from logging import LoggerAdapter
 from signal import SIGTERM, signal
-from typing import Callable, Optional
+from typing import Callable, Optional, ClassVar
 from pathlib import Path
-
+from queue import Queue
+from functools import cached_property
 
 import psutil
 
@@ -29,9 +31,9 @@ def _cleanup(logger: LoggerAdapter):
 class Runner(mp.Process):
     """Base class for cellophane runners."""
 
-    label: str
-    individual_samples: bool
-    wait: bool
+    label: ClassVar[str]
+    individual_samples: ClassVar[bool]
+    wait: ClassVar[bool]
 
     def __init_subclass__(
         cls,
@@ -45,14 +47,22 @@ class Runner(mp.Process):
     def __init__(
         self,
         config: cfg.Config,
-        kwargs: Optional[dict] = None,
+        samples: data.Samples,
+        log_queue: Queue,
+        log_level: int,
+        output_queue: Queue,
+        root: Path,
     ):
+        self._output_queue = output_queue
         super().__init__(
             target=self._main,
             kwargs={
                 "label": self.label,
                 "config": config,
-                **(kwargs or {}),
+                "samples": samples,
+                "log_queue": log_queue,
+                "log_level": log_level,
+                "root": root,
             },
         )
 
@@ -61,30 +71,46 @@ class Runner(mp.Process):
         label: str,
         config: cfg.Config,
         samples: data.Samples,
-        log_queue: mp.Queue,
+        log_queue: Queue,
         log_level: int,
         root: Path,
     ) -> None:
-        _adapter = logs.get_logger(
+        logger = logs.get_logger(
             label=label,
             level=log_level,
             queue=log_queue,
         )
-        signal(SIGTERM, _cleanup(_adapter))
+        signal(SIGTERM, _cleanup(logger))
         sys.stdout = open(os.devnull, "w", encoding="utf-8")
         sys.stderr = open(os.devnull, "w", encoding="utf-8")
         try:
-            self.main(
+            original_samples = deepcopy(samples)
+            returned_samples = self.main(
                 samples=samples,
                 config=config,
                 label=label,
-                logger=_adapter,
+                logger=logger,
                 root=root,
             )
 
+            match returned_samples:
+                case None if original_samples != samples:
+                    logger.warning("Runner returned None, but samples were modified")
+                    self._output_queue.put(None)
+                case data.Samples | None:
+                    self._output_queue.put(returned_samples)
+                case _:
+                    logger.warning(f"Runner returned an unexpected type {type(returned_samples)}")
+                    self._output_queue.put(original_samples)
+
         except Exception as exception:
-            _adapter.critical("Caught an exception", exc_info=True)
+            logger.critical("Caught an exception", exc_info=True)
             raise SystemExit(1) from exception
+
+    @cached_property
+    def processed_samples(self) -> data.Samples | None:
+        """Return the processed samples of the runner."""
+        return self._output_queue.get_nowait()
 
     @staticmethod
     def main(*args, **kwargs) -> None:

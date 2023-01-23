@@ -35,22 +35,24 @@ class Container(UserDict):
                 raise TypeError("Key must be hashble or a sequence of hashables")
 
     def __getattr__(self, key: str) -> Any:
-        if "data" in self.__dict__ and key in self.data:
+        try:
             return self.data[key]
-        else:
+        except KeyError as exception:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{key}'"
-            )
+            ) from exception
 
 
 class Sample(Container):
     """A basic sample container"""
+
     id: str
     fastq_paths: list[str]
     backup: Optional[Container]
 
 
 S = TypeVar("S", bound=Sample)
+
 
 class Samples(UserList[S]):
     """A list of sample containers"""
