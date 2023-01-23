@@ -117,7 +117,7 @@ def _main(
         )
 
     finally:
-        results: dict[str, set[data.Sample]] = {r.label: set() for r in _RUNNERS}
+        results: dict[str, dict[str, data.Sample]] = {r.label: {} for r in _RUNNERS}
 
         for proc in _PROCS:
             if proc.exitcode is None:
@@ -126,7 +126,7 @@ def _main(
                 proc.join()
 
             if (_ps := proc.output.get_nowait()) is not None:
-                results[proc.label].update({*_ps})
+                results[proc.label].update({s.id: s for s in _ps})
 
         for hook in [h for h in _HOOKS if h.when == "post"]:
             logger.info(f"Running post-hook {hook.label}")
@@ -140,8 +140,8 @@ def _main(
 
         for name, processed in results.items():
             if processed:
-                _n_processed = sum(p in samples for p in processed)
-                _n_failed = sum(s not in processed for s in samples)
+                _n_processed = sum(p in [s.id for s in samples] for p in processed)
+                _n_failed = sum(s.id not in processed for s in samples)
                 _n_extra = len(processed) - _n_processed
                 if _n_processed:
                     logger.info(f"Runner {name} completed {_n_processed} samples")
