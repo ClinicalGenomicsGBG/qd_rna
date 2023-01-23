@@ -111,6 +111,7 @@ class Runner(mp.Process):
                 "Caught an exception",
                 exc_info=config.log_level <= logging.DEBUG,
             )
+            self.output.put(None)
             raise SystemExit(1) from exception
 
     @staticmethod
