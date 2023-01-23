@@ -94,9 +94,9 @@ class Runner(mp.Process):
             )
 
             match returned_samples:
-                case None if original_samples != samples:
+                case None if all(s not in original_samples for s in samples)):
                     logger.warning("Runner returned None, but samples were modified")
-                    self._output_queue.put(None)
+                    self._output_queue.put(original_samples)
                 case data.Samples | None:
                     self._output_queue.put(returned_samples)
                 case _:
