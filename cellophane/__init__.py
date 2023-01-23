@@ -7,6 +7,7 @@ from copy import deepcopy
 from importlib.util import spec_from_file_location, module_from_spec
 from pathlib import Path
 from typing import Any, Optional, Type, Callable
+from queue import Queue
 
 import rich_click as click
 import yaml
@@ -18,7 +19,7 @@ _MP_MANAGER = mp.Manager()
 _LOG_QUEUE = logs.get_log_queue(_MP_MANAGER)
 
 _RUNNERS: list[Type[modules.Runner]] = []
-_PROCS: list[modules.Runner] = []
+_PROCS: list[tuple[modules.Runner, Queue]] = []
 _HOOKS: list[modules.Hook] = []
 
 CELLOPHANE_ROOT = Path(__file__).parent
@@ -91,20 +92,21 @@ def _main(
                     if runner.individual_samples
                     else [samples]
                 ):
+                    output = _MP_MANAGER.Queue()
                     proc = runner(
                         config=deepcopy(config),
                         samples=deepcopy(_samples),
                         log_queue=_LOG_QUEUE,
                         log_level=config.log_level,
-                        output_queue=_MP_MANAGER.Queue(),
+                        output_queue=output,
                         root=root,
                     )
-                    _PROCS.append(proc)
+                    _PROCS.append((proc, output))
 
-            for proc in _PROCS:
+            for proc, _ in _PROCS:
                 logger.info(f"Starting {proc.label} for {len(samples)} samples")
                 proc.start()
-            for proc in _PROCS:
+            for proc, _ in _PROCS:
                 proc.join()
 
     except KeyboardInterrupt:
@@ -119,13 +121,13 @@ def _main(
     finally:
         results: dict[str, set[data.Sample]] = {r.name: set() for r in _RUNNERS}
 
-        for proc in _PROCS:
+        for proc, output in _PROCS:
             if proc.exitcode is None:
                 logger.debug(f"Terminating {proc.label}")
                 proc.terminate()
                 proc.join()
 
-            if (_ps := proc.processed_samples) is not None:
+            if (_ps := output.get_nowait()) is not None:
                 results[proc.name].update({*_ps})
 
         for hook in [h for h in _HOOKS if h.when == "post"]:
