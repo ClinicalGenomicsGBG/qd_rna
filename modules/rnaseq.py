@@ -57,49 +57,53 @@ def rnaseq(
             strandedness=config.rnaseq.strandedness,
         )
 
-        sge.submit(
-            str(root / "scripts" / "nextflow.sh"),
-            f"-log {outdir / 'logs' / 'rnaseq.log'}",
-            (
-                f"-config {config.nextflow.config}"
-                if "config" in config.nextflow
-                else ""
-            ),
-            f"run {config.rnaseq.nf_main}",
-            "-ansi-log false",
-            "-resume" if config.nextflow.resume else "",
-            f"-work-dir {config.nextflow.workdir or outdir / 'work'}",
-            f"-with-report {outdir / 'logs' / 'rnaseq-execution.html'}",
-            f"-profile {config.nextflow.profile}",
-            f"--outdir {outdir}",
-            f"--input {sample_sheet}",
-            f"--aligner {config.rnaseq.aligner}",
-            (
-                "--pseudo_aligner salmon"
-                if config.rnaseq.aligner != "star_salmon"
-                else ""
-            ),
-            (
-                "--fasta {config.rnaseq.fasta} "
-                "--gtf {config.rnaseq.gtf} "
-                "--gene_bed {config.rnaseq.gene_bed}"
-                if "genome" not in config.rnaseq
-                else f"--genome {config.rnaseq.genome}"
-            ),
-            (
-                f"--star_index {config.rnaseq.index}"
-                if config.rnaseq.aligner == "star_salmon"
-                else f"--rsem_index {config.rnaseq.index}"
-                if config.rnaseq.aligner == "star_rsem"
-                else ""
-            ),
-            env={"_MODULES_INIT": config.modules_init},
-            queue=config.nextflow.sge_queue,
-            pe=config.nextflow.sge_pe,
-            slots=config.nextflow.sge_slots,
-            check=True,
-            name="rnafusion",
-            stderr=config.logdir / f"rnaseq.{timestamp}.err",
-            stdout=config.logdir / f"rnaseq.{timestamp}.out",
-            cwd=outdir,
-        )
+        try:
+            sge.submit(
+                str(root / "scripts" / "nextflow.sh"),
+                f"-log {outdir / 'logs' / 'rnaseq.log'}",
+                (
+                    f"-config {config.nextflow.config}"
+                    if "config" in config.nextflow
+                    else ""
+                ),
+                f"run {config.rnaseq.nf_main}",
+                "-ansi-log false",
+                "-resume" if config.nextflow.resume else "",
+                f"-work-dir {config.nextflow.workdir or outdir / 'work'}",
+                f"-with-report {outdir / 'logs' / 'rnaseq-execution.html'}",
+                f"-profile {config.nextflow.profile}",
+                f"--outdir {outdir}",
+                f"--input {sample_sheet}",
+                f"--aligner {config.rnaseq.aligner}",
+                (
+                    "--pseudo_aligner salmon"
+                    if config.rnaseq.aligner != "star_salmon"
+                    else ""
+                ),
+                (
+                    f"--fasta {config.rnaseq.fasta} "
+                    f"--gtf {config.rnaseq.gtf} "
+                    f"--gene_bed {config.rnaseq.gene_bed}"
+                    if "genome" not in config.rnaseq
+                    else f"--genome {config.rnaseq.genome}"
+                ),
+                (
+                    f"--star_index {config.rnaseq.index}"
+                    if config.rnaseq.aligner == "star_salmon"
+                    else f"--rsem_index {config.rnaseq.index}"
+                    if config.rnaseq.aligner == "star_rsem"
+                    else ""
+                ),
+                env={"_MODULES_INIT": config.modules_init},
+                queue=config.nextflow.sge_queue,
+                pe=config.nextflow.sge_pe,
+                slots=config.nextflow.sge_slots,
+                check=True,
+                name="rnafusion",
+                stderr=config.logdir / f"rnaseq.{timestamp}.err",
+                stdout=config.logdir / f"rnaseq.{timestamp}.out",
+                cwd=outdir,
+            )
+        except RuntimeError as exception:
+            logger.error(f"nf-core/rnaseq failed with {exception}")
+            raise SystemExit(1) from exception
