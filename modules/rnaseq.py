@@ -52,8 +52,6 @@ def rnaseq(
 
         logger.info("Running nf-core/rnaseq")
 
-        return
-
         sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
             strandedness=config.rnaseq.strandedness,

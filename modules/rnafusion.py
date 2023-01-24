@@ -36,8 +36,6 @@ def rnafusion(
         logger.info("Running nf-core/rnafusion")
         logger.debug(f"Output will be written to {outdir}")
 
-        return
-
         outdir.mkdir(parents=True, exist_ok=True)
         sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
