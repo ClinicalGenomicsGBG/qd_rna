@@ -164,7 +164,7 @@ def _main(
             if n_extra:
                 logger.info(f"Runner {runner.label} introduced {n_extra} extra samples")
             if n_failed:
-                logger.info(f"Runner {runner.label} failed for {n_failed} samples")
+                logger.warning(f"Runner {runner.label} failed for {n_failed} samples")
 
 
 def cellophane(
