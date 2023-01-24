@@ -1,6 +1,5 @@
 """Module for running nf-core/rnafusion."""
 
-import time
 from logging import LoggerAdapter
 from pathlib import Path
 
@@ -22,16 +21,16 @@ def get_output(outdir: Path, config: cfg.Config):
 
 @modules.runner()
 def rnafusion(
-    label: str,
     samples: SlimsSamples,
     config: cfg.Config,
+    timestamp: str,
+    label: str,
     logger: LoggerAdapter,
     root: Path,
 ) -> None:
     """Run nf-core/rnafusion."""
-    timestamp = time.strftime("%y%m%d-%H%M%S")
+
     outdir = config.outdir / timestamp / label
-    
 
     if "rnafusion" in config:
         logger.info("Running nf-core/rnafusion")
@@ -44,7 +43,7 @@ def rnafusion(
             location=outdir,
             strandedness=config.rnafusion.strandedness,
         )
-        
+
         if "workdir" in config.nextflow:
             config.nextflow.workdir.mkdir(parents=True, exist_ok=True)
         sge.submit(

@@ -34,15 +34,15 @@ def get_output(aligner: str, outdir: Path):
 
 @modules.runner(individual_samples=True)
 def rnaseq(
-    label: str,
-    logger: LoggerAdapter,
     samples: SlimsSamples,
     config: cfg.Config,
+    timestamp: str,
+    label: str,
+    logger: LoggerAdapter,
     root: Path,
 ) -> None:
     """Run nf-core/rnaseq."""
 
-    timestamp = time.strftime("%y%m%d-%H%M%S")
     outdir = config.outdir / timestamp / label
     outdir.mkdir(parents=True, exist_ok=True)
 
