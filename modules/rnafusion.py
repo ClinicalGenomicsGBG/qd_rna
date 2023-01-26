@@ -6,6 +6,7 @@ from pathlib import Path
 from cellophane import cfg, modules, sge
 from modules.slims import SlimsSamples
 
+
 def get_output(outdir: Path, config: cfg.Config):
     """Return a dictionary of output files for the rnafusion module."""
     return {
@@ -18,6 +19,7 @@ def get_output(outdir: Path, config: cfg.Config):
         "squid": [*(outdir / "squid").glob("*.txt")],
         "starfusion": [*(outdir / "starfusion").glob("*.tsv")],
     }
+
 
 @modules.runner()
 def rnafusion(

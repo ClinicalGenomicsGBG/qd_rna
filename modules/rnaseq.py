@@ -1,6 +1,5 @@
 """Module for running nf-core/rnaseq."""
 
-import time
 from logging import LoggerAdapter
 from pathlib import Path
 
