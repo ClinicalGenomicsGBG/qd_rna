@@ -83,7 +83,6 @@ def rnafusion(
         except RuntimeError as exception:
             logger.error("nf-core/rnafusion failed")
             raise SystemExit(1) from exception
-
-        output = get_output(outdir, config)
-
-        logger.debug(output)
+        else:
+            output = get_output(outdir, config)
+            logger.debug(output)
