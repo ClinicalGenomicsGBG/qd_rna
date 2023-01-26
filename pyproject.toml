@@ -18,11 +18,19 @@ rich-click = "^1.6.1"
 psutil = "^5.9.4"
 drmaa = "^0.7.9"
 
-
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
 mypy = "^0.991"
 flake8 = "^6.0.0"
+
+[tool.poetry2conda]
+name = "qd-rna"
+
+[tool.poetry2conda.dependencies]
+ngpiris = { channel = "pip" }
+slims-python-api = { channel = "pip" }
+rich-click = { channel = "conda-forge" }
+
 
 [build-system]
 requires = ["poetry-core"]
