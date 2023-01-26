@@ -99,7 +99,7 @@ def rnaseq(
                 pe=config.nextflow.sge_pe,
                 slots=config.nextflow.sge_slots,
                 check=True,
-                name="rnafusion",
+                name="rnaseq",
                 stderr=config.logdir / f"rnaseq.{timestamp}.err",
                 stdout=config.logdir / f"rnaseq.{timestamp}.out",
                 cwd=outdir,
