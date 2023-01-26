@@ -73,7 +73,7 @@ If for some reason you need to change this structure you can change `__main__.py
 from cellophane import cellophane
 
 if __name__ == "__main__":
-    main = cellphane(
+    main = cellophane(
         "My Awesome Wrapper" # Will be used for logging
         modules_path=Path(__file__) / "my_modules"
         schema_path=Path(__file__) / "schema.yaml"
