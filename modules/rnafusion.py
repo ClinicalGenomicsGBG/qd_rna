@@ -44,45 +44,41 @@ def rnafusion(
 
         if "workdir" in config.nextflow:
             config.nextflow.workdir.mkdir(parents=True, exist_ok=True)
-        
-        try:
-            sge.submit(
-                str(root / "scripts" / "nextflow.sh"),
-                f"-log {outdir / 'logs' / 'rnafusion.log'}",
-                (
-                    f"-config {config.nextflow.config}"
-                    if "config" in config.nextflow
-                    else ""
-                ),
-                f"run {config.rnafusion.nf_main}",
-                "-ansi-log false",
-                f"-work-dir {config.nextflow.workdir or outdir / 'work'}",
-                ("-resume" if config.nextflow.resume else ""),
-                f"-with-report {outdir / 'logs' / 'rnafusion-execution.html'}",
-                f"-profile {config.nextflow.profile}",
-                f"--outdir {outdir}",
-                f"--input {sample_sheet}",
-                f"--genomes_base {config.rnafusion.genomes_base}",
-                f"--arriba_ref {config.rnafusion.arriba_ref}",
-                f"--arriba_ref_blacklist {config.rnafusion.arriba_blacklist}",
-                f"--arriba_ref_protein_domain {config.rnafusion.arriba_protein_domain}",
-                f"--fusionreport_tool_cutoff {config.rnafusion.fusionreport_tool_cutoff}",
-                f"--read_length {config.rnafusion.read_length}",
-                "--all",
-                "--fusioninspector_filter",
-                env={"_MODULES_INIT": config.modules_init},
-                queue=config.nextflow.sge_queue,
-                pe=config.nextflow.sge_pe,
-                slots=config.nextflow.sge_slots,
-                check=True,
-                name="rnafusion",
-                stderr=config.logdir / f"rnafusion.{timestamp}.err",
-                stdout=config.logdir / f"rnafusion.{timestamp}.out",
-                cwd=outdir,
-            )
-        except RuntimeError as exception:
-            logger.error("nf-core/rnafusion failed")
-            raise SystemExit(1) from exception
-        else:
-            output = get_output(outdir, config)
-            logger.debug(output)
+
+        sge.submit(
+            str(root / "scripts" / "nextflow.sh"),
+            f"-log {outdir / 'logs' / 'rnafusion.log'}",
+            (
+                f"-config {config.nextflow.config}"
+                if "config" in config.nextflow
+                else ""
+            ),
+            f"run {config.rnafusion.nf_main}",
+            "-ansi-log false",
+            f"-work-dir {config.nextflow.workdir or outdir / 'work'}",
+            ("-resume" if config.nextflow.resume else ""),
+            f"-with-report {outdir / 'logs' / 'rnafusion-execution.html'}",
+            f"-profile {config.nextflow.profile}",
+            f"--outdir {outdir}",
+            f"--input {sample_sheet}",
+            f"--genomes_base {config.rnafusion.genomes_base}",
+            f"--arriba_ref {config.rnafusion.arriba_ref}",
+            f"--arriba_ref_blacklist {config.rnafusion.arriba_blacklist}",
+            f"--arriba_ref_protein_domain {config.rnafusion.arriba_protein_domain}",
+            f"--fusionreport_tool_cutoff {config.rnafusion.fusionreport_tool_cutoff}",
+            f"--read_length {config.rnafusion.read_length}",
+            "--all",
+            "--fusioninspector_filter",
+            env={"_MODULES_INIT": config.modules_init},
+            queue=config.nextflow.sge_queue,
+            pe=config.nextflow.sge_pe,
+            slots=config.nextflow.sge_slots,
+            check=True,
+            name="rnafusion",
+            stderr=config.logdir / f"rnafusion.{timestamp}.err",
+            stdout=config.logdir / f"rnafusion.{timestamp}.out",
+            cwd=outdir,
+        )
+
+        output = get_output(outdir, config)
+        logger.debug(output)
