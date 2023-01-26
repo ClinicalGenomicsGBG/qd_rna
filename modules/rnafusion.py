@@ -32,7 +32,7 @@ def rnafusion(
 
     outdir = config.outdir / timestamp / label
 
-    if "rnafusion" in config:
+    if "rnafusion" in config and not config.rnafusion.skip:
         logger.info("Running nf-core/rnafusion")
         logger.debug(f"Output will be written to {outdir}")
 

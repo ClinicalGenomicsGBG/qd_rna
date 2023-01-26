@@ -46,7 +46,7 @@ def rnaseq(
     outdir = config.outdir / timestamp / label
     outdir.mkdir(parents=True, exist_ok=True)
 
-    if "rnaseq" in config:
+    if "rnaseq" in config and not config.rnaseq.skip:
         if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
             logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
 
