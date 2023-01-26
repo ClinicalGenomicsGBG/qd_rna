@@ -1,0 +1,29 @@
+[tool.poetry]
+name = "qd-rna"
+version = "0.0.1"
+description = "Quick and Dirty RNASeq analysis pipeline"
+authors = ["Erik Demitz-Helin <erik.demitz-helin@gu.se>"]
+readme = "README.md"
+packages = [{include = "qd_rna"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+ngpiris = "^4.2.0"
+slims-python-api = "^6.8.0"
+humanfriendly = "^10.0"
+pyaml = "^21.10.1"
+jsonschema = "^4.17.3"
+rich = "^13.2.0"
+rich-click = "^1.6.1"
+psutil = "^5.9.4"
+drmaa = "^0.7.9"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.12.0"
+mypy = "^0.991"
+flake8 = "^6.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
