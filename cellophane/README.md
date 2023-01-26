@@ -260,7 +260,7 @@ def foo(samples, config, timestamp, label, logger, root):
 
         # sge.submit submits scripts jobs to an SGE cluster (via DRMAA)
         sge.submit(
-            str(scripts_path / "nextflow.sh"),
+            str(root / "scripts" / "nextflow.sh"),
             # *args will be passed as arguments to the script
             *(
                 f"-log {outdir / 'logs' / 'foo.log'}",
