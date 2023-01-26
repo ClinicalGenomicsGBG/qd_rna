@@ -2,6 +2,8 @@ type: object
 required:
   - modules_init
   - nextflow
+  - rnaseq
+  - rnafusion
 
 properties:
   modules_init:
@@ -99,23 +101,22 @@ properties:
       properties:
         skip:
           const: false
-    anyOf:
-      - required:
-        - skip
-      - required:
-        - nf_main
-        - genome
-        - aligner
-        - index
-        - strandedness
-      - required:
-        - nf_main
-        - fasta
-        - gtf
-        - gene_bed
-        - index
-        - aligner
-        - strandedness
+    then:
+      anyOf:
+        - required:
+          - nf_main
+          - genome
+          - aligner
+          - index
+          - strandedness
+        - required:
+          - nf_main
+          - fasta
+          - gtf
+          - gene_bed
+          - index
+          - aligner
+          - strandedness
 
   rnafusion:
     type: object
@@ -168,10 +169,12 @@ properties:
           - reverse
         default: unstranded
     
-    anyOf:
-      - required:
-        - skip
-      - required:
+    if:
+      properties:
+        skip:
+          const: false
+    then:
+      required:
         - nf_main
         - genomes_base
         - arriba_blacklist
