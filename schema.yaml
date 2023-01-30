@@ -78,9 +78,13 @@ properties:
         type: path
         description: Path to genome gene bed file
 
-      index:
+      star_index:
         type: path
-        description: Path to genome index (STAR or RSEM)
+        description: Path to STAR genome index
+      
+      rsem_index:
+        type: path
+        description: Path to RSEM genome index
 
       aligner:
         type: string
@@ -97,26 +101,33 @@ properties:
           - forward
           - reverse
         default: unstranded
-    if:
-      properties:
-        skip:
-          const: false
-    then:
+    
       anyOf:
-        - required:
-          - nf_main
-          - genome
-          - aligner
-          - index
-          - strandedness
-        - required:
-          - nf_main
-          - fasta
-          - gtf
-          - gene_bed
-          - index
-          - aligner
-          - strandedness
+        - properties:
+            skip:
+              const: true  
+        - allOf:
+          - required:
+            - nf_main
+            - aligner
+            - strandedness
+            - star_index
+          - oneOf:
+            - properties:
+                aligner:
+                  const: star_salmon
+            - properties:
+                aligner:
+                  const: star_rsem
+                required:
+                  - rsem_index
+          - anyOf:
+            - required:
+              - genome
+            - required:
+              - fasta
+              - gtf
+              - gene_bed
 
   rnafusion:
     type: object
