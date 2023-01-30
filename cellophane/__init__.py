@@ -221,7 +221,7 @@ def cellophane(
             root=root,
         )
 
-    for flag, _, default, description, _type, _ in schema.flags:
+    for flag, _, default, description, _, _type in schema.flags:
         inner = click.option(
             f"--{flag}",
             type=str if _type == list else _type,
