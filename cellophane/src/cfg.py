@@ -177,5 +177,5 @@ def set_defaults(ctx: click.Context, config_path: Path | click.Path, schema: Sch
 
     ctx.default_map = {
         flag: config[key] if key in config else default
-        for flag, key, default, *_ in schema.flags
+        for flag, key, default, _, _, _ in schema.flags
     }
