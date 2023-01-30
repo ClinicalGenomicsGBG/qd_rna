@@ -27,9 +27,6 @@ _TIMESTAMP: str = time.strftime("%Y%m%d_%H%M%S")
 CELLOPHANE_ROOT = Path(__file__).parent
 
 click.rich_click.DEFAULT_STRING = "[{}]"
-click.rich_click.APPEND_METAVARS_HELP = True
-click.rich_click.SHOW_METAVARS_COLUMN = False
-
 
 def _main(
     logger: logging.LoggerAdapter,
