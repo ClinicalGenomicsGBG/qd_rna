@@ -101,33 +101,32 @@ properties:
           - forward
           - reverse
         default: unstranded
-    
-      anyOf:
-        - properties:
-            skip:
-              const: true  
-        - allOf:
-          - required:
-            - nf_main
-            - aligner
-            - strandedness
-            - star_index
-          - oneOf:
-            - properties:
-                aligner:
-                  const: star_salmon
-            - properties:
-                aligner:
-                  const: star_rsem
-                required:
-                  - rsem_index
-          - anyOf:
-            - required:
-              - genome
-            - required:
-              - fasta
-              - gtf
-              - gene_bed
+
+    if:
+      properties:
+        skip:
+          const: false
+    then:  
+      allOf:
+      - required:
+        - nf_main
+        - aligner
+        - strandedness
+        - star_index
+      - if:
+          properties:
+            aligner:
+              const: star_rsem
+        then:
+          required:
+            - rsem_index
+      - anyOf:
+        - required:
+          - genome
+        - required:
+          - fasta
+          - gtf
+          - gene_bed
 
   rnafusion:
     type: object
