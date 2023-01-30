@@ -106,6 +106,10 @@ def _get_options(cls: Type[Validator]) -> Type[Validator]:
             "if": None,
             "then": None,
             "else": None,
+            "allOf": None,
+            "anyOf": None,
+            "oneOf": None,
+            "not": None,
         },
     )
 
