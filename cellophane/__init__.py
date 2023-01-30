@@ -229,7 +229,7 @@ def cellophane(
             multiple=_type == list,
             default=default,
             help=description,
-            show_default=secret,
+            show_default=not secret,
         )(inner)
 
     inner = click.option(
