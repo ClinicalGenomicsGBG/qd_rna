@@ -86,9 +86,9 @@ def rnaseq(
                 else f"--genome {config.rnaseq.genome}"
             ),
             (
-                f"--star_index {config.rnaseq.index}"
+                f"--star_index {config.rnaseq.star_index}"
                 if config.rnaseq.aligner == "star_salmon"
-                else f"--rsem_index {config.rnaseq.index}"
+                else f"--rsem_index {config.rnaseq.rsem_index}"
                 if config.rnaseq.aligner == "star_rsem"
                 else ""
             ),
