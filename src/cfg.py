@@ -183,7 +183,6 @@ class Config(data.Container):
 
         _data = schema.set_defaults(_data, validate=validate)
         super().__init__(_data)
-        self.default = None
 
 
 def set_defaults(ctx: click.Context, config_path: Path | click.Path, schema: Schema):
