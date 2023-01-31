@@ -1,6 +1,6 @@
 """Utility functions and classes"""
 
-from typing import Any
+from typing import Any, Iterable
 import importlib.util
 import sys
 
@@ -21,10 +21,12 @@ def map_nested_keys(data: Any) -> list[list[str]]:
 def merge_mappings(m_1: Any, m_2: Any) -> Any:
     """Merge two nested mappings"""
     match m_1, m_2:
-        case {**m_1}, {**m_2} if not any(k in m_1 for k in m_2):
-            return m_1 | m_2
-        case {**m_1}, {**m_2} if m_1:
-            return {k: merge_mappings(v, m_2.get(k, v)) for k, v in (m_2 | m_1).items()}
+        case {**v_1}, {**v_2} if not any(k in m_1 for k in m_2):
+            return v_1 | v_2
+        case {**v_1}, {**v_2} if m_1:
+            return {k: merge_mappings(v, v_2.get(k, v)) for k, v in (v_2 | v_1).items()}
+        case [*v_1] | set(v_1), [*v_2] | set(v_2):
+            return [*{*m_1, *m_2}]
         case _:
             return m_2
 
