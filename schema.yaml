@@ -101,7 +101,6 @@ properties:
           - forward
           - reverse
         default: unstranded
-
     if:
       properties:
         skip:
