@@ -25,7 +25,7 @@ def merge_mappings(m_1: Any, m_2: Any) -> Any:
             return v_1 | v_2
         case {**v_1}, {**v_2} if m_1:
             return {k: merge_mappings(v, v_2.get(k, v)) for k, v in (v_2 | v_1).items()}
-        case [*v_1] | set(v_1), [*v_2] | set(v_2):
+        case ([*v_1] | set(v_1)), ([*v_2] | set(v_2)):
             return [*{*m_1, *m_2}]
         case _:
             return m_2
