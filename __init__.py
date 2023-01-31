@@ -190,7 +190,7 @@ def cellophane(
 
     with (
         open(CELLOPHANE_ROOT / "schema.base.yaml", encoding="utf-8") as base_handle,
-        open(_schema_path, "r", encoding="utf-8") as custom_handle,
+        open(str(_schema_path), "r", encoding="utf-8") as custom_handle,
     ):
         base = yaml.safe_load(base_handle)
         custom = yaml.safe_load(custom_handle)
