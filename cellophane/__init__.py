@@ -28,7 +28,6 @@ CELLOPHANE_ROOT = Path(__file__).parent
 
 click.rich_click.DEFAULT_STRING = "[{}]"
 
-
 def _main(
     logger: logging.LoggerAdapter,
     config: cfg.Config,
@@ -185,12 +184,12 @@ def cellophane(
     """Generate a cellophane CLI from a schema file"""
     root = Path(inspect.stack()[1].filename).parent
     _wrapper_log = wrapper_log or root / "pipeline.log"
-    _schema_path = schema_path or root / "schema.yaml",
+    _schema_path = schema_path or root / "schema.yaml"
     _modules_path = modules_path or root / "modules"
 
     with (
         open(CELLOPHANE_ROOT / "schema.base.yaml", encoding="utf-8") as base_handle,
-        open(str(_schema_path), "r", encoding="utf-8") as custom_handle,
+        open(_schema_path, "r", encoding="utf-8") as custom_handle,
     ):
         base = yaml.safe_load(base_handle)
         custom = yaml.safe_load(custom_handle)
@@ -201,13 +200,7 @@ def cellophane(
             custom = util.merge_mappings(custom, module)
 
     merged = util.merge_mappings(custom, base)
-    # schema = cfg.Schema.from_file(
-    #     [
-    #         CELLOPHANE_ROOT / "schema.base.yaml",
-    #         schema_path or root / "schema.yaml",
-    #         *_modules_path.glob("*/schema.yaml"),
-    #     ]
-    # )
+    schema = cfg.Schema(merged)
 
     @click.command()
     @logs.handle_logging(
