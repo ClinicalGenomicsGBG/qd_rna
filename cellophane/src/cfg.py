@@ -113,7 +113,10 @@ class Schema(data.Container):
         schema: dict = {}
         for file in path:
             with open(file, "r", encoding="utf-8") as handle:
-                schema |= safe_load(handle) or {}
+                schema = util.merge_mappings(
+                    deepcopy(schema),
+                    safe_load(handle) or {},
+                )
         cls(schema)
 
     @property
