@@ -70,7 +70,7 @@ def _get_options(cls: Type[Validator]) -> Type[Validator]:
                         instance[prop].append(description)
                     case _:
                         instance[prop].append("")
-                
+
                 match subschema:
                     case {"secret": True}:
                         instance[prop].append(True)
@@ -99,18 +99,7 @@ def _get_options(cls: Type[Validator]) -> Type[Validator]:
             yield error
 
     return validators.extend(
-        cls,
-        {k: None for k in cls.VALIDATORS}
-        | {
-            "properties": func,
-            "if": None,
-            "then": None,
-            "else": None,
-            "allOf": None,
-            "anyOf": None,
-            "oneOf": None,
-            "not": None,
-        },
+        cls, {k: None for k in cls.VALIDATORS} | {"properties": func}
     )
 
 
