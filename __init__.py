@@ -214,7 +214,9 @@ def cellophane(
         try:
             _config = cfg.Config(config_path, schema, **kwargs)
         except ValidationError as exception:
-            logger.critical(f"Invalid configuration: {exception.message}")
+            _config = cfg.Config(config_path, schema, validate=False, **kwargs)
+            for error in schema.iter_errors(_config):
+                logger.critical(f"Invalid configuration: {error.message}")
             raise SystemExit(1) from exception
         return _main(
             config=_config,
