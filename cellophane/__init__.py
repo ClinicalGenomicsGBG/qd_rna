@@ -17,16 +17,14 @@ from .src import cfg, data, logs, modules, util, sge
 
 _MP_MANAGER = mp.Manager()
 _LOG_QUEUE = logs.get_log_queue(_MP_MANAGER)
-
 _RUNNERS: list[Type[modules.Runner]] = []
 _PROCS: list[modules.Runner] = []
 _HOOKS: list[modules.Hook] = []
 _TIMESTAMP: str = time.strftime("%Y%m%d_%H%M%S")
-
-
 CELLOPHANE_ROOT = Path(__file__).parent
 
 click.rich_click.DEFAULT_STRING = "[{}]"
+
 
 def _main(
     logger: logging.LoggerAdapter,
@@ -36,7 +34,7 @@ def _main(
 ) -> None:
     """Run cellophane"""
     logger.setLevel(config.log_level)
-    if config.samples_file is not None:
+    if "samples_file" in config:
         samples = data.Samples.from_file(config.samples_file)
     else:
         samples = data.Samples()
