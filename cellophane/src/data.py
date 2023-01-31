@@ -44,8 +44,6 @@ class Container(UserDict):
     def __getattr__(self, key: str) -> Any:
         if "data" in self.__dict__ and key in self.data:
             return self.data[key]
-        elif "default" in self.__dict__:
-            return self.default
         else:
             raise AttributeError(
                 f"'{self.__class__.__name__}' object has no attribute '{key}'"
