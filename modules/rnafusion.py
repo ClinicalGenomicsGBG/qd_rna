@@ -29,10 +29,9 @@ def rnafusion(
     label: str,
     logger: LoggerAdapter,
     root: Path,
+    outdir: Path,
 ) -> None:
     """Run nf-core/rnafusion."""
-
-    outdir = config.outdir / timestamp / label
 
     if "rnafusion" in config and not config.rnafusion.skip:
         logger.info("Running nf-core/rnafusion")

@@ -36,14 +36,12 @@ def rnaseq(
     samples: SlimsSamples,
     config: cfg.Config,
     timestamp: str,
+    label: str,
     logger: LoggerAdapter,
     root: Path,
     outdir: Path,
 ) -> None:
     """Run nf-core/rnaseq."""
-
-    # outdir = config.outdir / timestamp / label
-    # outdir.mkdir(parents=True, exist_ok=True)
 
     if "rnaseq" in config and not config.rnaseq.skip:
         if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
