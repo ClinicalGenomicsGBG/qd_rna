@@ -17,6 +17,7 @@ rich = "^13.2.0"
 rich-click = "^1.6.1"
 psutil = "^5.9.4"
 drmaa = "^0.7.9"
+xxhash = "^3.2.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
@@ -29,6 +30,7 @@ name = "qd-rna"
 [tool.poetry2conda.dependencies]
 ngpiris = { channel = "pip" }
 slims-python-api = { channel = "pip" }
+xxhash = { channel = "pip" }
 rich-click = { channel = "conda-forge" }
 
 
