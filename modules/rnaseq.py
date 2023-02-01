@@ -2,6 +2,7 @@
 
 from logging import LoggerAdapter
 from pathlib import Path
+from distutils.dir_util import copy_tree
 
 from cellophane import cfg, modules, sge
 from modules.slims import SlimsSamples
@@ -15,7 +16,6 @@ def get_output(aligner: str, outdir: Path):
             for pattern in [
                 "*.bam",
                 "*.bai",
-                "**/*.bigWig",
                 "*.results",
                 "*.tsv",
                 "*.rds",
@@ -36,14 +36,14 @@ def rnaseq(
     samples: SlimsSamples,
     config: cfg.Config,
     timestamp: str,
-    label: str,
     logger: LoggerAdapter,
     root: Path,
+    outdir: Path,
 ) -> None:
     """Run nf-core/rnaseq."""
 
-    outdir = config.outdir / timestamp / label
-    outdir.mkdir(parents=True, exist_ok=True)
+    # outdir = config.outdir / timestamp / label
+    # outdir.mkdir(parents=True, exist_ok=True)
 
     if "rnaseq" in config and not config.rnaseq.skip:
         if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
@@ -73,11 +73,8 @@ def rnaseq(
             f"--outdir {outdir}",
             f"--input {sample_sheet}",
             f"--aligner {config.rnaseq.aligner}",
-            (
-                "--pseudo_aligner salmon"
-                if config.rnaseq.aligner != "star_salmon"
-                else ""
-            ),
+            f"--star_index {config.rnaseq.star_index}",
+            "--pseudo_aligner salmon",
             (
                 f"--fasta {config.rnaseq.fasta} "
                 f"--gtf {config.rnaseq.gtf} "
@@ -86,9 +83,7 @@ def rnaseq(
                 else f"--genome {config.rnaseq.genome}"
             ),
             (
-                f"--star_index {config.rnaseq.star_index}"
-                if config.rnaseq.aligner == "star_salmon"
-                else f"--rsem_index {config.rnaseq.rsem_index}"
+                f"--rsem_index {config.rnaseq.rsem_index}"
                 if config.rnaseq.aligner == "star_rsem"
                 else ""
             ),
@@ -102,3 +97,6 @@ def rnaseq(
             stdout=config.logdir / f"rnaseq.{timestamp}.out",
             cwd=outdir,
         )
+
+        _tag = f"{samples[0].id}_{samples[0].run}"
+        copy_tree(outdir, f"/webstore/clinical/development/rnaseq/{_tag}")
