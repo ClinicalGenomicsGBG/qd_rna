@@ -222,8 +222,9 @@ def runner(
             label=label or func.__name__,
             individual_samples=individual_samples,
         ):
-            def __init__(self):
+            def __init__(self, *args, **kwargs):
                 self.main = staticmethod(func)
+                super().__init__(*args, **kwargs)
 
         return _runner
 
