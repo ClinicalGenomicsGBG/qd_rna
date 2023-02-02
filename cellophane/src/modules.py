@@ -105,13 +105,12 @@ class Runner(mp.Process):
         run_hash.update(pickle.dumps(inspect.getsource(self.main)))
 
         for sample in samples:
-            sample_hash = copy(run_hash)
             for fq in sample.fastq_paths:
-                sample_hash.update(Path(fq).stat().st_size.to_bytes())
+                run_hash.update(Path(fq).stat().st_size.to_bytes())
                 with open(fq, "rb") as handle:
-                    sample_hash.update(handle.read(int(128e6)))
+                    run_hash.update(handle.read(int(128e6)))
                     handle.seek(-int(128e6), 2)
-                    sample_hash.update(handle.read(int(128e6)))
+                    run_hash.update(handle.read(int(128e6)))
         
         run_hash = run_hash.hexdigest()[:16]
         outdir: Path = config.outdir / f"{self.name}_{run_hash}"
