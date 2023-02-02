@@ -144,6 +144,14 @@ class Runner(mp.Process):
                 outdir=outdir,
             )
 
+        except Exception as exception:
+            logger.critical(exception, exc_info=config.log_level == "DEBUG")
+            self.output.put(original)
+            self.output.close()
+            self.output.join_thread()
+            raise SystemExit(1)
+
+        else:
             match returned:
                 case None:
                     if returned is None and any(
@@ -164,19 +172,14 @@ class Runner(mp.Process):
             self.output.close()
             self.output.join_thread()
 
-        except Exception as exception:
-            logger.critical(exception, exc_info=config.log_level == "DEBUG")
-            self.output.put(original)
-            self.output.close()
-            self.output.join_thread()
-            raise SystemExit(1)
-        
-        else:
-            with open(outdir / ".cellophane_integrity", "wb") as handle:
-                if integrity is None:
-                    integrity = xxhash.xxh3_128()
-                    integrity.update(pickle.dumps(outdir.glob("**/*")))
-                pickle.dump(integrity, handle)
+            try:
+                with open(outdir / ".cellophane_integrity", "wb") as handle:
+                    if integrity is None:
+                        integrity = xxhash.xxh3_128()
+                        integrity.update(pickle.dumps(outdir.glob("**/*")))
+                    pickle.dump(integrity, handle)
+            except Exception as exception:
+                logger.warning(f"Unable to save integrity data: {exception}")
 
     @staticmethod
     def main(**_) -> Optional[data.Samples[data.Sample]]:
