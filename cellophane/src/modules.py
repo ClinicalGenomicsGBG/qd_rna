@@ -3,7 +3,7 @@
 import multiprocessing as mp
 import os
 import sys
-from copy import deepcopy
+from copy import deepcopy, copy
 from dataclasses import dataclass
 import logging
 from signal import SIGTERM, signal
@@ -41,6 +41,7 @@ class Runner(mp.Process):
     """Base class for cellophane runners."""
 
     label: ClassVar[str]
+    name: ClassVar[str]
     individual_samples: ClassVar[bool]
     wait: ClassVar[bool]
 
@@ -50,6 +51,7 @@ class Runner(mp.Process):
         individual_samples: bool = False,
     ) -> None:
         cls.label = label or cls.__name__
+        cls.name = cls.__name__
         cls.individual_samples = individual_samples
         super().__init_subclass__()
 
@@ -98,32 +100,40 @@ class Runner(mp.Process):
         sys.stdout = open(os.devnull, "w", encoding="utf-8")
         sys.stderr = open(os.devnull, "w", encoding="utf-8")
 
-        outdir: Path = config.outdir / self.label
+        run_hash = xxhash.xxh3_128()
+        run_hash.update(pickle.dumps(config))
+        run_hash.update(pickle.dumps(inspect.getsource(self.main)))
 
-        runhash = xxhash.xxh3_128()
-        runhash.update(pickle.dumps(config))
-        runhash.update(pickle.dumps(inspect.getsource(self.main)))
         for sample in samples:
+            sample_hash = copy(run_hash)
             for fq in sample.fastq_paths:
+                sample_hash.update(Path(fq).stat().st_size.to_bytes())
                 with open(fq, "rb") as handle:
-                    runhash.update(handle.read(int(128e6)))
-        runhash = runhash.hexdigest()
-
-        logger.debug(f"Run hash: {runhash}")
-
-        if (outdir / runhash).exists():
-            try:
-                returned = pickle.loads((outdir / runhash).read_bytes())
-            except Exception as exception:
-                logger.warning(
-                    f"Unable to load cached results: {exception}",
-                    exc_info=config.log_level == "DEBUG",
-                )
-            else:
-                logger.info("Using cached results")
+                    sample_hash.update(handle.read(int(128e6)))
+                    handle.seek(-int(128e6), 2)
+                    sample_hash.update(handle.read(int(128e6)))
+        
+        run_hash = run_hash.hexdigest()[:16]
+        outdir: Path = config.outdir / f"{self.name}_{run_hash}"
+        logger.debug(f"Run hash: {run_hash}")
 
         try:
-            returned = self.main(
+            checksum = pickle.loads((outdir / ".cellophane_integrity").read_bytes())
+            integrity = xxhash.xxh3_128()
+            integrity.update(pickle.dumps(outdir.glob("**/*")))
+
+            if checksum == integrity.hexdigest():
+                returned = pickle.loads((outdir / ".cellophane_cache").read_bytes())
+                logger.info("Using cached results")
+            else:
+                raise Exception("Integrity check failed")
+
+        except Exception as exception:
+            logger.debug(f"Unable to load cached results: {exception}")
+            returned = None
+        
+        try:
+            returned = returned or self.main(
                 samples=samples,
                 config=config,
                 timestamp=timestamp,
