@@ -102,7 +102,9 @@ class Runner(mp.Process):
         sys.stderr = open(os.devnull, "w", encoding="utf-8")
 
         run_hash = xxhash.xxh3_128()
-        run_hash.update(pickle.dumps(config))
+        run_hash.update(
+            pickle.dumps({k: v for k, v in config.items() if k not in ["log_level"]})
+        )
         run_hash.update(pickle.dumps(inspect.getsource(self.main)))
 
         for sample in samples:
@@ -112,7 +114,7 @@ class Runner(mp.Process):
                     run_hash.update(handle.read(int(128e6)))
                     handle.seek(-int(128e6), 2)
                     run_hash.update(handle.read(int(128e6)))
-        
+
         run_hash = run_hash.hexdigest()[:16]
         outdir: Path = config.outdir / f"{self.name}_{run_hash}"
         logger.debug(f"Run hash: {run_hash}")
@@ -132,7 +134,7 @@ class Runner(mp.Process):
             logger.debug(f"Unable to load cached results: {exception}")
             returned = None
             integrity = None
-        
+
         try:
             returned = returned or self.main(
                 samples=samples,
