@@ -181,6 +181,7 @@ class Hook:
     """Base class for cellophane pre/post-hooks."""
 
     label: str
+    name: str
     func: Callable
     overwrite: bool
     when: str
@@ -219,6 +220,7 @@ def pre_hook(
     def wrapper(func):
         return Hook(
             label=label or func.__name__,
+            name=func.__name__,
             func=func,
             overwrite=overwrite,
             when="pre",
@@ -238,6 +240,7 @@ def post_hook(
     def wrapper(func):
         return Hook(
             label=label or func.__name__,
+            name=func.__name__,
             func=func,
             overwrite=overwrite,
             when="post",
