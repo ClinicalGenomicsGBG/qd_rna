@@ -52,6 +52,7 @@ class Runner(mp.Process):
         individual_samples: bool = False,
     ) -> None:
         cls.label = label or name
+        cls.name = name
         cls.individual_samples = individual_samples
         super().__init_subclass__()
 
