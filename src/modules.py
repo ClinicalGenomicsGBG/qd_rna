@@ -47,11 +47,11 @@ class Runner(mp.Process):
 
     def __init_subclass__(
         cls,
+        name: str,
         label: Optional[str] = None,
         individual_samples: bool = False,
     ) -> None:
-        cls.label = label or cls.__name__
-        cls.name = cls.__name__
+        cls.label = label or name
         cls.individual_samples = individual_samples
         super().__init_subclass__()
 
@@ -106,7 +106,7 @@ class Runner(mp.Process):
 
         for sample in samples:
             for fq in sample.fastq_paths:
-                run_hash.update(Path(fq).stat().st_size.to_bytes())
+                run_hash.update(Path(fq).stat().st_size.to_bytes(8, "big"))
                 with open(fq, "rb") as handle:
                     run_hash.update(handle.read(int(128e6)))
                     handle.seek(-int(128e6), 2)
@@ -255,7 +255,8 @@ def runner(
     def wrapper(func):
         class _runner(
             Runner,
-            label=label or func.__name__,
+            name=func.__name__,
+            label=label,
             individual_samples=individual_samples,
         ):
             def __init__(self, *args, **kwargs):
