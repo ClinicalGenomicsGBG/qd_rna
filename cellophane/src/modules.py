@@ -122,7 +122,7 @@ class Runner(mp.Process):
             integrity = xxhash.xxh3_128()
             integrity.update(pickle.dumps(outdir.glob("**/*")))
 
-            if checksum == integrity.hexdigest():
+            if checksum == integrity:
                 returned = pickle.loads((outdir / ".cellophane_cache").read_bytes())
                 logger.info("Using cached results")
             else:
@@ -131,6 +131,7 @@ class Runner(mp.Process):
         except Exception as exception:
             logger.debug(f"Unable to load cached results: {exception}")
             returned = None
+            integrity = None
         
         try:
             returned = returned or self.main(
@@ -169,6 +170,13 @@ class Runner(mp.Process):
             self.output.close()
             self.output.join_thread()
             raise SystemExit(1)
+        
+        else:
+            with open(outdir / ".cellophane_integrity", "wb") as handle:
+                if integrity is None:
+                    integrity = xxhash.xxh3_128()
+                    integrity.update(pickle.dumps(outdir.glob("**/*")))
+                pickle.dump(integrity, handle)
 
     @staticmethod
     def main(**_) -> Optional[data.Samples[data.Sample]]:
