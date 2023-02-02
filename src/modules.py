@@ -179,7 +179,7 @@ class Runner(mp.Process):
                         integrity.update(pickle.dumps(outdir.glob("**/*")))
                     pickle.dump(integrity, handle)
             except Exception as exception:
-                logger.warning(f"Unable to save integrity data: {exception}")
+                logger.debug(f"Unable to save integrity data: {exception}")
 
     @staticmethod
     def main(**_) -> Optional[data.Samples[data.Sample]]:
