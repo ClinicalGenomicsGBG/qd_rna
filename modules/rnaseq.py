@@ -4,8 +4,10 @@ from logging import LoggerAdapter
 from pathlib import Path
 from copy import deepcopy
 
-from cellophane import cfg, modules, sge
+from cellophane import cfg, modules
 from modules.slims import SlimsSamples
+
+from modules.nextflow import nextflow
 
 
 def get_output(aligner: str, outdir: Path):
@@ -67,20 +69,8 @@ def rnaseq(
         if "workdir" in config.nextflow:
             config.nextflow.workdir.mkdir(parents=True, exist_ok=True)
 
-        sge.submit(
-            str(root / "scripts" / "nextflow.sh"),
-            f"-log {outdir / 'logs' / 'rnaseq.log'}",
-            (
-                f"-config {config.nextflow.config}"
-                if "config" in config.nextflow
-                else ""
-            ),
-            f"run {config.rnaseq.nf_main}",
-            "-ansi-log false",
-            "-resume" if config.nextflow.resume else "",
-            f"-work-dir {config.nextflow.workdir or outdir / 'work'}",
-            f"-with-report {outdir / 'logs' / 'rnaseq-execution.html'}",
-            f"-profile {config.nextflow.profile}",
+        nextflow(
+            config.rnaseq.nf_main,
             f"--outdir {outdir}",
             f"--input {sample_sheet}",
             f"--aligner {config.rnaseq.aligner}",
@@ -97,13 +87,8 @@ def rnaseq(
                 if config.rnaseq.aligner == "star_rsem"
                 else f"--star_index {config.rnaseq.star_index}"
             ),
-            env={"_MODULES_INIT": config.modules_init},
-            queue=config.nextflow.sge_queue,
-            pe=config.nextflow.sge_pe,
-            slots=config.nextflow.sge_slots,
-            check=True,
-            name="rnaseq",
-            stderr=config.logdir / f"rnaseq.{timestamp}.err",
-            stdout=config.logdir / f"rnaseq.{timestamp}.out",
+            config=config,
+            stderr=outdir / "logs" / f"rnaseq.{timestamp}.err",
+            stdout=outdir / "logs" / f"rnaseq.{timestamp}.out",
             cwd=outdir,
         )

@@ -4,8 +4,9 @@ from logging import LoggerAdapter
 from pathlib import Path
 from copy import deepcopy
 
-from cellophane import cfg, modules, sge
+from cellophane import cfg, modules
 from modules.slims import SlimsSamples
+from modules.nextflow import nextflow
 
 
 def get_output(outdir: Path, config: cfg.Config):
@@ -52,20 +53,8 @@ def rnafusion(
         if "workdir" in config.nextflow:
             config.nextflow.workdir.mkdir(parents=True, exist_ok=True)
 
-        sge.submit(
-            str(root / "scripts" / "nextflow.sh"),
-            f"-log {outdir / 'logs' / 'rnafusion.log'}",
-            (
-                f"-config {config.nextflow.config}"
-                if "config" in config.nextflow
-                else ""
-            ),
-            f"run {config.rnafusion.nf_main}",
-            "-ansi-log false",
-            f"-work-dir {config.nextflow.workdir or outdir / 'work'}",
-            ("-resume" if config.nextflow.resume else ""),
-            f"-with-report {outdir / 'logs' / 'rnafusion-execution.html'}",
-            f"-profile {config.nextflow.profile}",
+        nextflow(
+            config.rnafusion.nf_main,
             f"--outdir {outdir}",
             f"--input {sample_sheet}",
             f"--genomes_base {config.rnafusion.genomes_base}",
@@ -76,10 +65,7 @@ def rnafusion(
             f"--read_length {config.rnafusion.read_length}",
             "--all",
             "--fusioninspector_filter",
-            env={"_MODULES_INIT": config.modules_init},
-            queue=config.nextflow.sge_queue,
-            pe=config.nextflow.sge_pe,
-            slots=config.nextflow.sge_slots,
+            config=config,
             check=True,
             name="rnafusion",
             stderr=config.logdir / f"rnafusion.{timestamp}.err",
