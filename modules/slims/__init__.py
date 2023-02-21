@@ -1,5 +1,6 @@
 """Module for getting samples from SLIMS"""
 
+from copy import deepcopy
 from functools import cached_property
 from json import loads
 from logging import LoggerAdapter
@@ -131,34 +132,34 @@ class SlimsSample(data.Sample):
     record: Record
     bioinformatics: Optional[Record]
     pk: int
+    run: str
+    backup: Optional[data.Container]
 
-    def __init__(
-        self,
-        record: Record,
-        **kwargs,
-    ):
-        super().__init__(
-            record=record,
+    @classmethod
+    def from_record(cls, record: Record, **kwargs):
+        """Create a sample from a SLIMS fastq record"""
+        return cls(
             id=record.cntn_id.value,
             pk=record.pk(),
             run=record.cntn_cstm_runTag.value,
             bioinformatics=None,
+            record=record,
             **kwargs,
         )
 
     @cached_property
-    def _connection(self) -> Slims:
+    def _connection(self) -> Optional[Slims]:
         return Slims(
             "cellophane",
             url=self.record.slims_api.raw_url,
             username=self.record.slims_api.username,
             password=self.record.slims_api.password,
-        )
+        ) if self.record is not None else None
 
     def add_bioinformatics(self, analysis: int):
         """Add a bioinformatics record to the sample"""
 
-        if self.bioinformatics is None:
+        if self.bioinformatics is None and self._connection is not None:
             self.bioinformatics = self._connection.add(
                 "Content",
                 {
@@ -286,7 +287,7 @@ class SlimsSamples(data.Samples[SlimsSample]):
 
         return cls(
             [
-                SlimsSample(
+                SlimsSample.from_record(
                     record=_fastqs[pk],
                     backup=_backup[pk],
                     **_demuxer[pk],
@@ -319,11 +320,7 @@ def slims_samples(
 ) -> Optional[SlimsSamples]:
     """Load novel samples from SLIMS."""
 
-    if samples:
-        logger.debug("Samples already loaded")
-        return None
-
-    elif config.slims is not None:
+    if config.slims is not None:
         slims_connection = Slims(
             name=__package__,
             url=config.slims.url,
@@ -331,10 +328,40 @@ def slims_samples(
             password=config.slims.password,
         )
 
-        if config.slims.sample_id:
+        if samples:
+            logger.debug("Augmenting existing samples with SLIMS data")
+            _slims_samples = SlimsSamples.from_ids(
+                connection=slims_connection,
+                ids=[s.id for s in samples],
+                analysis=config.slims.analysis_pk,
+            )
+
+            _return_samples = SlimsSamples()
+            for sample in samples:
+                _ss = [s for s in _slims_samples if s.id == sample.id]
+                if len(_ss) > 1 and "pk" in sample:
+                    _ss = [s for s in _ss if s.pk == sample.pk]
+                elif len(_ss) > 1 and "run" in sample:
+                    _ss = [s for s in _ss if s.run == sample.run]
+
+                if len(_ss) > 1:
+                    logger.warning(f"Multiple SLIMS samples found for {sample.id}")
+                    _return_samples.append(SlimsSample(id=sample.pop("id"), **sample))
+                else:
+                    # FIXME: Why do the samples need to be unpacked?
+                    _data = {**_ss[0]} | {**sample}
+                    _return_samples.append(
+                        SlimsSample(
+                            id=_data.pop("id"),
+                            pk=_data.pop("pk"),
+                            **deepcopy(_data),
+                        )
+                    )
+
+        elif config.slims.sample_id:
             logger.info("Looking for samples by ID")
             logger.debug(f"ID(s): {config.slims.sample_id}")
-            samples = SlimsSamples.from_ids(
+            _return_samples = SlimsSamples.from_ids(
                 connection=slims_connection,
                 ids=config.slims.sample_id,
                 analysis=config.slims.analysis_pk,
@@ -349,7 +376,7 @@ def slims_samples(
             logger.info(
                 f"Finding novel samples for analysis {config.slims.analysis_pk}"
             )
-            samples = SlimsSamples.novel(
+            _return_samples = SlimsSamples.novel(
                 connection=slims_connection,
                 content_type=config.content_pk,
                 analysis=config.slims.analysis_pk,
@@ -360,7 +387,7 @@ def slims_samples(
             logger.error("No analysis configured")
             return None
 
-        return samples
+        return _return_samples
 
     else:
         logger.warning("No SLIMS connection configured")
@@ -398,7 +425,7 @@ def slims_update(
         logger.info("Dry run - Not updating SLIMS")
     elif isinstance(samples, SlimsSamples):
         logger.info("Updating bioinformatics")
-        pks = {s.pk for s in samples}
+        pks = {s.pk for s in samples if s.pk is not None}
         collect = {pk: [*filter(lambda s: s.pk == pk, samples)] for pk in pks}
 
         for pk_samples in collect.values():
