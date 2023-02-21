@@ -2,6 +2,7 @@
 
 from logging import LoggerAdapter
 from pathlib import Path
+from copy import deepcopy
 
 from cellophane import cfg, modules, sge
 from modules.slims import SlimsSamples
@@ -37,7 +38,12 @@ def rnafusion(
         logger.info("Running nf-core/rnafusion")
         logger.debug(f"Output will be written to {outdir}")
 
-        outdir.mkdir(parents=True, exist_ok=True)
+        _samples = deepcopy(samples)
+        for idx, sample in enumerate(_samples):
+            _samples[idx].id = (
+                f"{sample.id}_{sample.run}" if sample.run else sample.id
+            )
+
         sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
             strandedness=config.rnafusion.strandedness,

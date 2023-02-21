@@ -110,14 +110,11 @@ properties:
         - nf_main
         - aligner
         - strandedness
-        - star_index
-      - if:
-          properties:
-            aligner:
-              const: star_rsem
-        then:
-          required:
-            - rsem_index
+      - anyOf:
+        - required:
+          - star_index
+        - required:
+          - rsem_index
       - anyOf:
         - required:
           - genome

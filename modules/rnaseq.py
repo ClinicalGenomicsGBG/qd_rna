@@ -2,7 +2,7 @@
 
 from logging import LoggerAdapter
 from pathlib import Path
-from distutils.dir_util import copy_tree
+from copy import deepcopy
 
 from cellophane import cfg, modules, sge
 from modules.slims import SlimsSamples
@@ -43,6 +43,16 @@ def rnaseq(
 ) -> None:
     """Run nf-core/rnaseq."""
 
+    _sample = deepcopy(samples)
+    _sample[0].id = (
+        f"{_sample[0].id}_{_sample[0].run}" if _sample[0].run else _sample[0].id
+    )
+
+    sample_sheet = _sample.nfcore_samplesheet(
+        location=outdir,
+        strandedness=config.rnaseq.strandedness,
+    )
+
     if "rnaseq" in config and not config.rnaseq.skip:
         if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
             logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
@@ -53,6 +63,9 @@ def rnaseq(
             location=outdir,
             strandedness=config.rnaseq.strandedness,
         )
+
+        if "workdir" in config.nextflow:
+            config.nextflow.workdir.mkdir(parents=True, exist_ok=True)
 
         sge.submit(
             str(root / "scripts" / "nextflow.sh"),
@@ -71,7 +84,6 @@ def rnaseq(
             f"--outdir {outdir}",
             f"--input {sample_sheet}",
             f"--aligner {config.rnaseq.aligner}",
-            f"--star_index {config.rnaseq.star_index}",
             "--pseudo_aligner salmon",
             (
                 f"--fasta {config.rnaseq.fasta} "
@@ -83,7 +95,7 @@ def rnaseq(
             (
                 f"--rsem_index {config.rnaseq.rsem_index}"
                 if config.rnaseq.aligner == "star_rsem"
-                else ""
+                else f"--star_index {config.rnaseq.star_index}"
             ),
             env={"_MODULES_INIT": config.modules_init},
             queue=config.nextflow.sge_queue,
@@ -95,6 +107,3 @@ def rnaseq(
             stdout=config.logdir / f"rnaseq.{timestamp}.out",
             cwd=outdir,
         )
-
-        _tag = f"{samples[0].id}_{samples[0].run}"
-        copy_tree(outdir, f"/webstore/clinical/development/rnaseq/{_tag}")
