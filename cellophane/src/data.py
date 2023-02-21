@@ -3,13 +3,14 @@
 from collections import UserDict, UserList
 from functools import reduce
 from pathlib import Path
-from typing import Any, Hashable, Mapping, Optional, Sequence, TypeVar, Callable
+from typing import Any, Callable, Hashable, Mapping, Optional, Sequence, TypeVar
 
 from yaml import safe_load
 
 
 class Container(UserDict):
     """A dict that allows attribute access to its items"""
+
     def __contains__(self, key: Hashable | Sequence[Hashable]) -> bool:
         try:
             self[key]
@@ -25,7 +26,7 @@ class Container(UserDict):
         match key:
             case k if isinstance(k, Hashable):
                 self.data[k] = item
-            case *k, :
+            case *k,:
                 reduce(lambda d, k: d.setdefault(k, Container()), k[:-1], self.data)[
                     k[-1]
                 ] = item
@@ -34,7 +35,7 @@ class Container(UserDict):
 
     def __getitem__(self, key: Hashable | Sequence[Hashable]) -> Any:
         match key:
-            case *k, :
+            case *k,:
                 return reduce(lambda d, k: d[k], k, self.data)
             case k if isinstance(k, Hashable):
                 return self.data[k]
@@ -54,10 +55,11 @@ class Sample(Container):
     """A basic sample container"""
 
     id: str
-    fastq_paths: list[str]
-    backup: Optional[Container]
     complete: Optional[bool] = None
     runner: Optional[str] = None
+
+    def __init__(self, /, id, fastq_paths=[None, None], **kwargs):
+        super().__init__(id=id, fastq_paths=fastq_paths, **kwargs)
 
 
 S = TypeVar("S", bound=Sample)
@@ -70,14 +72,10 @@ class Samples(UserList[S]):
     def from_file(cls, path: Path):
         """Get samples from a YAML file"""
         with open(path, "r", encoding="utf-8") as handle:
-            samples = [
-                Sample(
-                    id=str(_id),
-                    fastq_paths=[fastq1, fastq2],
-                    backup=None,
-                )
-                for _id, (fastq1, fastq2) in safe_load(handle).items()
-            ]
+            samples = []
+            for sample in safe_load(handle):
+                id = sample.pop("id")
+                samples.append(Sample(id=id, **sample))
         return cls(samples)
 
     def hydra_units_samples(self, *_, location: str = "samples", **kwargs):
