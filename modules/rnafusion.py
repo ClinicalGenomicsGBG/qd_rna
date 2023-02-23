@@ -68,10 +68,10 @@ def rnafusion(
             "--all",
             "--fusioninspector_filter",
             config=config,
-            name="rnafusion",
+            name=label,
             workdir=outdir / "work",
-            stderr=outdir / "logs" / f"rnaseq.{timestamp}.err",
-            stdout=outdir / "logs" / f"rnaseq.{timestamp}.out",
+            stderr=outdir / "logs" / f"{label}.{timestamp}.err",
+            stdout=outdir / "logs" / f"{label}.{timestamp}.out",
             cwd=outdir,
         )
 
