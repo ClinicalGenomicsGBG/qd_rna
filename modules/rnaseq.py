@@ -88,6 +88,8 @@ def rnaseq(
                 else f"--star_index {config.rnaseq.star_index}"
             ),
             config=config,
+            name="rnaseq",
+            workdir=outdir / "work",
             stderr=outdir / "logs" / f"rnaseq.{timestamp}.err",
             stdout=outdir / "logs" / f"rnaseq.{timestamp}.out",
             cwd=outdir,

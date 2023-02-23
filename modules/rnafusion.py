@@ -66,10 +66,10 @@ def rnafusion(
             "--all",
             "--fusioninspector_filter",
             config=config,
-            check=True,
             name="rnafusion",
-            stderr=config.logdir / f"rnafusion.{timestamp}.err",
-            stdout=config.logdir / f"rnafusion.{timestamp}.out",
+            workdir=outdir / "work",
+            stderr=outdir / "logs" / f"rnaseq.{timestamp}.err",
+            stdout=outdir / "logs" / f"rnaseq.{timestamp}.out",
             cwd=outdir,
         )
 
