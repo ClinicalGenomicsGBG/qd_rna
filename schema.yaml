@@ -1,5 +1,4 @@
 required:
-  - modules_init
   - nextflow
   - rnaseq
   - rnafusion
