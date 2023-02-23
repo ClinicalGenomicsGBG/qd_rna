@@ -42,7 +42,9 @@ def rnafusion(
         _samples = deepcopy(samples)
         for idx, sample in enumerate(_samples):
             _samples[idx].id = (
-                f"{sample.id}_{sample.run}" if sample.run else sample.id
+                f"{sample.id}_{sample.run}"
+                if "run" in sample and sample.run
+                else sample.id
             )
 
         sample_sheet = samples.nfcore_samplesheet(

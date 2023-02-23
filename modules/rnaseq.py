@@ -47,7 +47,9 @@ def rnaseq(
 
     _sample = deepcopy(samples)
     _sample[0].id = (
-        f"{_sample[0].id}_{_sample[0].run}" if _sample[0].run else _sample[0].id
+        f"{_sample[0].id}_{_sample[0].run}"
+        if "run" in _sample[0] and _sample[0].run
+        else _sample[0].id
     )
 
     sample_sheet = _sample.nfcore_samplesheet(
