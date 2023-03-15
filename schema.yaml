@@ -123,7 +123,6 @@ properties:
     then:  
       allOf:
       - required:
-        - strandedness
         - star_index
       - anyOf:
         - required:
