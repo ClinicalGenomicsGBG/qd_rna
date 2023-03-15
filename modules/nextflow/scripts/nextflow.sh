@@ -3,18 +3,15 @@
 set -e -o pipefail
 
 _clean () {
-    echo "Killing nextflow..."
-    kill -TERM $_nf_pid
-    wait $_nf_pid
     code=$?
-    exit $code
+    ps -p $_nxf_pid &> /dev/null && {
+        echo "Killing process..."
+        kill -TERM $_nxf_pid
+        wait $_nxf_pid
+        exit $?
+    } || exit $code
 }
 
-module load $_JAVA_MODULE
-module load $_NEXTFLOW_MODULE
-NXF_HOME="${TMPDIR}/.nextflow" nextflow $@ & _nf_pid=$!
-
+NXF_HOME="${TMPDIR}/.nextflow" nextflow $@ & _nxf_pid=$!
 trap _clean EXIT
-
-wait $_nf_pid
-exit $?
+wait $_nxf_pid
