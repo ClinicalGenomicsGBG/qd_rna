@@ -89,12 +89,12 @@ properties:
       skip:
         type: boolean
         default: false
-        description: Skip nf-core/rnaseq (for qlucore)
+        description: Skip qlucore mapping
       
       force:
         type: boolean
         default: false
-        description: Overwrite any existing nf-core/rnaseq (for qlucore) output
+        description: Overwrite any existing qlucore output
 
       genome:
         type: string
