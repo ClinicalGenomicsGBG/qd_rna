@@ -52,11 +52,6 @@ def rnaseq(
         else _sample[0].id
     )
 
-    sample_sheet = _sample.nfcore_samplesheet(
-        location=outdir,
-        strandedness=config.rnaseq.strandedness,
-    )
-
     if "rnaseq" in config and not config.rnaseq.skip:
         if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
             logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")

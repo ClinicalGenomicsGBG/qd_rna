@@ -83,6 +83,56 @@ properties:
           - gtf
           - gene_bed
 
+  qlucore:
+    type: object
+    properties:
+      skip:
+        type: boolean
+        default: false
+        description: Skip nf-core/rnaseq (for qlucore)
+      
+      force:
+        type: boolean
+        default: false
+        description: Overwrite any existing nf-core/rnaseq (for qlucore) output
+
+      genome:
+        type: string
+        description: Genome reference
+
+      fasta:
+        type: path
+        description: Path to genome fasta file
+
+      gtf:
+        type: path
+        description: Path to genome gtf file
+
+      gene_bed:
+        type: path
+        description: Path to genome gene bed file
+
+      star_index:
+        type: path
+        description: Path to STAR genome index
+
+    if:
+      properties:
+        skip:
+          const: false
+    then:  
+      allOf:
+      - required:
+        - strandedness
+        - star_index
+      - anyOf:
+        - required:
+          - genome
+        - required:
+          - fasta
+          - gtf
+          - gene_bed
+
   rnafusion:
     type: object
     properties:
