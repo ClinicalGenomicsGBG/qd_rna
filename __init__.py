@@ -126,14 +126,14 @@ def get_derived_records(
     return derived
 
 
-class SlimsSample(data.Sample):
+class SlimsSample:
     """A sample container with SLIMS integration"""
 
     record: Optional[Record] = None
     bioinformatics: Optional[Record] = None
     pk: Optional[int] = None
     run: Optional[str] = None
-    backup: Optional[data.Container] = None
+    backup: data.Container = data.Container()
 
     @classmethod
     def from_record(cls, record: Record, **kwargs):
@@ -196,7 +196,7 @@ class SlimsSample(data.Sample):
         return super().__reduce__()
 
 
-class SlimsSamples(data.Samples[SlimsSample]):
+class SlimsSamples(Sequence):
     """A list of sample containers with SLIMS integration"""
 
     @classmethod
@@ -291,7 +291,7 @@ class SlimsSamples(data.Samples[SlimsSample]):
 
         return cls(
             [
-                SlimsSample.from_record(
+                cls.sample_class.from_record(
                     record=_fastqs[pk],
                     backup=_backup[pk],
                     **_demuxer[pk],
@@ -336,7 +336,7 @@ def slims_samples(
 
         if _samples:
             logger.debug("Augmenting existing samples with SLIMS data")
-            _slims_samples = SlimsSamples.from_ids(
+            _slims_samples = _samples.from_ids(
                 connection=slims_connection,
                 ids=[s.id for s in _samples],
                 analysis=config.slims.analysis_pk,
