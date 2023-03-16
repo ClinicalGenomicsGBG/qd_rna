@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Optional, Mapping
 
-from cellophane import cfg, sge, modules
+from cellophane import cfg, sge, modules, data
 
 
 class NextflowSamples:
