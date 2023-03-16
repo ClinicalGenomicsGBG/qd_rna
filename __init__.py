@@ -33,7 +33,7 @@ class NextflowSamples:
         return _path
 
 @modules.pre_hook(label="Nextflow Mixin")
-def nextflow(samples: data.Samples, **_):
+def nextflow_mixin(samples: data.Samples, **_):
     samples.add_mixin(NextflowSamples)
     return samples
 
