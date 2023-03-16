@@ -89,7 +89,7 @@ def petagene_extract(
     with ProcessPoolExecutor(config.unpack.parallel) as pool:
         for s_idx, sample in enumerate(samples):
             for f_idx, fastq in enumerate(sample.fastq_paths):
-                if (compressed_path := Path(fastq)).exists():
+                if fastq and (compressed_path := Path(fastq)).exists():
                     if compressed_path.suffix == ".fasterq":
                         method = "petagene"
                     elif compressed_path.suffix == ".spring":
