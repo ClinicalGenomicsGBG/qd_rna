@@ -1,7 +1,7 @@
 """Module for fetching files from HCP."""
 
 from pathlib import Path
-from typing import Optional, Protocol
+from typing import Optional, Mapping
 
 from cellophane import cfg, sge
 
