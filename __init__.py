@@ -5,7 +5,7 @@ from functools import cached_property
 from json import loads
 from logging import LoggerAdapter
 from time import time
-from typing import Optional
+from typing import Optional, Sequence
 
 from humanfriendly import parse_timespan
 from slims.criteria import (
@@ -127,13 +127,13 @@ def get_derived_records(
 
 
 class SlimsSample(data.Sample):
-    """A SLIMS sample container"""
+    """A sample container with SLIMS integration"""
 
-    record: Record
-    bioinformatics: Optional[Record]
-    pk: int
-    run: str
-    backup: Optional[data.Container]
+    record: Optional[Record] = None
+    bioinformatics: Optional[Record] = None
+    pk: Optional[int] = None
+    run: Optional[str] = None
+    backup: Optional[data.Container] = None
 
     @classmethod
     def from_record(cls, record: Record, **kwargs):
@@ -197,7 +197,7 @@ class SlimsSample(data.Sample):
 
 
 class SlimsSamples(data.Samples[SlimsSample]):
-    """A list of sample containers"""
+    """A list of sample containers with SLIMS integration"""
 
     @classmethod
     def novel(
@@ -323,7 +323,9 @@ def slims_samples(
     **_,
 ) -> Optional[SlimsSamples]:
     """Load novel samples from SLIMS."""
-
+    _samples = deepcopy(samples)
+    _samples.add_mixin(SlimsSamples[SlimsSample])
+    
     if config.slims is not None:
         slims_connection = Slims(
             name=__package__,
@@ -332,16 +334,15 @@ def slims_samples(
             password=config.slims.password,
         )
 
-        if samples:
+        if _samples:
             logger.debug("Augmenting existing samples with SLIMS data")
             _slims_samples = SlimsSamples.from_ids(
                 connection=slims_connection,
-                ids=[s.id for s in samples],
+                ids=[s.id for s in _samples],
                 analysis=config.slims.analysis_pk,
             )
 
-            _return_samples = SlimsSamples()
-            for sample in samples:
+            for idx, sample in enumerate(_samples):
                 _ss = [s for s in _slims_samples if s.id == sample.id]
                 if len(_ss) > 1 and "pk" in sample:
                     _ss = [s for s in _ss if s.pk == sample.pk]
@@ -350,32 +351,23 @@ def slims_samples(
 
                 if len(_ss) > 1:
                     logger.warning(f"Multiple SLIMS samples found for {sample.id}")
-                    _return_samples.append(SlimsSample(id=sample.pop("id"), **sample))
                 elif len(_ss) == 0:
                     logger.warning(f"SLIMS sample not found for {sample.id}")
-                    _return_samples.append(
-                        SlimsSample(
-                            id=sample.pop("id"),
-                            pk=None,
-                            **deepcopy(sample),
-                        )
-                    )
                 else:
                     if sample.fastq_paths == [None, None]:
                         sample.pop("fastq_paths")
                     _data = {**_ss[0]} | {**sample}
-                    _return_samples.append(
-                        SlimsSample(
-                            id=_data.pop("id"),
-                            pk=_data.pop("pk"),
-                            **deepcopy(_data),
-                        )
+                    _samples[idx] = sample.__class__(
+                        id=_data.pop("id"),
+                        pk=_data.pop("pk"),
+                        run=_data.pop("run"),
+                        **deepcopy(_data),
                     )
 
         elif config.slims.sample_id:
             logger.info("Looking for samples by ID")
             logger.debug(f"ID(s): {config.slims.sample_id}")
-            _return_samples = SlimsSamples.from_ids(
+            _samples = _samples.from_ids(
                 connection=slims_connection,
                 ids=config.slims.sample_id,
                 analysis=config.slims.analysis_pk,
@@ -390,7 +382,7 @@ def slims_samples(
             logger.info(
                 f"Finding novel samples for analysis {config.slims.analysis_pk}"
             )
-            _return_samples = SlimsSamples.novel(
+            _samples = _samples.novel(
                 connection=slims_connection,
                 content_type=config.content_pk,
                 analysis=config.slims.analysis_pk,
@@ -401,7 +393,7 @@ def slims_samples(
             logger.error("No analysis configured")
             return None
 
-        return _return_samples
+        return _samples
 
     else:
         logger.warning("No SLIMS connection configured")
