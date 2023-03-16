@@ -3,7 +3,7 @@
 from pathlib import Path
 from typing import Optional, Mapping
 
-from cellophane import cfg, sge
+from cellophane import cfg, sge, modules
 
 
 class NextflowSamples:
@@ -31,6 +31,12 @@ class NextflowSamples:
             handle.write(_samplesheet)
 
         return _path
+
+@modules.pre_hook(label="Nextflow Mixin")
+def nextflow(samples: data.Samples, **_):
+    samples.add_mixin(NextflowSamples)
+    return samples
+
 
 def nextflow(
     main: Path,
