@@ -7,7 +7,7 @@ from typing import Iterable
 
 @dataclass
 class Output:
-    src: Path|Iterable[Path]
+    src: Iterable[Path]
     dest: Path
 
     def __post_init__(self):
