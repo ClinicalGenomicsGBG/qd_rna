@@ -68,6 +68,7 @@ def _main(
                         case type() as mixin if (
                             issubclass(mixin, data.Mixin)
                             and mixin != data.Mixin
+                            and mixin.__module__ == name
                         ):
                             logger.debug(f"Found mixin {mixin.__name__} ({base})")
                             _MIXINS.append(mixin)
