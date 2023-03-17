@@ -6,7 +6,7 @@ from typing import Optional, Mapping
 from cellophane import cfg, sge, modules, data
 
 
-class NextflowSamples:
+class NextflowSamples(data.Mixin):
     def nfcore_samplesheet(self, *_, location: str | Path, **kwargs) -> Path:
         """Write a Nextflow samplesheet"""
         Path(location).mkdir(parents=True, exist_ok=True)
@@ -31,12 +31,6 @@ class NextflowSamples:
             handle.write(_samplesheet)
 
         return _path
-
-@modules.pre_hook(label="Nextflow Mixin")
-def nextflow_mixin(samples: data.Samples, **_):
-    samples.add_mixin(NextflowSamples)
-    return samples
-
 
 def nextflow(
     main: Path,
