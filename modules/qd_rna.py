@@ -7,6 +7,7 @@ from typing import Iterable
 
 @dataclass
 class Output:
+    """Output dataclass for QD-RNA samples."""
     src: Iterable[Path]
     dest: Path
 
@@ -18,7 +19,8 @@ class Output:
             self.source = [Path(s) for s in self.source]
 
 
-class QDRNASamples:
+class QDRNASamples(data.Mixin):
+    """Mixin for QD-RNA samples."""
     output: list[Output] = []
 
 
