@@ -86,7 +86,7 @@ def _main(
     try:
         for mixin in [m for m in _MIXINS]:
             logger.debug(f"Adding {mixin.__name__} mixin to samples")
-            result = mixin.mixin_hook(samples=deepcopy(samples))
+            samples = mixin.mixin_hook(samples=deepcopy(samples))
 
         for hook in [h for h in _HOOKS if h.when == "pre"]:
             logger.debug(f"Running pre-hook {hook.label}")
