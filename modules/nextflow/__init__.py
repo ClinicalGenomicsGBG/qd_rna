@@ -56,7 +56,7 @@ def nextflow(
 
     sge.submit(
         str(Path(__file__).parent / "scripts" / "nextflow.sh"),
-        f"-log {log}",
+        f"-log {log}" if log else "",
         (
             f"-config {config.nextflow.config}"
             if "config" in config.nextflow
