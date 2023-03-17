@@ -64,7 +64,7 @@ def nextflow(
         f"-profile {config.nextflow.profile}",
         *args,
         env={
-            "_NEXTFLOW_MODULE": config.nextflow.nf_module,
+            "_NXF_MODULE": config.nextflow.nf_module,
             "_JAVA_MODULE": config.nextflow.java_module,
             **env,
         },
