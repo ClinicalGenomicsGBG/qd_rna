@@ -196,7 +196,7 @@ class SlimsSample:
         return super().__reduce__()
 
 
-class SlimsSamples(Sequence):
+class SlimsSamples(Sequence, data.Mixin):
     """A list of sample containers with SLIMS integration"""
 
     @classmethod
