@@ -69,7 +69,7 @@ def _main(
                             issubclass(mixin, data.Mixin)
                             and mixin != data.Mixin
                         ):
-                            logger.debug(f"Found mixin {mixin.name} ({base})")
+                            logger.debug(f"Found mixin {mixin.__name__} ({base})")
                             _MIXINS.append(mixin)
                         
                         case type() as runner if (

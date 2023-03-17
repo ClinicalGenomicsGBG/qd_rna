@@ -102,7 +102,7 @@ class Samples(UserList[S]):
         )
         if mixin_arg:
             self.sample_class = type(
-                self.__class__.__name__, (self.__class__, mixin_arg), {}
+                self.sample_class.__name__, (self.sample_class, mixin_arg), {}
             )
             for sample in self:
                 sample.__class__ = self.sample_class
