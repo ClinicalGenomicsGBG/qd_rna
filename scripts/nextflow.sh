@@ -12,6 +12,8 @@ _clean () {
     } || exit $code
 }
 
+module load $_JAVA_MODULE
+module load $_NXF_MODULE
 NXF_HOME="${TMPDIR}/.nextflow" nextflow $@ & _nxf_pid=$!
 trap _clean EXIT
 wait $_nxf_pid
