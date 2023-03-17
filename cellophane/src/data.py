@@ -94,15 +94,13 @@ class Samples(UserList[S]):
                 yield sample
         self.data = [s for s in self if None not in s.fastq_paths]
 
-    def add_mixin(self, mixin: type):
-        mixin_origin = get_origin(mixin) or mixin
-        (mixin_arg, *_) = get_args(mixin) or (None,)
+    def add_mixin(self, mixin: type, sample_mixin: Optional[type] = None):
         self.__class__ = type(
-            self.__class__.__name__, (self.__class__, mixin_origin), {}
+            self.__class__.__name__, (self.__class__, mixin), {}
         )
-        if mixin_arg:
+        if sample_mixin:
             self.sample_class = type(
-                self.sample_class.__name__, (self.sample_class, mixin_arg), {}
+                self.sample_class.__name__, (self.sample_class, sample_mixin), {}
             )
             for sample in self:
                 sample.__class__ = self.sample_class
@@ -120,8 +118,5 @@ class Mixin:
 
     @classmethod
     def mixin_hook(cls, samples: Samples):
-        if cls.sample_mixin:
-            samples.add_mixin(cls[cls.sample_mixin])
-        else:
-            samples.add_mixin(cls)
+        samples.add_mixin(cls, sample_mixin=cls.sample_mixin)
         return samples
