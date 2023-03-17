@@ -11,8 +11,6 @@ from typing import (
     Optional,
     Sequence,
     TypeVar,
-    get_args,
-    get_origin,
 )
 
 from yaml import safe_load
@@ -99,7 +97,7 @@ class Samples(UserList[S]):
             self.__class__.__name__, (self.__class__, mixin), {}
         )
         if sample_mixin:
-            self.sample_class = type(
+            self.__class__.sample_class = type(
                 self.sample_class.__name__, (self.sample_class, sample_mixin), {}
             )
             for sample in self:
