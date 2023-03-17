@@ -110,13 +110,8 @@ class Samples(UserList[S]):
 
 
 class Mixin:
-    sample_mixin: Optional[type] = None
+    sample_mixin: Optional[type]
 
     """Mixin class for adding properties to Samples"""
     def __init_subclass__(cls, sample_mixin: Optional[type] = None) -> None:
         cls.sample_mixin = sample_mixin
-
-    @classmethod
-    def mixin_hook(cls, samples: Samples):
-        samples.add_mixin(cls, sample_mixin=cls.sample_mixin)
-        return samples
