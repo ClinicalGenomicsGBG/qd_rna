@@ -110,9 +110,18 @@ class Samples(UserList[S]):
     def __reduce__(self) -> Callable | tuple:
         return self.__class__, (self.data,)
 
+
 class Mixin:
+    sample_mixin: Optional[type] = None
+
     """Mixin class for adding properties to Samples"""
+    def __init_subclass__(cls, sample_class: Optional[type] = None) -> None:
+        cls.sample_mixin = sample_class
+
     @classmethod
     def mixin_hook(cls, samples: Samples):
-        samples.add_mixin(cls)
+        if cls.sample_mixin:
+            samples.add_mixin(cls[cls.sample_mixin])
+        else:
+            samples.add_mixin(cls)
         return samples
