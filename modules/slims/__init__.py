@@ -196,7 +196,7 @@ class SlimsSample:
         return super().__reduce__()
 
 
-class SlimsSamples(Sequence, data.Mixin):
+class SlimsSamples(Sequence, data.Mixin, sample_mixin=SlimsSample):
     """A list of sample containers with SLIMS integration"""
 
     @classmethod
@@ -324,7 +324,6 @@ def slims_samples(
 ) -> Optional[SlimsSamples]:
     """Load novel samples from SLIMS."""
     _samples = deepcopy(samples)
-    _samples.add_mixin(SlimsSamples[SlimsSample])
     
     if config.slims is not None:
         slims_connection = Slims(
