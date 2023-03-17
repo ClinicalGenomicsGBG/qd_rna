@@ -2,8 +2,14 @@ required:
   - nextflow
   - rnaseq
   - rnafusion
+  - qlucore
+  - results_base
 
 properties:
+  results_base:
+    type: path
+    description: Base of directory where results will be stored
+
   rnaseq:
     type: object
     properties:

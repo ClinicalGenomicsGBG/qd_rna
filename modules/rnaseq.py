@@ -6,8 +6,8 @@ from copy import deepcopy
 
 from cellophane import cfg, modules
 from modules.slims import SlimsSamples
-
 from modules.nextflow import nextflow
+from modules.qd_rna import Output
 
 
 def get_output(aligner: str, outdir: Path):
@@ -58,7 +58,7 @@ def rnaseq(
 
         logger.info("Running nf-core/rnaseq")
 
-        sample_sheet = samples.nfcore_samplesheet(
+        sample_sheet = _sample.nfcore_samplesheet(
             location=outdir,
             strandedness=config.rnaseq.strandedness,
         )
@@ -87,7 +87,34 @@ def rnaseq(
             config=config,
             name="rnaseq",
             workdir=outdir / "work",
-            stderr=outdir / "logs" / f"{label}.{timestamp}.err",
-            stdout=outdir / "logs" / f"{label}.{timestamp}.out",
+            report=outdir / "logs" / f"{label}.{timestamp}.nextflow_report.html",
+            log=outdir / "logs" / f"{label}.{timestamp}.nextflow.log",
+            stderr=outdir / "logs" / f"{label}.{timestamp}.nextflow.err",
+            stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
+        samples.output += [
+            Output(
+                src = (outdir / _sample[0].id / config.rnaseq.aligner).glob(f"{_sample[0].id}.markdup.sorted.bam*"),
+                dest = Path(_sample[0].id),
+            ),
+            Output(
+                src = (outdir / _sample[0].id / "star_salmon").glob("salmon.*"),
+                dest = Path(_sample[0].id) / "salmon",
+            ),
+            Output(
+                src = (outdir / _sample[0].id / "star_salmon" / _sample[0].id).glob("*"),
+                dest = Path(_sample[0].id) / "salmon" / _sample[0].id,
+            ),
+            Output(
+                src = (outdir / _sample[0].id / config.rnaseq.aligner / "stringtie").glob("*"),
+                dest = Path(_sample[0].id) / "stringtie",
+            ),
+            Output(
+                src = (outdir / _sample[0].id / "multiqc" / config.rnaseq.aligner).glob("*"),
+                dest = Path(_sample[0].id) / "multiqc",
+            )
+        ]
+
+        return samples
+    

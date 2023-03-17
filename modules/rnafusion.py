@@ -7,20 +7,7 @@ from copy import deepcopy
 from cellophane import cfg, modules
 from modules.slims import SlimsSamples
 from modules.nextflow import nextflow
-
-
-def get_output(outdir: Path, config: cfg.Config):
-    """Return a dictionary of output files for the rnafusion module."""
-    return {
-        "arriba": [*(outdir / config.rnaseq.aligner).glob("*.tsv")],
-        "arrriba_visualisation": [*(outdir / "arriba_visualisation").glob("*.pdf")],
-        "fusioncatcher": [*(outdir / "fusioncatcher").glob("*.txt")],
-        "fusioninspector": [*(outdir / "fusioninspector").glob("*")],
-        "fusionreport": [*(outdir / "fusionreport").glob("**/*.html")],
-        "pizzly": [*(outdir / "pizzly").glob("*")],
-        "squid": [*(outdir / "squid").glob("*.txt")],
-        "starfusion": [*(outdir / "starfusion").glob("*.tsv")],
-    }
+from modules.qd_rna import Output
 
 
 @modules.runner()
@@ -47,7 +34,7 @@ def rnafusion(
                 else sample.id
             )
 
-        sample_sheet = samples.nfcore_samplesheet(
+        sample_sheet = _samples.nfcore_samplesheet(
             location=outdir,
             strandedness=config.rnafusion.strandedness,
         )
@@ -70,10 +57,46 @@ def rnafusion(
             config=config,
             name=label,
             workdir=outdir / "work",
-            stderr=outdir / "logs" / f"{label}.{timestamp}.err",
-            stdout=outdir / "logs" / f"{label}.{timestamp}.out",
+            report=outdir / "logs" / f"{label}.{timestamp}.nextflow_report.html",
+            log=outdir / "logs" / f"{label}.{timestamp}.nextflow.log",
+            stderr=outdir / "logs" / f"{label}.{timestamp}.nextflow.err",
+            stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
 
-        output = get_output(outdir, config)
-        logger.debug(output)
+        for sample in _samples:
+            samples.output += [
+                Output(
+                    src = [
+                        *(outdir / "arriba_visualisation" / f"{sample.id}.pdf"),
+                        *(outdir / "arriba" / f"{sample.id}.*.tsv"),
+                    ],
+                    dest = (Path(sample.id) / "arriba"),
+                ),
+                Output(
+                    src = (outdir / "fusioncatcher").glob(f"{sample.id}.*.txt"),
+                    dest = (Path(sample.id) / "fusioncatcher"),
+                ),
+                Output(
+                    src = (outdir / "fusioninspector").glob(f"{sample.id}.*"),
+                    dest = (Path(sample.id) / "fusioninspector"),
+                ),
+                Output(
+                    src = (outdir / "fusionreport" / sample.id).glob("*.html"),
+                    dest = (Path(sample.id) / "fusionreport"),
+                ),
+                Output(
+                    src = (outdir / "pizzly").glob(f"{sample.id}.*"),
+                    dest = (Path(sample.id) / "pizzly"),
+                ),
+                Output(
+                    src = (outdir / "squid").glob(f"{sample.id}.*.txt"),
+                    dest = (Path(sample.id) / "squid"),
+                ),
+                Output(
+                    src = (outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
+                    dest = (Path(sample.id) / "starfusion"),
+                ),
+            ]
+
+        return samples
