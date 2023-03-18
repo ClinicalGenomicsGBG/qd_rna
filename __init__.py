@@ -131,7 +131,6 @@ class SlimsSample:
 
     record: Optional[Record] = None
     bioinformatics: Optional[Record] = None
-    pk: Optional[int] = None
     run: Optional[str] = None
     backup: data.Container = data.Container()
 
@@ -140,7 +139,6 @@ class SlimsSample:
         """Create a sample from a SLIMS fastq record"""
         return cls(
             id=record.cntn_id.value,
-            pk=record.pk(),
             run=record.cntn_cstm_runTag.value,
             bioinformatics=None,
             record=record,
@@ -167,11 +165,11 @@ class SlimsSample:
             self.bioinformatics = self._connection.add(
                 "Content",
                 {
-                    "cntn_id": self.id,
+                    "cntn_id": self.record.cntn_id.value,
                     "cntn_fk_contentType": Content.BIOINFORMATICS,
                     "cntn_status": 10,  # Pending
                     "cntn_fk_location": 83,  # FIXME: Should location be configuarable?
-                    "cntn_fk_originalContent": self.pk,
+                    "cntn_fk_originalContent": self.record.pk(),
                     "cntn_fk_user": "",  # FIXME: Should user be configuarable?
                     "cntn_cstm_SecondaryAnalysisState": "novel",
                     "cntn_cstm_secondaryAnalysisBioinfo": analysis,
@@ -358,7 +356,6 @@ def slims_samples(
                     _data = {**_ss[0]} | {**sample}
                     _samples[idx] = sample.__class__(
                         id=_data.pop("id"),
-                        pk=_data.pop("pk"),
                         run=_data.pop("run"),
                         **deepcopy(_data),
                     )
@@ -430,8 +427,8 @@ def slims_update(
         logger.info("Dry run - Not updating SLIMS")
     elif isinstance(samples, SlimsSamples):
         logger.info("Updating bioinformatics")
-        pks = {s.pk for s in samples if s.pk is not None}
-        collect = {pk: [*filter(lambda s: s.pk == pk, samples)] for pk in pks}
+        pks = {s.record.pk() for s in samples if s.record.pk() is not None}
+        collect = {pk: [*filter(lambda s: s.record.pk() == pk, samples)] for pk in pks}
 
         for pk_samples in collect.values():
             if all(s.complete for s in pk_samples):
