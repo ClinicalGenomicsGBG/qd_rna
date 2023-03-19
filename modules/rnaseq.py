@@ -89,23 +89,23 @@ def rnaseq(
         samples[0].output = [
             Output(
                 src = (outdir / samples[0].id / config.rnaseq.aligner).glob(f"{samples[0].id}.markdup.sorted.bam*"),
-                dest = Path(samples[0].id),
+                dest_dir = Path(samples[0].id),
             ),
             Output(
                 src = (outdir / samples[0].id / "star_salmon").glob("salmon.*"),
-                dest = Path(samples[0].id) / "salmon",
+                dest_dir = Path(samples[0].id) / "salmon",
             ),
             Output(
                 src = (outdir / samples[0].id / "star_salmon" / samples[0].id).glob("*"),
-                dest = Path(samples[0].id) / "salmon" / samples[0].id,
+                dest_dir = Path(samples[0].id) / "salmon" / samples[0].id,
             ),
             Output(
                 src = (outdir / samples[0].id / config.rnaseq.aligner / "stringtie").glob("*"),
-                dest = Path(samples[0].id) / "stringtie",
+                dest_dir = Path(samples[0].id) / "stringtie",
             ),
             Output(
                 src = (outdir / samples[0].id / "multiqc" / config.rnaseq.aligner).glob("*"),
-                dest = Path(samples[0].id) / "multiqc",
+                dest_dir = Path(samples[0].id) / "multiqc",
             )
         ]
 

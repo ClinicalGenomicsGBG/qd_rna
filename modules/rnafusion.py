@@ -62,31 +62,31 @@ def rnafusion(
                         outdir / "arriba_visualisation" / f"{sample.id}.pdf",
                         outdir / "arriba" / f"{sample.id}.*.tsv",
                     ],
-                    dest = Path(sample.id) / "arriba",
+                    dest_dir = Path(sample.id) / "arriba",
                 ),
                 Output(
                     src = (outdir / "fusioncatcher").glob(f"{sample.id}.*.txt"),
-                    dest = Path(sample.id) / "fusioncatcher",
+                    dest_dir = Path(sample.id) / "fusioncatcher",
                 ),
                 Output(
                     src = (outdir / "fusioninspector").glob(f"{sample.id}.*"),
-                    dest = Path(sample.id) / "fusioninspector",
+                    dest_dir = Path(sample.id) / "fusioninspector",
                 ),
                 Output(
                     src = (outdir / "fusionreport" / sample.id).glob("*.html"),
-                    dest = Path(sample.id) / "fusionreport",
+                    dest_dir = Path(sample.id) / "fusionreport",
                 ),
                 Output(
                     src = (outdir / "pizzly").glob(f"{sample.id}.*"),
-                    dest = Path(sample.id) / "pizzly",
+                    dest_dir = Path(sample.id) / "pizzly",
                 ),
                 Output(
                     src = (outdir / "squid").glob(f"{sample.id}.*.txt"),
-                    dest = Path(sample.id) / "squid",
+                    dest_dir = Path(sample.id) / "squid",
                 ),
                 Output(
                     src = (outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
-                    dest = Path(sample.id) / "starfusion",
+                    dest_dir = Path(sample.id) / "starfusion",
                 ),
             ]
 

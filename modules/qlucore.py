@@ -74,7 +74,7 @@ def qlucore(
             samples[idx].output = [
                 Output(
                     src = (outdir / "star_salmon").glob(f"{sample.id}.markdup.sorted.bam*"),
-                    dest = Path(sample.id) / "qlucore",
+                    dest_dir = Path(sample.id) / "qlucore",
                 ),
             ]
         
