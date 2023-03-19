@@ -31,14 +31,14 @@ class QDRNASamples(data.Mixin, sample_mixin=QDRNASample):
     pass
 
 
-@modules.pre_hook(label="Set Sample ID")
+@modules.pre_hook(label="Sample ID")
 def set_sample_id(samples: QDRNASamples, logger: LoggerAdapter, config: cfg.Config, **_):
     logger.debug("Adding Run ID to sample IDs")
     for idx, s in enumerate(samples):
         samples[idx].id = f"{s.id}_{s.run}" if "run" in s and s.run else s.id
 
 
-@modules.post_hook(label="Copy results")
+@modules.post_hook(label="Results")
 def copy_results(samples: QDRNASamples, logger: LoggerAdapter, config: cfg.Config, **_):
     logger.info(f"Copying output to {config.results.base}")
     with ProcessPoolExecutor(config.results.parallel) as executor:
