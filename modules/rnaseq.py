@@ -45,20 +45,13 @@ def rnaseq(
 ) -> None:
     """Run nf-core/rnaseq."""
 
-    _sample = deepcopy(samples)
-    _sample[0].id = (
-        f"{_sample[0].id}_{_sample[0].run}"
-        if "run" in _sample[0] and _sample[0].run
-        else _sample[0].id
-    )
-
     if "rnaseq" in config and not config.rnaseq.skip:
         if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
             logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
 
         logger.info("Running nf-core/rnaseq")
 
-        sample_sheet = _sample.nfcore_samplesheet(
+        sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
             strandedness=config.rnaseq.strandedness,
         )
@@ -93,26 +86,26 @@ def rnaseq(
             stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
-        samples.output += [
+        samples[0].output = [
             Output(
-                src = (outdir / _sample[0].id / config.rnaseq.aligner).glob(f"{_sample[0].id}.markdup.sorted.bam*"),
-                dest = Path(_sample[0].id),
+                src = (outdir / samples[0].id / config.rnaseq.aligner).glob(f"{samples[0].id}.markdup.sorted.bam*"),
+                dest = Path(samples[0].id),
             ),
             Output(
-                src = (outdir / _sample[0].id / "star_salmon").glob("salmon.*"),
-                dest = Path(_sample[0].id) / "salmon",
+                src = (outdir / samples[0].id / "star_salmon").glob("salmon.*"),
+                dest = Path(samples[0].id) / "salmon",
             ),
             Output(
-                src = (outdir / _sample[0].id / "star_salmon" / _sample[0].id).glob("*"),
-                dest = Path(_sample[0].id) / "salmon" / _sample[0].id,
+                src = (outdir / samples[0].id / "star_salmon" / samples[0].id).glob("*"),
+                dest = Path(samples[0].id) / "salmon" / samples[0].id,
             ),
             Output(
-                src = (outdir / _sample[0].id / config.rnaseq.aligner / "stringtie").glob("*"),
-                dest = Path(_sample[0].id) / "stringtie",
+                src = (outdir / samples[0].id / config.rnaseq.aligner / "stringtie").glob("*"),
+                dest = Path(samples[0].id) / "stringtie",
             ),
             Output(
-                src = (outdir / _sample[0].id / "multiqc" / config.rnaseq.aligner).glob("*"),
-                dest = Path(_sample[0].id) / "multiqc",
+                src = (outdir / samples[0].id / "multiqc" / config.rnaseq.aligner).glob("*"),
+                dest = Path(samples[0].id) / "multiqc",
             )
         ]
 

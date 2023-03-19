@@ -24,17 +24,8 @@ def rnafusion(
 
     if "rnafusion" in config and not config.rnafusion.skip:
         logger.info("Running nf-core/rnafusion")
-        logger.debug(f"Output will be written to {outdir}")
 
-        _samples = deepcopy(samples)
-        for idx, sample in enumerate(_samples):
-            _samples[idx].id = (
-                f"{sample.id}_{sample.run}"
-                if "run" in sample and sample.run
-                else sample.id
-            )
-
-        sample_sheet = _samples.nfcore_samplesheet(
+        sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
             strandedness=config.rnafusion.strandedness,
         )
@@ -64,38 +55,38 @@ def rnafusion(
             cwd=outdir,
         )
 
-        for sample in _samples:
-            samples.output += [
+        for idx, sample in enumerate(samples):
+            samples[idx].output += [
                 Output(
                     src = [
-                        *(outdir / "arriba_visualisation" / f"{sample.id}.pdf"),
-                        *(outdir / "arriba" / f"{sample.id}.*.tsv"),
+                        outdir / "arriba_visualisation" / f"{sample.id}.pdf",
+                        outdir / "arriba" / f"{sample.id}.*.tsv",
                     ],
-                    dest = (Path(sample.id) / "arriba"),
+                    dest = Path(sample.id) / "arriba",
                 ),
                 Output(
                     src = (outdir / "fusioncatcher").glob(f"{sample.id}.*.txt"),
-                    dest = (Path(sample.id) / "fusioncatcher"),
+                    dest = Path(sample.id) / "fusioncatcher",
                 ),
                 Output(
                     src = (outdir / "fusioninspector").glob(f"{sample.id}.*"),
-                    dest = (Path(sample.id) / "fusioninspector"),
+                    dest = Path(sample.id) / "fusioninspector",
                 ),
                 Output(
                     src = (outdir / "fusionreport" / sample.id).glob("*.html"),
-                    dest = (Path(sample.id) / "fusionreport"),
+                    dest = Path(sample.id) / "fusionreport",
                 ),
                 Output(
                     src = (outdir / "pizzly").glob(f"{sample.id}.*"),
-                    dest = (Path(sample.id) / "pizzly"),
+                    dest = Path(sample.id) / "pizzly",
                 ),
                 Output(
                     src = (outdir / "squid").glob(f"{sample.id}.*.txt"),
-                    dest = (Path(sample.id) / "squid"),
+                    dest = Path(sample.id) / "squid",
                 ),
                 Output(
                     src = (outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
-                    dest = (Path(sample.id) / "starfusion"),
+                    dest = Path(sample.id) / "starfusion",
                 ),
             ]
 

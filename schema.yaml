@@ -3,12 +3,25 @@ required:
   - rnaseq
   - rnafusion
   - qlucore
-  - results_base
+  - results
 
 properties:
-  results_base:
-    type: path
-    description: Base of directory where results will be stored
+  results:
+    type: object
+    properties:
+      base:
+        type: path
+        description: Base of directory where results will be stored
+      parallel:
+        type: integer
+        description: Maximum number of files to copy in parallel
+        default: 4
+      overwrite:
+        type: boolean
+        description: Overwrite existing results
+        default: false
+    required:
+      - base
 
   rnaseq:
     type: object

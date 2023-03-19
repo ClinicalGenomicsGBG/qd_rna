@@ -29,10 +29,6 @@ def qlucore(
 ) -> None:
     """Run nf-core/rnaseq (Mapping for qlucore)."""
 
-    _samples = deepcopy(samples)
-    for idx, s in enumerate(samples):
-        _samples[idx].id = f"{s.id}_{s.run}" if "run" in s and s.run else s.id
-
     if "qlucore" in config and not config.qlucore.skip:
         if any(
             {"genome", x} <= {*config.qlucore} for x in ["fasta", "gtf", "gene_bed"]
@@ -41,7 +37,7 @@ def qlucore(
 
         logger.info("Running nf-core/rnaseq (for qlucore)")
 
-        sample_sheet = _samples.nfcore_samplesheet(
+        sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
             strandedness=config.rnaseq.strandedness,
         )
@@ -74,11 +70,11 @@ def qlucore(
             cwd=outdir,
         )
 
-        for sample in _samples:
-            samples.output += [
+        for idx, sample in enumerate(samples):
+            samples[idx].output = [
                 Output(
                     src = (outdir / "star_salmon").glob(f"{sample.id}.markdup.sorted.bam*"),
-                    dest = Path(sample.id / "qlucore"),
+                    dest = Path(sample.id) / "qlucore",
                 ),
             ]
         
