@@ -58,7 +58,7 @@ def copy_results(
         outputs = [o for s in samples for o in s.output]
 
         for dest_dir in set(config.results.base / o.dest_dir for o in outputs):
-            if dest_dir.glob("*") and not config.results.overwrite:
+            if [*dest_dir.glob("*")] and not config.results.overwrite:
                 logger.error(f"Output directory {dest_dir} not empty")
                 return
             else:
