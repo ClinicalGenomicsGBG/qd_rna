@@ -2,24 +2,22 @@
 
 from logging import LoggerAdapter
 from pathlib import Path
-from copy import deepcopy
 
-from cellophane import cfg, modules
-from modules.slims import SlimsSamples
+from cellophane import cfg, modules, data
 from modules.nextflow import nextflow
 from modules.qd_rna import Output
 
 
 @modules.runner()
 def rnafusion(
-    samples: SlimsSamples,
+    samples: data.Samples,
     config: cfg.Config,
     timestamp: str,
     label: str,
     logger: LoggerAdapter,
     root: Path,
     outdir: Path,
-) -> None:
+) -> data.Samples:
     """Run nf-core/rnafusion."""
 
     if "rnafusion" in config and not config.rnafusion.skip:
@@ -90,4 +88,4 @@ def rnafusion(
                 ),
             ]
 
-        return samples
+    return samples

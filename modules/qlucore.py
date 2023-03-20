@@ -2,31 +2,22 @@
 
 from logging import LoggerAdapter
 from pathlib import Path
-from copy import deepcopy
 
 from cellophane import cfg, modules, data
-from modules.slims import SlimsSamples
+
 from modules.qd_rna import Output
-
 from modules.nextflow import nextflow
-
-
-def get_output(outdir: Path, samples: data.Samples):
-    """Return a dictionary of output files for the rnafusion module."""
-    return [
-
-    ]
 
 @modules.runner()
 def qlucore(
-    samples: SlimsSamples,
+    samples: data.Samples,
     config: cfg.Config,
     timestamp: str,
     label: str,
     logger: LoggerAdapter,
     root: Path,
     outdir: Path,
-) -> None:
+) -> data.Samples:
     """Run nf-core/rnaseq (Mapping for qlucore)."""
 
     if "qlucore" in config and not config.qlucore.skip:
@@ -73,9 +64,9 @@ def qlucore(
         for idx, sample in enumerate(samples):
             samples[idx].output = [
                 Output(
-                    src = (outdir / "star_salmon").glob(f"{sample.id}.markdup.sorted.bam*"),
+                    src = (outdir / "star_salmon").glob(f"{sample.id}.*.bam*"),
                     dest_dir = Path(sample.id) / "qlucore",
                 ),
             ]
         
-        return samples
+    return samples
