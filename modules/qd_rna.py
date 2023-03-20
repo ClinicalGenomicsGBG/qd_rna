@@ -54,22 +54,22 @@ def copy_results(
     **_,
 ):
     logger.info(f"Copying output to {config.results.base}")
-    with ProcessPoolExecutor(config.results.parallel) as executor:
-        outputs = [o for s in samples for o in s.output]
+    outputs = [o for s in samples for o in s.output]
 
-        for dest_dir in set(config.results.base / o.dest_dir for o in outputs):
-            if [*dest_dir.glob("*")] and not config.results.overwrite:
-                logger.error(f"Output directory {dest_dir} not empty")
-                return
-            else:
-                dest_dir.mkdir(parents=True, exist_ok=True)
+    for dest_dir in set(config.results.base / o.dest_dir for o in outputs):
+        if [*dest_dir.glob("*")] and not config.results.overwrite:
+            logger.error(f"Output directory {dest_dir} not empty")
+            return
 
-        for dest_dir, dest_name, src in [
-            (o.dest_dir, o.dest_name, s) for o in outputs for s in o.src
-        ]:
-            try:
-                dest = config.results.base / dest_dir / (dest_name or src.name)
-                logger.debug(f"Copying {src} to {dest}")
-                executor.submit(copy, src, dest)
-            except Exception as e:
-                logger.warning(f"Failed to copy {src}: {e}")
+    for dest_dir, dest_name, src in [
+        (config.results.base / o.dest_dir, o.dest_name, s)
+        for o in outputs
+        for s in o.src
+    ]:
+        try:
+            dest_dir.mkdir(parents=True, exist_ok=True)
+            dest = dest_dir / (dest_name or src.name)
+            logger.debug(f"Copying {src} to {dest}")
+            copy(src, dest)
+        except Exception as e:
+            logger.warning(f"Failed to copy {src}: {e}")
