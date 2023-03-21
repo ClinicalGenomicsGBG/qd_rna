@@ -61,8 +61,8 @@ def qlucore(
             cwd=outdir,
         )
 
-        for idx, sample in enumerate(samples):
-            samples[idx].output = [
+        for sample in samples:
+            sample.output = [
                 Output(
                     src = (outdir / "star_salmon").glob(f"{sample.id}.*.bam*"),
                     dest_dir = Path(sample.id) / "qlucore",

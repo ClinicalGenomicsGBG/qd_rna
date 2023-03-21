@@ -53,12 +53,12 @@ def rnafusion(
             cwd=outdir,
         )
 
-        for idx, sample in enumerate(samples):
-            samples[idx].output += [
+        for sample in samples:
+            sample.output = [
                 Output(
                     src = [
-                        outdir / "arriba_visualisation" / f"{sample.id}.pdf",
-                        outdir / "arriba" / f"{sample.id}.*.tsv",
+                        *(outdir / "arriba_visualisation").glob(f"{sample.id}.pdf"),
+                        *(outdir / "arriba").glob(f"{sample.id}.*.tsv"),
                     ],
                     dest_dir = Path(sample.id) / "arriba",
                 ),
@@ -71,7 +71,7 @@ def rnafusion(
                     dest_dir = Path(sample.id) / "fusioninspector",
                 ),
                 Output(
-                    src = (outdir / "fusionreport" / sample.id).glob("*.html"),
+                    src = (outdir / "fusionreport").glob("sample.id/*.html"),
                     dest_dir = Path(sample.id) / "fusionreport",
                 ),
                 Output(
