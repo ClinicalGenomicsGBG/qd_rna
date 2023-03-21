@@ -8,6 +8,18 @@ from cellophane import cfg, modules, data
 from modules.qd_rna import Output
 from modules.nextflow import nextflow
 
+
+qlucore_data = """\
+<Header Producer='Qlucore' Format='PatientData' FormatVersion='0.1' QFFVersion='1.0'/>
+<PatientData>
+    <PatientName>PATIENT NAME</PatientName>
+    <PatientId>{sample.id}</PatientId>
+    <SampleOrigin>{sample.run or ''}</SampleOrigin>
+    <SampleTissue>Blood sample</SampleTissue>
+    <Technology>RNA Seq.</Technology>
+</PatientData>
+"""
+
 @modules.runner()
 def qlucore(
     samples: data.Samples,
@@ -60,9 +72,18 @@ def qlucore(
             stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
+        
+
 
         for sample in samples:
+            with open(outdir / f"{sample.id}.qlucore.xml", "w") as f:
+                f.write(qlucore_data.format(sample=sample))
+
             sample.output = [
+                Output(
+                    src = (outdir / "star_salmon").glob(f"{sample.id}.qlucore.xml"),
+                    dest_dir = Path(sample.id) / "qlucore",
+                ),
                 Output(
                     src = (outdir / "star_salmon").glob(f"{sample.id}.*.bam*"),
                     dest_dir = Path(sample.id) / "qlucore",

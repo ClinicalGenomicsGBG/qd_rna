@@ -4,7 +4,6 @@ from shutil import copy
 from cellophane import modules, data, cfg
 from logging import LoggerAdapter
 from typing import Iterable, Optional
-from concurrent.futures import ProcessPoolExecutor
 
 
 @dataclass

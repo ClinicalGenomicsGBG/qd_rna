@@ -118,6 +118,7 @@ class Runner(mp.Process):
             self.output_queue.put((samples, self.id))
 
         else:
+            logger.info(f"Finished {self.label} runner")
             match returned:
                 case None:
                     for sample in samples:
