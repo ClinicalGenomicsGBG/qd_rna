@@ -13,8 +13,8 @@ qlucore_data = """\
 <Header Producer='Qlucore' Format='PatientData' FormatVersion='0.1' QFFVersion='1.0'/>
 <PatientData>
     <PatientName>PATIENT NAME</PatientName>
-    <PatientId>{sample.id}</PatientId>
-    <SampleOrigin>{sample.run or ''}</SampleOrigin>
+    <PatientId>{id}</PatientId>
+    <SampleOrigin>{run}</SampleOrigin>
     <SampleTissue>Blood sample</SampleTissue>
     <Technology>RNA Seq.</Technology>
 </PatientData>
@@ -77,7 +77,7 @@ def qlucore(
 
         for sample in samples:
             with open(outdir / f"{sample.id}.qlucore.xml", "w") as f:
-                f.write(qlucore_data.format(sample=sample))
+                f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
 
             sample.output = [
                 Output(
