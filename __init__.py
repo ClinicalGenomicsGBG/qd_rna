@@ -52,9 +52,11 @@ def nextflow(
         str(Path(__file__).parent / "scripts" / "nextflow.sh"),
         f"-log {log}" if log else "",
         (
-            f"-config {config.nextflow.config}"
+            f"-config {nf_config}"
+            if nf_config
+            else f"-config {config.nextflow.config}"
             if "config" in config.nextflow
-            else nf_config or ""
+            else ""
         ),
         f"run {main}",
         "-ansi-log false" if not ansi_log or config.nextflow.ansi_log else "",
