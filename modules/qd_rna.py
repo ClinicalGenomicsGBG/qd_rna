@@ -41,8 +41,11 @@ def set_sample_id(
     **_,
 ):
     logger.debug("Adding Run ID to sample IDs")
-    for idx, s in enumerate(samples):
-        samples[idx].id = f"{s.id}_{s.run}" if "run" in s and s.run else s.id
+    for sample in samples:
+        sample.id = (
+            f"{sample.id}_{sample.run}" if "run" in sample and sample.run else sample.id
+        )
+    return samples
 
 
 @modules.post_hook(label="Results")
