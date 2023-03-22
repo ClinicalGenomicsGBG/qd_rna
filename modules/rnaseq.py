@@ -7,29 +7,6 @@ from modules.nextflow import nextflow
 from modules.qd_rna import Output
 
 
-def get_output(aligner: str, outdir: Path):
-    """Return a dictionary of output files for the rnaseq module."""
-    return {
-        aligner: [
-            output
-            for pattern in [
-                "*.bam",
-                "*.bai",
-                "*.results",
-                "*.tsv",
-                "*.rds",
-            ]
-            for output in (outdir / aligner).glob(pattern)
-        ],
-        "stringtie": [
-            output
-            for pattern in ["*.gtf", "*.txt", "*.ballgown"]
-            for output in (outdir / aligner / "stringtie").glob(pattern)
-        ],
-        "multiqc": [outdir / "multiqc" / "multiqc_report.html"],
-    }
-
-
 @modules.runner(individual_samples=True)
 def rnaseq(
     samples: data.Samples,

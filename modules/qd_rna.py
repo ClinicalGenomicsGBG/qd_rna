@@ -39,7 +39,7 @@ def set_sample_id(
     samples: data.Samples,
     logger: LoggerAdapter,
     **_,
-):
+) -> data.Samples:
     logger.debug("Adding Run ID to sample IDs")
     for sample in samples:
         sample.id = (
@@ -54,7 +54,7 @@ def copy_results(
     logger: LoggerAdapter,
     config: cfg.Config,
     **_,
-):
+) -> None:
     logger.info(f"Copying output to {config.results.base}")
     outputs = [o for s in samples for o in s.output]
 
