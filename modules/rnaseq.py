@@ -88,12 +88,6 @@ def rnaseq(
         dest_base = Path(samples[0].id)
         samples[0].output = [
             Output(
-                src=(src_base / config.rnaseq.aligner).glob(
-                    f"{samples[0].id}.markdup.sorted.bam*"
-                ),
-                dest_dir=dest_base,
-            ),
-            Output(
                 src=(src_base / "star_salmon").glob("salmon.*"),
                 dest_dir=dest_base / "salmon",
             ),

@@ -83,6 +83,10 @@ def rnafusion(
                     dest_dir = Path(sample.id) / "squid",
                 ),
                 Output(
+                    src = (outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
+                    dest_dir = Path(sample.id),
+                ),
+                Output(
                     src = (outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
                     dest_dir = Path(sample.id) / "starfusion",
                 ),
