@@ -23,30 +23,32 @@ qlucore_data = """\
 qlucore_nf_config = """\
 process {
   withName: 'STAR_FOR_STARFUSION' {
-    ext.args = '--twopassMode Basic \\
-      --outReadsUnmapped None \\
-      --readFilesCommand zcat \\
-      --outSAMtype BAM SortedByCoordinate \\
-      --outSAMstrandField intronMotif \\
-      --outSAMunmapped Within \\
-      --chimSegmentMin 12 \\
-      --chimJunctionOverhangMin 8 \\
-      --chimOutJunctionFormat 1 \\
-      --alignSJDBoverhangMin 10 \\
-      --alignMatesGapMax 100000 \\
-      --alignIntronMax 100000 \\
-      --alignSJstitchMismatchNmax 5 -1 5 5 \\
-      --chimMultimapScoreRange 3 \\
-      --chimScoreJunctionNonGTAG -4 \\
-      --chimMultimapNmax 20 \\
-      --chimNonchimScoreDropMin 10 \\
-      --peOverlapNbasesMin 12 \\
-      --peOverlapMMp 0.1 \\
-      --alignInsertionFlush Right \\
-      --alignSplicedMateMapLminOverLmate 0 \\
-      --alignSplicedMateMapLmin 30 \\
-      --chimOutType Junctions \\
-      --outFilterMultimapNmax 200'
+    ext.args = [
+        '--twopassMode Basic',
+        '--outReadsUnmapped None',
+        '--readFilesCommand zcat',
+        '--outSAMtype BAM SortedByCoordinate',
+        '--outSAMstrandField intronMotif',
+        '--outSAMunmapped Within',
+        '--chimSegmentMin 12',
+        '--chimJunctionOverhangMin 8',
+        '--chimOutJunctionFormat 1',
+        '--alignSJDBoverhangMin 10',
+        '--alignMatesGapMax 100000',
+        '--alignIntronMax 100000',
+        '--alignSJstitchMismatchNmax 5 -1 5 5',
+        '--chimMultimapScoreRange 3',
+        '--chimScoreJunctionNonGTAG -4',
+        '--chimMultimapNmax 20',
+        '--chimNonchimScoreDropMin 10',
+        '--peOverlapNbasesMin 12',
+        '--peOverlapMMp 0.1',
+        '--alignInsertionFlush Right',
+        '--alignSplicedMateMapLminOverLmate 0',
+        '--alignSplicedMateMapLmin 30',
+        '--chimOutType Junctions',
+        '--outFilterMultimapNmax 200'
+    ].join(' ').trim()
   }
 }
 """
@@ -77,7 +79,7 @@ def qlucore(
 
         with open(outdir / "nextflow.config", "w") as f:
             if "config" in config.nextflow:
-                f.write(f"includeConfig {config.nextflow.config}\n\n")
+                f.write(f"includeConfig '{config.nextflow.config}'\n\n")
             f.write(qlucore_nf_config)
 
         (outdir / "dummy.fa").touch()
