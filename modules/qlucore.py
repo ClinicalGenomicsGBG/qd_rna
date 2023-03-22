@@ -20,7 +20,15 @@ qlucore_data = """\
 </PatientData>
 """
 
-@modules.runner()
+qlucore_nf_config = """\
+process {
+    withName:NFCORE_RNAFUSION:RNAFUSION:STARFUSION_WORKFLOW:STAR_FOR_STARFUSION {
+        ext.args = "--outFilterMultimapNmax 200"
+    }
+}
+"""
+
+@modules.runner(individual_samples=True)
 def qlucore(
     samples: data.Samples,
     config: cfg.Config,
@@ -33,38 +41,34 @@ def qlucore(
     """Run nf-core/rnaseq (Mapping for qlucore)."""
 
     if "qlucore" in config and not config.qlucore.skip:
-        if any(
-            {"genome", x} <= {*config.qlucore} for x in ["fasta", "gtf", "gene_bed"]
-        ):
-            logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
-
-        logger.info("Running nf-core/rnaseq (for qlucore)")
+        logger.info("Running STAR + STAR-Fusion for qlucore")
 
         sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
-            strandedness=config.rnaseq.strandedness,
+            strandedness=config.qlucore.strandedness,
         )
 
         if "workdir" in config.nextflow:
             config.nextflow.workdir.mkdir(parents=True, exist_ok=True)
 
+        with open(outdir / "nextflow.config", "w") as f:
+            if "config" in config.nextflow:
+                f.write(f"includeConfig {config.qlucore.config}\n\n")
+            f.write(qlucore_nf_config)
+
         nextflow(
-            config.rnaseq.nf_main,
+            config.qlucore.nf_main,
+            "--starfusion",
+            "--skip_qc",
+            "--skip_vis",
+            "--star_ignore_sjdbgtf",
             f"--outdir {outdir}",
             f"--input {sample_sheet}",
-            "--aligner star_salmon",
-            "--skip_qc",
-            "--skip_bigwig",
-            f"--star_index {config.qlucore.star_index}",
-            (
-                f"--fasta {config.qlucore.fasta} "
-                f"--gtf {config.qlucore.gtf} "
-                f"--gene_bed {config.qlucore.gene_bed}"
-                if "genome" not in config.qlucore
-                else f"--genome {config.qlucore.genome}"
-            ),
+            f"--starfusion_ref {config.qlucore.starfusion_ref}",
+            f"--read_length {config.qlucore.read_length}",
             config=config,
-            name="qlucore",
+            name=label,
+            nf_config=outdir / "nextflow.config",
             workdir=outdir / "work",
             report=outdir / "logs" / f"{label}.{timestamp}.nextflow_report.html",
             log=outdir / "logs" / f"{label}.{timestamp}.nextflow.log",
@@ -72,20 +76,22 @@ def qlucore(
             stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
-        
-
 
         for sample in samples:
-            with open(outdir / f"{sample.id}.qlucore.xml", "w") as f:
+            with open(outdir / f"{sample.id}.qlucore.txt", "w") as f:
                 f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
 
             sample.output = [
                 Output(
-                    src = (outdir / "star_salmon").glob(f"{sample.id}.qlucore.xml"),
+                    src = outdir.glob(f"{sample.id}.qlucore.txt"),
                     dest_dir = Path(sample.id) / "qlucore",
                 ),
                 Output(
-                    src = (outdir / "star_salmon").glob(f"{sample.id}.*.bam*"),
+                    src = (outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
+                    dest_dir = Path(sample.id) / "qlucore",
+                ),
+                Output(
+                    src = (outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
                     dest_dir = Path(sample.id) / "qlucore",
                 ),
             ]

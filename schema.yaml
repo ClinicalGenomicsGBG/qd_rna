@@ -27,10 +27,10 @@ properties:
         default: false
         description: Skip nf-core/rnaseq
       
-      force:
+      force: &force
         type: boolean
         default: false
-        description: Overwrite any existing nf-core/rnaseq output
+        description: Overwrite any existing output
 
       nf_main:
         type: path
@@ -67,7 +67,7 @@ properties:
           - star_salmon
           - star_rsem
       
-      strandedness:
+      strandedness: &strandedness
         type: string
         description: Strandedness of RNA-seq library
         enum:
@@ -98,55 +98,6 @@ properties:
           - gtf
           - gene_bed
 
-  qlucore:
-    type: object
-    properties:
-      skip:
-        type: boolean
-        default: false
-        description: Skip qlucore mapping
-      
-      force:
-        type: boolean
-        default: false
-        description: Overwrite any existing qlucore output
-
-      genome:
-        type: string
-        description: Genome reference
-
-      fasta:
-        type: path
-        description: Path to genome fasta file
-
-      gtf:
-        type: path
-        description: Path to genome gtf file
-
-      gene_bed:
-        type: path
-        description: Path to genome gene bed file
-
-      star_index:
-        type: path
-        description: Path to STAR genome index
-
-    if:
-      properties:
-        skip:
-          const: false
-    then:  
-      allOf:
-      - required:
-        - star_index
-      - anyOf:
-        - required:
-          - genome
-        - required:
-          - fasta
-          - gtf
-          - gene_bed
-
   rnafusion:
     type: object
     properties:
@@ -155,10 +106,7 @@ properties:
         description: Skip nf-core/rnafusion
         default: false
 
-      force:
-        type: boolean
-        default: false
-        description: Overwrite any existing nf-core/rnaseq output
+      force: *force
 
       nf_main:
         type: path
@@ -185,18 +133,11 @@ properties:
         description: Minimum number of callers for fusion to be reported
         default: 1
 
-      read_length:
+      read_length: &read_length
         type: integer
         description: Sample read length
       
-      strandedness:
-        type: string
-        description: Strandedness of RNA-seq library
-        enum:
-          - unstranded
-          - forward
-          - reverse
-        default: unstranded
+      strandedness: *strandedness
     
     if:
       properties:
@@ -208,5 +149,39 @@ properties:
         - genomes_base
         - arriba_blacklist
         - arriba_protein_domain
+        - read_length
+        - strandedness
+
+  qlucore:
+    type: object
+    properties:
+      skip:
+        type: boolean
+        default: false
+        description: Skip qlucore mapping
+      
+      force: *force
+
+      nf_main:
+        type: path
+        description: Path to nf-core/rnafusion main.nf
+
+      starfusion_ref:
+        type: path
+        description: Path to STAR-Fusion reference
+
+      read_length: *read_length
+
+      strandedness: *strandedness
+
+
+    if:
+      properties:
+        skip:
+          const: false
+    then:  
+      required:
+        - nf_main
+        - starfusion_ref
         - read_length
         - strandedness
