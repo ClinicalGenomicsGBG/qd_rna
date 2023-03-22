@@ -166,6 +166,16 @@ properties:
       starfusion_ref:
         type: path
         description: Path to STAR-Fusion reference
+      
+      subsample_threads:
+        type: integer
+        description: Number of threads to use for subsampling
+        default: 12
+      
+      subsample_frac:
+        type: number
+        description: Fraction of reads to subsample
+        default: 0.2
 
     if:
       properties:

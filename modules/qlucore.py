@@ -3,7 +3,7 @@
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import cfg, modules, data
+from cellophane import cfg, modules, data, sge
 
 from modules.qd_rna import Output
 from modules.nextflow import nextflow
@@ -50,6 +50,7 @@ process {
   }
 }
 """
+
 
 @modules.runner(individual_samples=True)
 def qlucore(
@@ -112,19 +113,44 @@ def qlucore(
             with open(outdir / f"{sample.id}.qlucore.txt", "w") as f:
                 f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
 
+            sge.submit(
+                str(root / "scripts" / "qlucore_subsample.sh"),
+                queue=config.nextflow.sge_queue,
+                name=f"qlucore_subsample_{sample.id}",
+                pe=config.nextflow.sge_pe,
+                slots=config.qlucore.subsample_threads,
+                stdout=outdir / "logs" / f"{sample.id}.qlucore_subsample.out",
+                stderr=outdir / "logs" / f"{sample.id}.qlucore_subsample.err",
+                cwd=outdir,
+                env={
+                    "_QLUCORE_SUBSAMPLE_FRAC": config.qlucore.subsample_frac,
+                    "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample_threads,
+                    "_QLUCORE_SUBSAMPLE_INPUT_BAM": (
+                        outdir
+                        / "star_for_starfusion"
+                        / f"{sample.id}.Aligned.sortedByCoord.out.bam"
+                    ),
+                    "_QLUCORE_SUBSAMPLE_OUTPUT_BAM": (
+                        outdir
+                        / "star_for_starfusion"
+                        / f"{sample.id}.Aligned.sortedByCoord.out.subsample.bam"
+                    ),
+                },
+            )
+
             sample.output = [
                 Output(
-                    src = outdir.glob(f"{sample.id}.qlucore.txt"),
-                    dest_dir = Path(sample.id) / "qlucore",
+                    src=outdir.glob(f"{sample.id}.qlucore.txt"),
+                    dest_dir=Path(sample.id) / "qlucore",
                 ),
                 Output(
-                    src = (outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
-                    dest_dir = Path(sample.id) / "qlucore",
+                    src=(outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
+                    dest_dir=Path(sample.id) / "qlucore",
                 ),
                 Output(
-                    src = (outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
-                    dest_dir = Path(sample.id) / "qlucore",
+                    src=(outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
+                    dest_dir=Path(sample.id) / "qlucore",
                 ),
             ]
-        
+
     return samples
