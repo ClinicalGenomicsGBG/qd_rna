@@ -12,19 +12,42 @@ from modules.nextflow import nextflow
 qlucore_data = """\
 <Header Producer='Qlucore' Format='PatientData' FormatVersion='0.1' QFFVersion='1.0'/>
 <PatientData>
-    <PatientName>PATIENT NAME</PatientName>
-    <PatientId>{id}</PatientId>
-    <SampleOrigin>{run}</SampleOrigin>
-    <SampleTissue>Blood sample</SampleTissue>
-    <Technology>RNA Seq.</Technology>
+  <PatientName>PATIENT NAME</PatientName>
+  <PatientId>{id}</PatientId>
+  <SampleOrigin>{run}</SampleOrigin>
+  <SampleTissue>Blood sample</SampleTissue>
+  <Technology>RNA Seq.</Technology>
 </PatientData>
 """
 
 qlucore_nf_config = """\
 process {
-    withName:NFCORE_RNAFUSION:RNAFUSION:STARFUSION_WORKFLOW:STAR_FOR_STARFUSION {
-        ext.args = "--outFilterMultimapNmax 200"
-    }
+  withName: 'STAR_FOR_STARFUSION' {
+    ext.args = '--twopassMode Basic \\
+      --outReadsUnmapped None \\
+      --readFilesCommand zcat \\
+      --outSAMtype BAM SortedByCoordinate \\
+      --outSAMstrandField intronMotif \\
+      --outSAMunmapped Within \\
+      --chimSegmentMin 12 \\
+      --chimJunctionOverhangMin 8 \\
+      --chimOutJunctionFormat 1 \\
+      --alignSJDBoverhangMin 10 \\
+      --alignMatesGapMax 100000 \\
+      --alignIntronMax 100000 \\
+      --alignSJstitchMismatchNmax 5 -1 5 5 \\
+      --chimMultimapScoreRange 3 \\
+      --chimScoreJunctionNonGTAG -4 \\
+      --chimMultimapNmax 20 \\
+      --chimNonchimScoreDropMin 10 \\
+      --peOverlapNbasesMin 12 \\
+      --peOverlapMMp 0.1 \\
+      --alignInsertionFlush Right \\
+      --alignSplicedMateMapLminOverLmate 0 \\
+      --alignSplicedMateMapLmin 30 \\
+      --chimOutType Junctions \\
+      --outFilterMultimapNmax 200'
+  }
 }
 """
 
@@ -45,7 +68,7 @@ def qlucore(
 
         sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
-            strandedness=config.qlucore.strandedness,
+            strandedness=config.strandedness,
         )
 
         if "workdir" in config.nextflow:
@@ -56,16 +79,24 @@ def qlucore(
                 f.write(f"includeConfig {config.qlucore.config}\n\n")
             f.write(qlucore_nf_config)
 
+        (outdir / "dummy.fa").touch()
+        (outdir / "dummy.gtf").touch()
+        (outdir / "dummy.refflat").touch()
+
         nextflow(
             config.qlucore.nf_main,
             "--starfusion",
             "--skip_qc",
             "--skip_vis",
             "--star_ignore_sjdbgtf",
+            f"--fasta {outdir / 'dummy.fa'}",
+            f"--gtf {outdir / 'dummy.gtf'}",
+            f"--refflat {outdir / 'dummy.refflat'}",
             f"--outdir {outdir}",
             f"--input {sample_sheet}",
             f"--starfusion_ref {config.qlucore.starfusion_ref}",
-            f"--read_length {config.qlucore.read_length}",
+            f"--starindex_ref {config.qlucore.starfusion_ref}/ref_genome.fa.star.idx",
+            f"--read_length {config.read_length}",
             config=config,
             name=label,
             nf_config=outdir / "nextflow.config",
