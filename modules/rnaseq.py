@@ -27,7 +27,7 @@ def rnaseq(
 
         sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
-            strandedness=config.rnaseq.strandedness,
+            strandedness=config.strandedness,
         )
 
         if "workdir" in config.nextflow:

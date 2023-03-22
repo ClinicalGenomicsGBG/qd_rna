@@ -25,7 +25,7 @@ def rnafusion(
 
         sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
-            strandedness=config.rnafusion.strandedness,
+            strandedness=config.strandedness,
         )
 
         if "workdir" in config.nextflow:
@@ -40,7 +40,7 @@ def rnafusion(
             f"--arriba_ref_blacklist {config.rnafusion.arriba_blacklist}",
             f"--arriba_ref_protein_domain {config.rnafusion.arriba_protein_domain}",
             f"--fusionreport_tool_cutoff {config.rnafusion.fusionreport_tool_cutoff}",
-            f"--read_length {config.rnafusion.read_length}",
+            f"--read_length {config.read_length}",
             "--all",
             "--fusioninspector_filter",
             config=config,

@@ -4,8 +4,23 @@ required:
   - rnafusion
   - qlucore
   - results
+  - read_length
+  - strandedness
 
 properties:
+  strandedness:
+    type: string
+    description: Strandedness of RNA-seq library
+    enum:
+      - unstranded
+      - forward
+      - reverse
+    default: unstranded
+  
+  read_length:
+    type: integer
+    description: Sample read length
+
   results:
     type: object
     properties:
@@ -66,15 +81,6 @@ properties:
         enum:
           - star_salmon
           - star_rsem
-      
-      strandedness: &strandedness
-        type: string
-        description: Strandedness of RNA-seq library
-        enum:
-          - unstranded
-          - forward
-          - reverse
-        default: unstranded
     if:
       properties:
         skip:
@@ -84,7 +90,6 @@ properties:
       - required:
         - nf_main
         - aligner
-        - strandedness
       - anyOf:
         - required:
           - star_index
@@ -132,12 +137,6 @@ properties:
         type: integer
         description: Minimum number of callers for fusion to be reported
         default: 1
-
-      read_length: &read_length
-        type: integer
-        description: Sample read length
-      
-      strandedness: *strandedness
     
     if:
       properties:
@@ -149,8 +148,6 @@ properties:
         - genomes_base
         - arriba_blacklist
         - arriba_protein_domain
-        - read_length
-        - strandedness
 
   qlucore:
     type: object
@@ -170,11 +167,6 @@ properties:
         type: path
         description: Path to STAR-Fusion reference
 
-      read_length: *read_length
-
-      strandedness: *strandedness
-
-
     if:
       properties:
         skip:
@@ -183,5 +175,3 @@ properties:
       required:
         - nf_main
         - starfusion_ref
-        - read_length
-        - strandedness
