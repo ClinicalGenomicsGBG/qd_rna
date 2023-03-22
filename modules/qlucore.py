@@ -77,7 +77,7 @@ def qlucore(
 
         with open(outdir / "nextflow.config", "w") as f:
             if "config" in config.nextflow:
-                f.write(f"includeConfig {config.qlucore.config}\n\n")
+                f.write(f"includeConfig {config.nextflow.config}\n\n")
             f.write(qlucore_nf_config)
 
         (outdir / "dummy.fa").touch()
