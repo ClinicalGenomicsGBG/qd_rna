@@ -62,24 +62,22 @@ def rnaseq(
         )
 
     if not config.rnaseq.skip or config.results.copy_skipped:
-        src_base = outdir / samples[0].id
-        dest_base = Path(samples[0].id)
         samples[0].output = [
             Output(
-                src=(src_base / "star_salmon").glob("salmon.*"),
-                dest_dir=dest_base / "salmon",
+                src=(outdir / "star_salmon").glob("salmon.*"),
+                dest_dir=Path(samples[0].id) / "salmon",
             ),
             Output(
-                src=(src_base / "star_salmon" / samples[0].id).glob("*"),
-                dest_dir=dest_base / "salmon" / samples[0].id,
+                src=(outdir / "star_salmon" / samples[0].id).glob("*"),
+                dest_dir=Path(samples[0].id) / "salmon" / samples[0].id,
             ),
             Output(
-                src=(src_base / config.rnaseq.aligner / "stringtie").glob("*"),
-                dest_dir=dest_base / "stringtie",
+                src=(outdir / config.rnaseq.aligner / "stringtie").glob("*"),
+                dest_dir=Path(samples[0].id) / "stringtie",
             ),
             Output(
-                src=(src_base / "multiqc" / config.rnaseq.aligner).glob("*"),
-                dest_dir=dest_base / "multiqc",
+                src=(outdir / "multiqc" / config.rnaseq.aligner).glob("*"),
+                dest_dir=Path(samples[0].id) / "multiqc",
             ),
         ]
 
