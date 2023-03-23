@@ -129,9 +129,9 @@ def get_derived_records(
 class SlimsSample:
     """A sample container with SLIMS integration"""
 
-    record: Optional[Record] = None
-    bioinformatics: Optional[Record] = None
-    run: Optional[str] = None
+    record: Optional[Record]
+    bioinformatics: Optional[Record]
+    run: Optional[str]
     backup: data.Container = data.Container()
 
     @classmethod
@@ -322,7 +322,7 @@ def slims_samples(
 ) -> Optional[SlimsSamples]:
     """Load novel samples from SLIMS."""
     _samples = deepcopy(samples)
-    
+
     if config.slims is not None:
         slims_connection = Slims(
             name=__package__,
@@ -356,7 +356,10 @@ def slims_samples(
                     _data = {**_ss[0]} | {**sample}
                     _samples[idx] = sample.__class__(
                         id=_data.pop("id"),
-                        run=_data.pop("run"),
+                        run=_data.pop("run", None),
+                        record=_data.pop("record", None),
+                        bioinformatics=_data.pop("bioinformatics", None),
+                        backup=_data.pop("backup", data.Container()),
                         **deepcopy(_data),
                     )
 
