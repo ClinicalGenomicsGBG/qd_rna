@@ -1,5 +1,7 @@
 #! /bin/bash
 
+set -e
+
 module load samtools/1.16
 
 samtools view \
