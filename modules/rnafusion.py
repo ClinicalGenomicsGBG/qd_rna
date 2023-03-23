@@ -53,6 +53,7 @@ def rnafusion(
             cwd=outdir,
         )
 
+    if not config.rnafusion.skip or config.results.copy_skipped:
         for sample in samples:
             sample.output = [
                 Output(

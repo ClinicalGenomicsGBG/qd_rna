@@ -61,6 +61,7 @@ def rnaseq(
             cwd=outdir,
         )
 
+    if not config.rnaseq.skip or config.results.copy_skipped:
         src_base = outdir / samples[0].id
         dest_base = Path(samples[0].id)
         samples[0].output = [

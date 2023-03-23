@@ -31,6 +31,10 @@ properties:
         type: boolean
         description: Overwrite existing results
         default: false
+      copy_skipped:
+        type: boolean
+        description: Copy results from skipped modules
+        default: false
     required:
       - base
 
