@@ -55,7 +55,7 @@ process {
 """
 
 
-@modules.runner(individual_samples=True)
+@modules.runner()
 def qlucore(
     samples: data.Samples,
     config: cfg.Config,
