@@ -134,11 +134,6 @@ def qlucore(
                         / "star_for_starfusion"
                         / f"{sample.id}.Aligned.sortedByCoord.out.bam"
                     ),
-                    "_QLUCORE_SUBSAMPLE_OUTPUT_BAM": (
-                        outdir
-                        / "star_for_starfusion"
-                        / f"{sample.id}.Aligned.sortedByCoord.out.subsample.bam"
-                    ),
                 },
             )
 
