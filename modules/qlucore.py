@@ -1,5 +1,6 @@
 """Module for running nf-core/rnaseq."""
 
+from multiprocessing import Process
 from logging import LoggerAdapter
 from pathlib import Path
 
@@ -112,12 +113,10 @@ def qlucore(
             stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
-
+        
+        _SUBSAMPLE_PROCS: dict[str, Process] = {}
         for sample in samples:
-            with open(outdir / f"{sample.id}.qlucore.txt", "w") as f:
-                f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
-
-            sge.submit(
+            _SUBSAMPLE_PROCS[sample.id] = sge.submit(
                 str(root / "scripts" / "qlucore_subsample.sh"),
                 queue=config.nextflow.sge_queue,
                 name=f"qlucore_subsample_{sample.id}",
@@ -126,6 +125,7 @@ def qlucore(
                 stdout=outdir / "logs" / f"{sample.id}.qlucore_subsample.out",
                 stderr=outdir / "logs" / f"{sample.id}.qlucore_subsample.err",
                 cwd=outdir,
+                check=False,
                 env={
                     "_QLUCORE_SUBSAMPLE_FRAC": config.qlucore.subsample_frac,
                     "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample_threads,
@@ -136,6 +136,15 @@ def qlucore(
                     ),
                 },
             )
+
+        for sample in samples:
+            subsample_proc = _SUBSAMPLE_PROCS[sample.id]
+            subsample_proc.join()
+            if subsample_proc.exitcode != 0:
+                logger.error(f"Subsampling failed for {sample.id}")
+
+            with open(outdir / f"{sample.id}.qlucore.txt", "w") as f:
+                f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
 
             sample.output = [
                 Output(
