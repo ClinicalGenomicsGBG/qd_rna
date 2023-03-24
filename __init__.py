@@ -63,19 +63,19 @@ def _extract_callback(
 ):
     if (exception := future.exception()) is not None:
         logger.error(f"Failed to extract {compressed_path} ({exception})")
-        samples[s_idx].fastq_paths[f_idx] = None
+        samples[s_idx].files[f_idx] = None
     elif extract_path.exists():
         logger.debug(f"Extracted {extract_path}")
-        samples[s_idx].fastq_paths[f_idx] = extract_path
+        samples[s_idx].files[f_idx] = extract_path
     elif (
         (fq1 := extract_path.with_suffix(".1")).exists() and
         (fq2 := extract_path.with_suffix(".2")).exists()
     ):
         logger.debug(f"Extracted {fq1} and {fq2}")
-        samples[s_idx].fastq_paths = [fq1, fq2]
+        samples[s_idx].files = [fq1, fq2]
     else:
         logger.error(f"Extraction completed, but {extract_path} does not exist")
-        samples[s_idx].fastq_paths[f_idx] = None
+        samples[s_idx].files[f_idx] = None
 
 
 @modules.pre_hook(label="unpack", priority=15)
@@ -88,7 +88,7 @@ def petagene_extract(
     """Extract petagene fasterq files."""
     with ProcessPoolExecutor(config.unpack.parallel) as pool:
         for s_idx, sample in enumerate(samples):
-            for f_idx, fastq in enumerate(sample.fastq_paths):
+            for f_idx, fastq in enumerate(sample.files):
                 if fastq and (compressed_path := Path(fastq)).exists():
                     if compressed_path.suffix == ".fasterq":
                         method = "petagene"
@@ -100,7 +100,7 @@ def petagene_extract(
                     extract_path = compressed_path.with_suffix(".fastq.gz")
                     if extract_path.exists():
                         logger.debug(f"Extracted file found for {sample.id}")
-                        sample.fastq_paths[f_idx] = extract_path
+                        sample.files[f_idx] = extract_path
                         continue
                     else:
                         logger.debug(f"Extracting {compressed_path} to {extract_path}")
