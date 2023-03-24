@@ -20,7 +20,7 @@ def rnafusion(
 ) -> data.Samples:
     """Run nf-core/rnafusion."""
 
-    if "rnafusion" in config and not config.rnafusion.skip:
+    if not config.rnafusion.skip:
         logger.info("Running nf-core/rnafusion")
 
         sample_sheet = samples.nfcore_samplesheet(

@@ -67,7 +67,7 @@ def qlucore(
 ) -> data.Samples:
     """Run nf-core/rnaseq (Mapping for qlucore)."""
 
-    if "qlucore" in config and not config.qlucore.skip:
+    if not config.qlucore.skip:
         logger.info("Running STAR + STAR-Fusion for qlucore")
 
         sample_sheet = samples.nfcore_samplesheet(

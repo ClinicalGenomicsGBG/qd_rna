@@ -19,7 +19,7 @@ def rnaseq(
 ) -> data.Samples:
     """Run nf-core/rnaseq."""
 
-    if "rnaseq" in config and not config.rnaseq.skip:
+    if not config.rnaseq.skip:
         if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
             logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
 
