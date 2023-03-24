@@ -6,10 +6,24 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 from typing import Optional
+from collections import UserDict, UserList
+from dataclasses import dataclass
 
 from NGPIris import hcp
 
 from cellophane import cfg, data, modules
+
+class HCPSample(UserDict):
+    """Sample with HCP backup."""
+    backup: list[str]
+
+    def __init__(self, *args, backup: list[str] = [], **kwargs):
+        super().__init__(*args, backup=backup, **kwargs)
+
+class HCPSamples(data.Mixin, UserList, sample_mixin=HCPSample):
+    """Samples with HCP backup."""
+
+    pass
 
 
 def _fetch(
@@ -59,10 +73,10 @@ def _fetch_callback(
 ):
     if (exception := future.exception()) is not None:
         logger.error(f"Failed to fetch {local_path} from HCP ({exception})")
-        samples[s_idx].fastq_paths[f_idx] = None
+        samples[s_idx].files[f_idx] = None
     else:
         logger.debug(f"Fetched {local_path}")
-        samples[s_idx].fastq_paths[f_idx] = str(local_path)
+        samples[s_idx].files[f_idx] = str(local_path)
 
 
 @modules.pre_hook(label="HCP", priority=10)
@@ -76,18 +90,18 @@ def hcp_fetch(
     with ProcessPoolExecutor(config.iris.parallel) as pool:
         for s_idx, sample in enumerate(samples):
             if all(
-                fastq is not None and Path(fastq).exists()
-                for fastq in sample.fastq_paths
+                file is not None and Path(file).exists()
+                for file in sample.files
             ):
-                logger.debug(f"Files found for {sample.id} {sample.fastq_paths}")
+                logger.debug(f"Files found for {sample.id} {sample.files}")
 
-            elif "remote_keys" in sample.backup:
+            elif sample.backup:
                 logger.info(f"Fetching files for {sample.id} from HCP")
                 if "remote_keys" not in sample.backup:
                     logger.warning(f"Remote key not found for {sample.id}, will search")
-                    sample.backup.remote_keys = [None] * len(sample.fastq_paths)
+                    sample.backup.remote_keys = [None] * len(sample.files)
 
-                for f_idx, local_key in enumerate(sample.fastq_paths):
+                for f_idx, local_key in enumerate(sample.files):
                     remote_key: Optional[str] = sample.backup.remote_keys[f_idx]
                     _local_key = local_key or remote_key or f"{sample.id}_{f_idx}"
                     local_path = config.iris.fastq_temp / Path(_local_key).name
