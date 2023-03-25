@@ -389,7 +389,7 @@ def slims_samples(
                 _parse_criteria(config.slims.bioinfo.check_criteria),
                 connection=slims_connection,
                 derived_from=records,
-                content_type=config.slims.derived_bioinfo.content_type,
+                content_type=config.slims.bioinfo.content_type,
             )
             for sample in bioinfo.keys():
                 logger.info(
@@ -398,8 +398,7 @@ def slims_samples(
             records = [
                 record
                 for record in records
-                if config.slims.derived_bioinfo.ignore_existing
-                or record.pk() not in [b.pk() for b in bioinfo.keys()]
+                if record.pk() not in [b.pk() for b in bioinfo.keys()]
             ]
 
         slims_samples = samples.from_records(records, config)
