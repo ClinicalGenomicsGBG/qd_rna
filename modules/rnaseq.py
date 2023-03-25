@@ -16,7 +16,7 @@ def rnaseq(
     logger: LoggerAdapter,
     root: Path,
     outdir: Path,
-) -> data.Samples:
+) -> None:
     """Run nf-core/rnaseq."""
 
     if not config.rnaseq.skip:
@@ -80,5 +80,3 @@ def rnaseq(
                 dest_dir=Path(samples[0].id) / "multiqc",
             ),
         ]
-
-    return samples

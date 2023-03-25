@@ -64,7 +64,7 @@ def qlucore(
     logger: LoggerAdapter,
     root: Path,
     outdir: Path,
-) -> data.Samples:
+) -> None:
     """Run nf-core/rnaseq (Mapping for qlucore)."""
 
     if not config.qlucore.skip:
@@ -163,4 +163,3 @@ def qlucore(
                 ),
             ]
 
-    return samples

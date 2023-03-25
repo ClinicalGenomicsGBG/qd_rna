@@ -17,7 +17,7 @@ def rnafusion(
     logger: LoggerAdapter,
     root: Path,
     outdir: Path,
-) -> data.Samples:
+) -> None:
     """Run nf-core/rnafusion."""
 
     if not config.rnafusion.skip:
@@ -92,5 +92,3 @@ def rnafusion(
                     dest_dir = Path(sample.id) / "starfusion",
                 ),
             ]
-
-    return samples
