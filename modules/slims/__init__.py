@@ -452,7 +452,7 @@ def slims_bioinformatics(
     """Load novel samples from SLIMS."""
     if config.slims.dry_run:
         logger.debug("Dry run - Not adding bioinformatics")
-    elif config.slims.bioinfo.add:
+    elif config.slims.bioinfo.create:
         logger.info("Adding bioinformatics content")
         samples.add_bioinformatics(config)
         samples.set_bioinformatics_state("running", config)
