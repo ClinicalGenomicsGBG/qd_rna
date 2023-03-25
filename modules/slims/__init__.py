@@ -261,7 +261,7 @@ class SlimsSample:
                 config.slims.bioinfo.state_field: "novel",
             }
 
-            self.bioinformatics = self._connection.add("Content", *fields)
+            self.bioinformatics = self._connection.add("Content", fields)
 
     def set_bioinformatics_state(self, state, state_field):
         """Set the bioinformatics state"""
