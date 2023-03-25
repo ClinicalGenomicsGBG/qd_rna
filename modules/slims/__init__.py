@@ -208,9 +208,9 @@ def get_derived_records(
 
     criterion = is_one_of("cntn_fk_originalContent", [*original])
     records = get_records(
-        connection,
-        criterion,
         *args,
+        criterion,
+        connection=connection,
         content_type=content_type,
         **kwargs,
     )
@@ -223,7 +223,7 @@ def get_derived_records(
     return derived
 
 
-class SlimsSample(UserDict):
+class SlimsSample:
     """A sample container with SLIMS integration"""
 
     record: Optional[Record]
@@ -236,11 +236,9 @@ class SlimsSample(UserDict):
             id=record.cntn_id.value,
             bioinformatics=None,
             record=record,
-            files=_get_field(record, config.slims.files_field, []),
-            backup=_get_field(record, config.slims.backup_field, []),
             **{
                 key: _get_field(record, field)
-                for key, field in config.slims.extra_fields.items()
+                for key, field in config.slims.field.items()
             },
             **kwargs,
         )
@@ -300,7 +298,7 @@ class SlimsSample(UserDict):
         return super().__reduce__()
 
 
-class SlimsSamples(UserList, data.Mixin, sample_mixin=SlimsSample):
+class SlimsSamples(data.Mixin, sample_mixin=SlimsSample):
     """A list of sample containers with SLIMS integration"""
 
     @classmethod
@@ -356,12 +354,12 @@ def slims_samples(
                 connection=slims_connection,
                 slims_id=[s.id for s in samples],
             )
-        elif config.slims.get("ids", None):
+        elif config.slims.get("id", None):
             logger.debug("Fetching samples by ID")
             records = get_records(
                 _parse_criteria(config.slims.criteria),
                 connection=slims_connection,
-                slims_id=config.slims.ids,
+                slims_id=config.slims.id,
             )
         elif config.slims.criteria is not None:
             logger.debug(f"Fetching samples from the last {config.slims.novel_max_age}")
@@ -374,20 +372,20 @@ def slims_samples(
             logger.error("No way to fetch samples from SLIMS")
             return None
 
-        if config.slims.derived:
+        if config.slims.derived.samples:
             records = [
                 record
                 for original in get_derived_records(
-                    _parse_criteria(config.slims.derived_criteria),
+                    _parse_criteria(config.slims.derived.criteria),
                     connection=slims_connection,
                     derived_from=records,
                 ).values()
                 for record in original
             ]
 
-        if "derived_bioinfo" in config.slims:
+        if config.slims.bioinfo.check:
             bioinfo = get_derived_records(
-                _parse_criteria(config.slims.derived_criteria),
+                _parse_criteria(config.slims.bioinfo.criteria),
                 connection=slims_connection,
                 derived_from=records,
                 content_type=config.slims.derived_bioinfo.content_type,
@@ -404,27 +402,34 @@ def slims_samples(
                 or record.pk() not in [b.pk() for b in bioinfo.keys()]
             ]
 
-        slims_samples = samples.from_records(records)
+        slims_samples = samples.from_records(records, config)
 
         if samples:
-            for sample in samples:
-                _ss = [s for s in slims_samples if s.id == sample.id]
-                if len(_ss) > 1 and "pk" in sample:
-                    _ss = [s for s in _ss if s.pk == sample.pk]
-                elif len(_ss) > 1 and "run" in sample:
-                    _ss = [s for s in _ss if s.run == sample.run]
-                if len(_ss) > 1:
+            for idx, sample in enumerate(samples):
+                match = [m for m in slims_samples if m.id == sample.id]
+                common_keys = set([k for s in match for k in s]) & set(sample.keys()) - set(["files", "backup"])
+                for key in common_keys:
+                    _match = []
+                    for match_sample in match:
+                        if (
+                            (m_value := match_sample[key])
+                            and (s_value := sample[key])
+                            and s_value == m_value
+                        ):
+                            _match.append(match_sample)
+                    match = _match
+
+                if len(match) > 1:
                     logger.warning(f"Multiple SLIMS samples found for {sample.id}")
-                elif len(_ss) == 0:
+                elif len(match) == 0:
                     logger.warning(f"SLIMS sample not found for {sample.id}")
                 else:
-                    if sample.files == [None]:
+                    if sample.files == None:
                         sample.pop("files")
-                    _data = {**_ss[0]} | {**sample}
+                    _data = {**match[0]} | {**sample}
 
-                    sample = sample.__class__(
+                    samples[idx] = sample.__class__(
                         id=_data.pop("id"),
-                        record=_data.pop("record", None),
                         **deepcopy(_data),
                     )
             return samples
@@ -436,7 +441,7 @@ def slims_samples(
         return None
 
 
-@modules.pre_hook(label="SLIMS Add")
+@modules.pre_hook(label="SLIMS Add Bioinfo")
 def slims_bioinformatics(
     samples: data.Samples,
     config: cfg.Config,
@@ -454,10 +459,10 @@ def slims_bioinformatics(
         logger.debug("Samples not from SLIMS")
 
 
-@modules.post_hook(label="SLIMS Update")
+@modules.post_hook(label="SLIMS Update Bioinfo")
 def slims_update(
     config: cfg.Config,
-    samples: SlimsSamples,
+    samples: data.Samples,
     logger: LoggerAdapter,
     **_,
 ) -> None:

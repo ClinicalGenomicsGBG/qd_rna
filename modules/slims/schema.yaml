@@ -6,32 +6,27 @@ properties:
       - username
       - password
       - url
-      - files_field
+      - criteria
     properties:
       url:
         description: SLIMS URL
         type: string
-      
+
       username:
         description: SLIMS username
         type: string
-      
+
       password:
         description: SLIMS password
         type: string
         secret: true
-      
+
       criteria:
         description: SLIMS criteria for finding main records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
         type: string
-        default: ""
-      
-      files_field:
-        description: "SLIMS field(s) with file paths (Use json: prefix and dot notation for JSON fields)"
-        type: array
-      
-      extra_field:
-        description: "Mapping of extra field(s) (Use json: prefix and dot notation for JSON fields)"
+
+      field:
+        description: "Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields)"
         type: mapping
 
       derived:
@@ -41,51 +36,56 @@ properties:
             description: Sample records are derived from the main records
             default: false
             type: boolean
-      
-          samples_criteria:
+
+          criteria:
             description: SLIMS criteria for finding derived samples (see slims_criteria)
             type: string
+
+      bioinfo:
+        type: object
+        if: {properties: {check: {const: true}}}
+        then:
+          required:
+            - content_type
+            - state_field
+        properties:
+          content_type:
+            description: Content type PK for bioinformatics records
+            type: integer
+
+          criteria:
+            description: Criteria for finding bioinformatics records (see slims_criteria)
+            type: string
             default: ""
-      
-          bioinfo:
-            type: object
-            required:
-              - bioinfo_pk
-              - criteria
-              - state_field
-            properties:
-              content_type:
-                description: PK of content type for derived bioinformatics records
-                type: integer
-              
-              criteria:
-                description: Criteria for finding derived bioinformatics records (see slims_criteria)
-                type: string
-                default: ""
-              
-              state_field:
-                description: "Field with state of bioinformatics objects (Use json: prefix and dot notation for JSON fields)"
-                type: string
-              
-              create:
-                description: Create derived bioinformatics objects
-                default: true
-                type: boolean
+
+          state_field:
+            description: "Field with state of bioinformatics objects (Use json: prefix and dot notation for JSON fields)"
+            type: string
+
+          check:
+            description: Check state of existing bioinformatics records
+            type: boolean
+            default: false
+
+          create:
+            description: Create bioinformatics objects
+            default: true
+            type: boolean
 
       id:
         description: Manually select SLIMS Sample ID(s)
         type: array
-      
+
       allow_duplicates:
         description: Allow duplicate samples (eg. if a pre-hook can handle this)
         default: false
         type: boolean
-      
+
       dry_run:
         description: Do not create SLIMS bioinformatics objects
         default: false
         type: boolean
-      
+
       novel_max_age:
         description: Maximum age of novel samples (eg. "7 days", "1 month", "1 year")
         default: 1 year
