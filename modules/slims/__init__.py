@@ -391,9 +391,9 @@ def slims_samples(
                 derived_from=records,
                 content_type=config.slims.bioinfo.content_type,
             )
-            for sample in bioinfo.keys():
+            for record in bioinfo.keys():
                 logger.info(
-                    f"Skipping {sample.id} as it already has completed bioinformatics"
+                    f"Skipping {record.cntn_id.value} with completed bioinformatics"
                 )
             records = [
                 record
