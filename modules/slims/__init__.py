@@ -142,6 +142,7 @@ def _get_field(record: Record, field: str, default=None) -> Any:
     except KeyError:
         return default
 
+
 def get_records(
     *args: Criterion,
     connection: Slims,
@@ -245,23 +246,22 @@ class SlimsSample:
 
     def add_bioinformatics(
         self,
-        content_type: int,
-        state_field: str,
-        additional: dict = {},
+        config: cfg.Config,
     ):
         """Add a bioinformatics record to the sample"""
 
         if self.bioinformatics is None and self._connection is not None:
-            self.bioinformatics = self._connection.add(
-                "Content",
-                {
-                    "cntn_id": self.record.cntn_id.value,
-                    "cntn_fk_contentType": content_type,
-                    "cntn_fk_originalContent": self.record.pk(),
-                    state_field: "novel",
-                }
-                | additional,
-            )
+            fields = {
+                "cntn_id": self.record.cntn_id.value,
+                "cntn_fk_contentType": config.slims.bioinfo.content_type,
+                "cntn_status": 10,  # Pending
+                "cntn_fk_location": 83,  # FIXME: Should location be configuarable?
+                "cntn_fk_originalContent": self.record.pk(),
+                "cntn_fk_user": "",  # FIXME: Should user be configuarable?
+                config.slims.bioinfo.state_field: "novel",
+            }
+
+            self.bioinformatics = self._connection.add("Content", *fields)
 
     def set_bioinformatics_state(self, state, state_field):
         """Set the bioinformatics state"""
@@ -316,17 +316,17 @@ class SlimsSamples(data.Mixin, sample_mixin=SlimsSample):
             ]
         )
 
-    def add_bioinformatics(self, analysis: int) -> None:
+    def add_bioinformatics(self, config: cfg.Config) -> None:
         """Add bioinformatics content to SLIMS samples"""
         for sample in self:
-            sample.add_bioinformatics(analysis)
+            sample.add_bioinformatics(config)
 
-    def set_bioinformatics_state(self, state: str) -> None:
+    def set_bioinformatics_state(self, state: str, config: cfg.Config) -> None:
         """Update bioinformatics state in SLIMS"""
         match state:
             case "running" | "complete" | "error":
                 for sample in self:
-                    sample.set_bioinformatics_state(state)
+                    sample.set_bioinformatics_state(state, config)
             case _:
                 raise ValueError(f"Invalid state: {state}")
 
@@ -407,7 +407,8 @@ def slims_samples(
         if samples:
             for idx, sample in enumerate(samples):
                 match = [m for m in slims_samples if m.id == sample.id]
-                common_keys = set([k for s in match for k in s]) & set(sample.keys()) - set(["files", "backup"])
+                common_keys = set([k for s in match for k in s]) & set(sample.keys())
+                common_keys -= set(["files", "backup"])
                 for key in common_keys:
                     _match = []
                     for match_sample in match:
@@ -451,12 +452,11 @@ def slims_bioinformatics(
     """Load novel samples from SLIMS."""
     if config.slims.dry_run:
         logger.debug("Dry run - Not adding bioinformatics")
-    elif isinstance(samples, SlimsSamples):
+    elif config.slims.bioinfo.add:
         logger.info("Adding bioinformatics content")
-        samples.add_bioinformatics(config.slims.analysis_pk)
-        samples.set_bioinformatics_state("running")
-    else:
-        logger.debug("Samples not from SLIMS")
+        samples.add_bioinformatics(config)
+        samples.set_bioinformatics_state("running", config)
+    return samples
 
 
 @modules.post_hook(label="SLIMS Update Bioinfo")
@@ -472,13 +472,14 @@ def slims_update(
         logger.info("Dry run - Not updating SLIMS")
     elif isinstance(samples, SlimsSamples):
         logger.info("Updating bioinformatics")
-        pks = {s.record.pk() for s in samples if s.record.pk() is not None}
-        collect = {pk: [*filter(lambda s: s.record.pk() == pk, samples)] for pk in pks}
-
-        for pk_samples in collect.values():
-            if all(s.complete for s in pk_samples):
-                pk_samples[0].set_bioinformatics_state("complete")
+        unique = {
+            pk: [s for s in samples if s.record.pk() == pk]
+            for pk in set(s.record.pk() for s in samples)
+        }
+        for _samples in unique.values():
+            if all(s.complete for s in _samples):
+                _samples[0].set_bioinformatics_state("complete", config)
             else:
-                pk_samples[0].set_bioinformatics_state("error")
+                _samples[0].set_bioinformatics_state("error", config)
     else:
         logger.info("No SLIMS samples to update")
