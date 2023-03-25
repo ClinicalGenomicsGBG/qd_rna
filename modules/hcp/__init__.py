@@ -6,21 +6,19 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 from typing import Optional
-from collections import UserDict, UserList
-from dataclasses import dataclass
 
 from NGPIris import hcp
 
 from cellophane import cfg, data, modules
 
-class HCPSample(UserDict):
+class HCPSample:
     """Sample with HCP backup."""
     backup: list[str]
 
     def __init__(self, *args, backup: list[str] = [], **kwargs):
         super().__init__(*args, backup=backup, **kwargs)
 
-class HCPSamples(data.Mixin, UserList, sample_mixin=HCPSample):
+class HCPSamples(data.Mixin, sample_mixin=HCPSample):
     """Samples with HCP backup."""
 
     pass
