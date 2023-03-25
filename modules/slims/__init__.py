@@ -263,14 +263,14 @@ class SlimsSample:
 
             self.bioinformatics = self._connection.add("Content", fields)
 
-    def set_bioinformatics_state(self, state, state_field):
+    def set_bioinformatics_state(self, state, config: cfg.Config):
         """Set the bioinformatics state"""
 
         match state:
             case "running" | "complete" | "error":
                 if self.bioinformatics is not None:
                     self.bioinformatics = self.bioinformatics.update(
-                        {state_field: state}
+                        {config.slims.bioinfo.state_field: state}
                     )
             case _:
                 raise ValueError(f"Invalid state: {state}")
