@@ -43,7 +43,10 @@ properties:
 
       bioinfo:
         type: object
-        if: {properties: {check: {const: true}}}
+        if:
+          anyOf:
+            - properties: {check: {const: true}}
+            - properties: {create: {const: true}}
         then:
           required:
             - content_type
