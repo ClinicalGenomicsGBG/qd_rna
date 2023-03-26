@@ -182,6 +182,8 @@ def get_records(
             raise TypeError(f"Expected int(s), got {type(content_type)}")
 
     match derived_from:
+        case None:
+            pass
         case record if isinstance(record, Record):
             original = {record.pk(): record}
             criteria = criteria.add(is_one_of("cntn_fk_originalContent", [*original]))
@@ -358,6 +360,7 @@ def slims_samples(
 
 
         if config.slims.bioinfo.check:
+            logger.debug("Checking for completed bioinformatics")
             bioinfo = get_records(
                 _parse_criteria(config.slims.bioinfo.check_criteria),
                 connection=slims_connection,
