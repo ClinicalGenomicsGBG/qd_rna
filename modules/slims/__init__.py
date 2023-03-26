@@ -378,8 +378,8 @@ def slims_samples(
                 ]
             ]
             
-            for sample_id in set([r.cntn_id.value for r in bioinfo]) - set(original_ids):
-                logger.info(f"Found completed bioinformatics for {sample_id}")
+            for sid in set(original_ids) - set([r.cntn_id.value for r in records]):
+                logger.info(f"Found completed bioinformatics for {sid}")
 
         slims_samples = samples.from_records(records, config)
  
