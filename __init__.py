@@ -325,7 +325,7 @@ def slims_samples(
             password=config.slims.password,
         )
         
-        if config.slims.derived_from:
+        if "derived_from" in config.slims:
             logger.debug("Fetching derived from records")
             parent_records = get_records(
                 _parse_criteria(config.slims.derived_from.criteria),
@@ -339,7 +339,7 @@ def slims_samples(
             logger.debug("Augmenting existing samples")
             samples_kwargs = {"slms_id": [s.id for s in samples]}
 
-        elif config.slims.get("id", None):
+        if "id" in config.slims:
             logger.debug("Fetching samples by ID")
             samples_kwargs = {"slms_id": config.slims.id}
 
