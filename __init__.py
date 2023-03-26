@@ -339,11 +339,11 @@ def slims_samples(
 
         if samples:
             logger.debug("Augmenting existing samples")
-            samples_kwargs = {"slms_id": [s.id for s in samples]}
+            samples_kwargs = {"slims_id": [s.id for s in samples]}
 
         if "id" in config.slims:
             logger.debug("Fetching samples by ID")
-            samples_kwargs = {"slms_id": config.slims.id}
+            samples_kwargs = {"slims_id": config.slims.id}
 
         else:
             logger.debug(f"Fetching samples from the last {config.slims.novel_max_age}")
