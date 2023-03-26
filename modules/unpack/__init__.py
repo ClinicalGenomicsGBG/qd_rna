@@ -103,7 +103,7 @@ def petagene_extract(
                         sample.files[f_idx] = extract_path
                         continue
                     else:
-                        logger.debug(f"Extracting {compressed_path} to {extract_path}")
+                        logger.info(f"Extracting {compressed_path}")
                         pool.submit(
                             _extract,
                             method,
