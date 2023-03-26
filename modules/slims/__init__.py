@@ -219,7 +219,7 @@ class SlimsSample:
             record=record,
             **{
                 key: _get_field(record, field)
-                for key, field in config.slims.field.items()
+                for key, field in config.slims.map_field.items()
             },
             **kwargs,
         )
