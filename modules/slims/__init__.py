@@ -149,6 +149,7 @@ def get_records(
     slims_id: Optional[str | list[str]] = None,
     max_age: Optional[int | str] = None,
     content_type: Optional[int | list[int]] = None,
+    derived_from: Optional[str | list[str]] = None,
     **kwargs: str | int | list[str | int],
 ) -> list[Record]:
     """Get records from SLIMS"""
@@ -180,6 +181,16 @@ def get_records(
         case _:
             raise TypeError(f"Expected int(s), got {type(content_type)}")
 
+    match derived_from:
+        case record if isinstance(record, Record):
+            original = {record.pk(): record}
+            criteria = criteria.add(is_one_of("cntn_fk_originalContent", [*original]))
+        case [*records] if all(isinstance(r, Record) for r in records):
+            original = {r.pk(): r for r in records}
+            criteria = criteria.add(is_one_of("cntn_fk_originalContent", [*original]))
+        case _:
+            raise TypeError(f"Expected Record(s), got {derived_from}")
+
     for key, value in kwargs.items():
         criteria = criteria.add(
             is_one_of(key, [value] if isinstance(value, int | str) else value)
@@ -189,39 +200,6 @@ def get_records(
         criteria = criteria.add(arg)
 
     return connection.fetch("Content", criteria)
-
-
-def get_derived_records(
-    *args,
-    connection: Slims,
-    derived_from: Record | list[Record],
-    content_type: Optional[int | list[int]] = None,
-    **kwargs,
-) -> dict[Record, list[Record]]:
-    """Get derived records from SLIMS"""
-    match derived_from:
-        case record if isinstance(record, Record):
-            original = {record.pk(): record}
-        case [*records] if all(isinstance(r, Record) for r in records):
-            original = {r.pk(): r for r in records}
-        case _:
-            raise TypeError(f"Expected Record(s), got {derived_from}")
-
-    criterion = is_one_of("cntn_fk_originalContent", [*original])
-    records = get_records(
-        *args,
-        criterion,
-        connection=connection,
-        content_type=content_type,
-        **kwargs,
-    )
-
-    derived = {
-        o: [r for r in records if r.cntn_cstm_originalContent.value == pk]
-        for pk, o in original.items()
-    }
-
-    return derived
 
 
 class SlimsSample:
@@ -346,60 +324,57 @@ def slims_samples(
             username=config.slims.username,
             password=config.slims.password,
         )
+        
+        if config.slims.derived_from:
+            logger.debug("Fetching derived from records")
+            parent_records = get_records(
+                _parse_criteria(config.slims.derived_from.criteria),
+                content_type=config.slims.derived_from.content_type,
+                connection=slims_connection,
+            )
+            samples_kwargs = {"derived_from": parent_records}
+
 
         if samples:
             logger.debug("Augmenting existing samples")
-            records = get_records(
-                _parse_criteria(config.slims.criteria),
-                content_type=config.slims.content_type,
-                connection=slims_connection,
-                slims_id=[s.id for s in samples],
-            )
+            samples_kwargs = {"slms_id": [s.id for s in samples]}
+
         elif config.slims.get("id", None):
             logger.debug("Fetching samples by ID")
-            records = get_records(
-                _parse_criteria(config.slims.criteria),
-                content_type=config.slims.content_type,
-                connection=slims_connection,
-                slims_id=config.slims.id,
-            )
+            samples_kwargs = {"slms_id": config.slims.id}
+
         else:
             logger.debug(f"Fetching samples from the last {config.slims.novel_max_age}")
-            records = get_records(
-                _parse_criteria(config.slims.criteria),
-                content_type=config.slims.content_type,
-                connection=slims_connection,
-                max_age=config.slims.novel_max_age,
-            )
+            samples_kwargs = {"max_age": config.slims.novel_max_age}
 
-        if config.slims.derived.samples:
-            records = [
-                record
-                for original in get_derived_records(
-                    _parse_criteria(config.slims.derived.criteria),
-                    content_type=config.slims.derived.content_type,
-                    connection=slims_connection,
-                    derived_from=records,
-                ).values()
-                for record in original
-            ]
+
+        logger.debug(f"Fetching samples with {samples_kwargs}")
+        records = get_records(
+            _parse_criteria(config.slims.criteria),
+            content_type=config.slims.content_type,
+            connection=slims_connection,
+            **samples_kwargs,
+        )
+
 
         if config.slims.bioinfo.check:
-            bioinfo = get_derived_records(
+            bioinfo = get_records(
                 _parse_criteria(config.slims.bioinfo.check_criteria),
                 connection=slims_connection,
                 derived_from=records,
                 content_type=config.slims.bioinfo.content_type,
             )
-            for record in bioinfo.keys():
-                logger.info(
-                    f"Skipping {record.cntn_id.value} with completed bioinformatics"
-                )
+
             records = [
                 record
                 for record in records
-                if record.pk() not in [b.pk() for b in bioinfo.keys()]
+                if record.pk() not in [
+                    b.cntn_fk_originalContent.value
+                    for b in bioinfo
+                ]
             ]
+            
+            logger.debug(f"skipping {len(bioinfo)} samples with complete bioinformatics")
 
         slims_samples = samples.from_records(records, config)
 
