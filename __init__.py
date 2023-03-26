@@ -378,7 +378,7 @@ def slims_samples(
                 ]
             ]
             
-            for sample_id in set([r.cntn_id for r in bioinfo]) - set(original_ids):
+            for sample_id in set([r.cntn_id.value for r in bioinfo]) - set(original_ids):
                 logger.info(f"Found completed bioinformatics for {sample_id}")
 
         slims_samples = samples.from_records(records, config)
@@ -431,7 +431,7 @@ def slims_bioinformatics(
     """Load novel samples from SLIMS."""
     if config.slims.dry_run:
         logger.debug("Dry run - Not adding bioinformatics")
-    elif config.slims.bioinfo.create:
+    elif config.slims.bioinfo.create and samples:
         logger.info("Creating bioinformatics records")
         samples.add_bioinformatics(config)
         samples.set_bioinformatics_state("running", config)
