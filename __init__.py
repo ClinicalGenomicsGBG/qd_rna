@@ -328,7 +328,7 @@ def slims_samples(
         )
         
         if "derived_from" in config.slims:
-            logger.debug("Fetching derived from records")
+            logger.info("Fetching derived from records")
             parent_records = get_records(
                 _parse_criteria(config.slims.derived_from.criteria),
                 content_type=config.slims.derived_from.content_type,
@@ -338,15 +338,15 @@ def slims_samples(
 
 
         if samples:
-            logger.debug("Augmenting existing samples")
+            logger.info("Augmenting existing samples with info from SLIMS")
             samples_kwargs = {"slims_id": [s.id for s in samples]}
 
         if "id" in config.slims:
-            logger.debug("Fetching samples by ID")
+            logger.info("Fetching samples from SLIMS by ID")
             samples_kwargs = {"slims_id": config.slims.id}
 
         else:
-            logger.debug(f"Fetching samples from the last {config.slims.novel_max_age}")
+            logger.info(f"Fetching samples from the last {config.slims.novel_max_age}")
             samples_kwargs = {"max_age": config.slims.novel_max_age}
 
 
@@ -360,7 +360,7 @@ def slims_samples(
 
 
         if config.slims.bioinfo.check:
-            logger.debug("Checking for completed bioinformatics")
+            logger.info("Checking SLIMS for completed bioinformatics")
             bioinfo = get_records(
                 _parse_criteria(config.slims.bioinfo.check_criteria),
                 connection=slims_connection,
@@ -378,7 +378,7 @@ def slims_samples(
             ]
             
             for sample_id in set([r.cntn_fk_originalContent.value for r in bioinfo]):
-                logger.debug(f"Found existing bioinformatics for {sample_id}")
+                logger.info(f"Found completed bioinformatics for {sample_id}")
 
         slims_samples = samples.from_records(records, config)
 
@@ -431,7 +431,7 @@ def slims_bioinformatics(
     if config.slims.dry_run:
         logger.debug("Dry run - Not adding bioinformatics")
     elif config.slims.bioinfo.create:
-        logger.info("Adding bioinformatics content")
+        logger.info("Creating bioinformatics records")
         samples.add_bioinformatics(config)
         samples.set_bioinformatics_state("running", config)
     return samples
@@ -449,15 +449,16 @@ def slims_update(
     if config.slims.dry_run:
         logger.info("Dry run - Not updating SLIMS")
     elif isinstance(samples, SlimsSamples):
-        logger.info("Updating bioinformatics")
         unique = {
             pk: [s for s in samples if s.record.pk() == pk]
             for pk in set(s.record.pk() for s in samples)
         }
         for _samples in unique.values():
             if all(s.complete for s in _samples):
+                logger.info(f"Marking {len(_samples)} samples as complete")
                 _samples[0].set_bioinformatics_state("complete", config)
             else:
+                logger.warning(f"Marking {len(_samples)} samples as failed")
                 _samples[0].set_bioinformatics_state("error", config)
     else:
         logger.info("No SLIMS samples to update")
