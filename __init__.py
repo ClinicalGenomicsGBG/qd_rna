@@ -377,7 +377,8 @@ def slims_samples(
                 ]
             ]
             
-            logger.debug(f"skipping {len(bioinfo)} samples with complete bioinformatics")
+            for sample_id in set([r.cntn_fk_originalContent.value for r in bioinfo]):
+                logger.debug(f"Found existing bioinformatics for {sample_id}")
 
         slims_samples = samples.from_records(records, config)
 
