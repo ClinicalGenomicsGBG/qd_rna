@@ -89,7 +89,7 @@ def hcp_fetch(
         for s_idx, sample in enumerate(samples):
             if all(
                 file is not None and Path(file).exists()
-                for file in sample.files
+                for file in sample.files or []
             ):
                 logger.debug(f"Files found for {sample.id} {sample.files}")
 
