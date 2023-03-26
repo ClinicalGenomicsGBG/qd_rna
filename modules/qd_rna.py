@@ -48,7 +48,7 @@ def set_sample_id(
     return samples
 
 
-@modules.post_hook(label="Results")
+@modules.post_hook(label="Results", condition="complete")
 def copy_results(
     samples: data.Samples,
     logger: LoggerAdapter,
@@ -62,6 +62,10 @@ def copy_results(
         if [*dest_dir.glob("*")] and not config.results.overwrite:
             logger.error(f"Output directory {dest_dir} not empty")
             return
+
+    for output in outputs:
+        if not output.src:
+            logger.warning(f"No output for {output.dest_dir}")
 
     for dest_dir, dest_name, src in [
         (config.results.base / o.dest_dir, o.dest_name, s)
