@@ -23,38 +23,29 @@ properties:
         secret: true
       
       content_type:
-        description: Content type PK for main records
+        description: Content type PK for sample records
         type: integer
 
       criteria:
-        description: SLIMS criteria for finding main records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
+        description: SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
         type: string
 
-      field:
+      map_field:
         description: "Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields)"
         type: mapping
 
-      derived:
+      derived_from:
         type: object
-        if:
-          properties: {samples: {const: true}}
-        then:
-          required:
-            - content_type
-            - criteria
-        properties:
-          samples:
-            description: Sample records are derived from the main records
-            default: false
-            type: boolean
+        required:
+          - content_type
+          - criteria
+        criteria:
+          description: SLIMS criteria for finding parent samples (see slims_criteria)
+          type: string
+        content_type:
+          description: Content type PK for parent records
+          type: integer
 
-          content_type:
-            description: Content type PK for derived records
-            type: integer
-
-          criteria:
-            description: SLIMS criteria for finding derived samples (see slims_criteria)
-            type: string
 
       bioinfo:
         type: object
@@ -93,7 +84,7 @@ properties:
             default: false
 
           check_criteria:
-            description: Criteria for completed bioinformatics records (see slims_criteria)
+            description: Criteria for checking completed bioinformatics (see slims_criteria)
             type: string
             default: ""
 
