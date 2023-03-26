@@ -368,6 +368,7 @@ def slims_samples(
                 content_type=config.slims.bioinfo.content_type,
             )
 
+            original_ids = [r.cntn_id.value for r in records]
             records = [
                 record
                 for record in records
@@ -377,11 +378,11 @@ def slims_samples(
                 ]
             ]
             
-            for sample_id in set([r.cntn_fk_originalContent.value for r in bioinfo]):
+            for sample_id in set([r.cntn_id for r in bioinfo]) - set(original_ids):
                 logger.info(f"Found completed bioinformatics for {sample_id}")
 
         slims_samples = samples.from_records(records, config)
-
+ 
         if samples:
             for idx, sample in enumerate(samples):
                 match = [m for m in slims_samples if m.id == sample.id]
@@ -455,10 +456,10 @@ def slims_update(
         }
         for _samples in unique.values():
             if all(s.complete for s in _samples):
-                logger.info(f"Marking {len(_samples)} samples as complete")
+                logger.info(f"Marking {len(unique)} samples as complete")
                 _samples[0].set_bioinformatics_state("complete", config)
             else:
-                logger.warning(f"Marking {len(_samples)} samples as failed")
+                logger.warning(f"Marking {len(unique)} samples as failed")
                 _samples[0].set_bioinformatics_state("error", config)
     else:
         logger.info("No SLIMS samples to update")
