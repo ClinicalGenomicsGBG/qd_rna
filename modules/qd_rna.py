@@ -24,8 +24,7 @@ class Output:
 
 class QDRNASample:
     """QD-RNA sample class."""
-
-    output: list[Output] = []
+    output: list[Output]
 
 
 class QDRNASamples(data.Mixin, sample_mixin=QDRNASample):
