@@ -254,7 +254,7 @@ class SlimsSample:
 
         match state:
             case "running" | "complete" | "error":
-                if self.bioinformatics is not None:
+                if "bioinformatics" in self and self.bioinformatics is not None:
                     self.bioinformatics = self.bioinformatics.update(
                         {config.slims.bioinfo.state_field: state}
                     )
