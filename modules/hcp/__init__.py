@@ -95,12 +95,12 @@ def hcp_fetch(
 
             elif sample.backup:
                 logger.info(f"Fetching files for {sample.id} from HCP")
-                if "remote_keys" not in sample.backup:
+                if "backup" not in sample:
                     logger.warning(f"Remote key not found for {sample.id}, will search")
-                    sample.backup.remote_keys = [None] * len(sample.files)
+                    sample.backup = [None] * len(sample.files)
 
                 for f_idx, local_key in enumerate(sample.files):
-                    remote_key: Optional[str] = sample.backup.remote_keys[f_idx]
+                    remote_key: Optional[str] = sample.backup[f_idx]
                     _local_key = local_key or remote_key or f"{sample.id}_{f_idx}"
                     local_path = config.iris.fastq_temp / Path(_local_key).name
 
