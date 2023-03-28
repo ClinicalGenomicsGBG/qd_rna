@@ -91,8 +91,10 @@ def _parse_criteria(criteria: str) -> Criterion:
             return equals(field, value)
         case [field, "not_equals", value]:
             return is_not(equals(field, value))
-        case [field, "is_one_of", *values]:
+        case [field, "one_of", *values]:
             return is_one_of(field, values)
+        case [field, "not_one_of", *values]:
+            return is_not(is_one_of(field, values))
 
         case [field, "equals_ignore_case", value]:
             return equals_ignore_case(field, value)
@@ -230,7 +232,11 @@ class SlimsSample:
     ):
         """Add a bioinformatics record to the sample"""
 
-        if self.bioinformatics is None and self._connection is not None:
+        if (
+            "bioinformatics" in self
+            and self.bioinformatics is None
+            and self._connection is not None
+        ):
             fields = {
                 "cntn_id": self.record.cntn_id.value,
                 "cntn_fk_contentType": config.slims.bioinfo.content_type,
@@ -326,7 +332,7 @@ def slims_samples(
             username=config.slims.username,
             password=config.slims.password,
         )
-        
+
         if "derived_from" in config.slims:
             logger.info("Fetching derived from records")
             parent_records = get_records(
@@ -336,19 +342,17 @@ def slims_samples(
             )
             samples_kwargs = {"derived_from": parent_records}
 
-
         if samples:
             logger.info("Augmenting existing samples with info from SLIMS")
             samples_kwargs = {"slims_id": [s.id for s in samples]}
 
-        if "id" in config.slims:
+        elif "id" in config.slims:
             logger.info("Fetching samples from SLIMS by ID")
             samples_kwargs = {"slims_id": config.slims.id}
 
         else:
             logger.info(f"Fetching samples from the last {config.slims.novel_max_age}")
             samples_kwargs = {"max_age": config.slims.novel_max_age}
-
 
         logger.debug(f"Fetching samples with {samples_kwargs}")
         records = get_records(
@@ -357,7 +361,6 @@ def slims_samples(
             connection=slims_connection,
             **samples_kwargs,
         )
-
 
         if config.slims.bioinfo.check:
             logger.info("Checking SLIMS for completed bioinformatics")
@@ -372,22 +375,19 @@ def slims_samples(
             records = [
                 record
                 for record in records
-                if record.pk() not in [
-                    b.cntn_fk_originalContent.value
-                    for b in bioinfo
-                ]
+                if record.pk() not in [b.cntn_fk_originalContent.value for b in bioinfo]
             ]
-            
+
             for sid in set(original_ids) - set([r.cntn_id.value for r in records]):
                 logger.info(f"Found completed bioinformatics for {sid}")
 
         slims_samples = samples.from_records(records, config)
- 
+
         if samples:
             for idx, sample in enumerate(samples):
                 match = [m for m in slims_samples if m.id == sample.id]
                 common_keys = set([k for s in match for k in s]) & set(sample.keys())
-                common_keys -= set(["files", "backup"])
+                common_keys -= set(["files", "backup", "complete"])
                 for key in common_keys:
                     _match = []
                     for match_sample in match:
