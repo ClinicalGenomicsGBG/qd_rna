@@ -20,4 +20,3 @@ properties:
     required:
       - sge_queue
       - sge_pe
-      - sge_slots
