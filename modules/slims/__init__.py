@@ -387,7 +387,7 @@ def slims_samples(
             for idx, sample in enumerate(samples):
                 match = [m for m in slims_samples if m.id == sample.id]
                 common_keys = set([k for s in match for k in s]) & set(sample.keys())
-                common_keys -= set(["files", "backup"])
+                common_keys -= set(["files", "backup", "complete"])
                 for key in common_keys:
                     _match = []
                     for match_sample in match:
