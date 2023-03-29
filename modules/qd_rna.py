@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from shutil import copy
+from shutil import copy, copytree
 from cellophane import modules, data, cfg
 from logging import LoggerAdapter
 from typing import Iterable, Optional
@@ -75,6 +75,9 @@ def copy_results(
             dest_dir.mkdir(parents=True, exist_ok=True)
             dest = dest_dir / (dest_name or src.name)
             logger.debug(f"Copying {src} to {dest}")
-            copy(src, dest)
+            if Path(src).is_dir():
+                copytree(src, dest)
+            else:
+                copy(src, dest)
         except Exception as e:
             logger.warning(f"Failed to copy {src}: {e}")
