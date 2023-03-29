@@ -382,7 +382,7 @@ def slims_samples(
         if config.slims.bioinfo.check:
             logger.info("Checking SLIMS for completed bioinformatics")
             bioinfo = get_records(
-                _parse_criteria(config.slims.bioinfo.check_criteria),
+                _parse_criteria(config.slims.bioinfo.check_criteria)[0],
                 connection=slims_connection,
                 derived_from=records,
                 content_type=config.slims.bioinfo.content_type,
