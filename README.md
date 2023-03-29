@@ -18,9 +18,6 @@ Option                            | Type      | Required | Default | Description
 `slims.content_type`              | int       | x        |         | Content type PK for sample records
 `slims.criteria`                  | str       | x        |         | SLIMS criteria for finding records (see [Criteria](#Criteria))
 `slims.map_field`                 | list[str] |          |         | Mapping of keys to SLIMS field(s) (see [Fields](#Fields)/[Mappings](#Mappings))
-`slims.derived_from.criteria`     | str       |          |         | SLIMS criteria for finding parent samples (see [Criteria](#Criteria))
-`slims.derived_from.content_type` | int       |          |         | Content type PK for parent records
-`slims.bioinfo.content_type`      | int       |          |         | Content type PK for bioinformatics records
 `slims.bioinfo.state_field`       | str       |          |         | Field with state of bioinformatics objects (see [Fields](#Fields))
 `slims.bioinfo.create`            | bool      |          | false   | Create bioinformatics objects
 `slims.bioinfo.check`             | bool      |          | false   | Check state of existing bioinformatics records
@@ -92,7 +89,9 @@ The following operators are supported:
 
 Complex boolean criteria can be constructed using `and`/`or` and parentheses.
 
-eg. `cntn_cstm_foo equals a or (cntn_cstm_foo equals b and cntn_cstm_bar not_between_inclusive c d)`
+To find derived records, the "->" operator can be used between two criteria. This will find all records that match the first criteria and then find all records that match the second criteria and are derived from the first (and so on). This operator can not be used inside parentheses. When finding sample records by id or from exisitng samples, these will be added to the final criteria (i.e. the most derived records).
+
+eg. `cntn_cstm_foo equals a -> cntn_cstm_foo equals b and (cntn_cstm_bar not_between_inclusive c d or cntn_cstm_baz equals e)`
 
 ## Fields
 
