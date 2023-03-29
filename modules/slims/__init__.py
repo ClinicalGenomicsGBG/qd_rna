@@ -1,11 +1,11 @@
 """Module for getting samples from SLIMS"""
 
 from copy import deepcopy
-from functools import cached_property, reduce
+from functools import cached_property, reduce, singledispatch
 from json import loads
 from logging import LoggerAdapter
 from time import time
-from typing import Optional, Any
+from typing import Any
 from collections import UserList, UserDict
 import re
 
@@ -30,101 +30,112 @@ from slims.slims import Record, Slims
 from cellophane import cfg, data, modules
 
 
-def _parse_bool(string: str) -> list[str]:
+def _split_criteria(criteria: str) -> list[str]:
     """
     Split string on "and"/"or" but not within parentheses
 
     >>> _parse_bool("a is x and (b is y or c is d) or g is h")
     ['a is x', 'and', 'b is y or c is d', 'or', 'g is h']
     """
-    string = " ".join(string.split())
+
+    _criteria = " ".join(criteria.split())
     parts: list[str] = []
     part = ""
     depth = 0
-    while string:
-        if string[0] == "(":
+    while _criteria:
+        if _criteria[0] == "(":
             if depth > 0:
-                part += string[0]
+                part += "("
             depth += 1
-        elif string[0] == ")":
+        elif _criteria[0] == ")":
             if depth > 1:
-                part += string[0]
+                part += ")"
             depth -= 1
-        elif string[1:4] == "and" and depth == 0:
-            parts.append(part)
-            parts.append("and")
-            string = string[4:]
-            part = ""
-        elif string[1:3] == "or" and depth == 0:
-            parts.append(part)
-            parts.append("or")
-            string = string[3:]
-            part = ""
+            parts += part,
+        elif _criteria[1:4] == "and" and depth == 0:
+            parts += part, "and"
+            _criteria, part = _criteria[4:], ""
+        elif _criteria[1:3] == "or" and depth == 0:
+            parts += part, "or"
+            _criteria, part = _criteria[3:], ""
         else:
-            part += string[0]
-            if len(string) == 1:
+            part += _criteria[0]
+            if len(_criteria) == 1:
                 parts.append(part)
-        string = string[1:]
+        _criteria = _criteria[1:]
+
+    if depth != 0:
+        raise ValueError(f"Unmatched parentheses: {criteria}")
 
     while len(parts) == 1 and any(w in parts[0] for w in [" and ", " or ", "(", ")"]):
-        parts = _parse_bool(parts[0])
+        parts = _split_criteria(parts[0])
 
     return parts
 
 
-def _parse_criteria(criteria: str) -> Criterion:
+def _parse_criteria(criteria: str | list[str]) -> list[Criterion]:
     """Parse criteria"""
 
-    _criteria = _parse_bool(criteria)
-    if len(_criteria) == 1:
-        _criteria = _criteria[0].split(" ")
+    print("Parsing criteria:", criteria)
 
-    match _criteria:
-        case [a, "and", b]:
-            return conjunction().add(_parse_criteria(a)).add(_parse_criteria(b))
-        case [a, "or", b]:
-            return disjunction().add(_parse_criteria(a)).add(_parse_criteria(b))
+    match criteria:
+        case str(criteria) if "->" in criteria:
+            return [_parse_criteria(c)[0] for c in criteria.split("->")]
+        case str(criteria):
+            return _parse_criteria(_split_criteria(criteria))
+
+        case [criterion]:
+            criteria = _split_criteria(criterion)
+            if len(criteria) == 1:
+                return _parse_criteria(criteria[0].split(" "))
+            else:
+                return _parse_criteria(criteria)
+
+        case [a, "and", *b]:
+            return [conjunction().add(_parse_criteria(a)[0]).add(_parse_criteria(b)[0])]
+        case [a, "or", *b]:
+            return [disjunction().add(_parse_criteria(a)[0]).add(_parse_criteria(b)[0])]
         case [field, *_] if not field.startswith("cntn_"):
             raise ValueError(f"Invalid field: {field}")
 
         case [field, "equals", value]:
-            return equals(field, value)
+            return [equals(field, value)]
         case [field, "not_equals", value]:
-            return is_not(equals(field, value))
+            return [is_not(equals(field, value))]
         case [field, "one_of", *values]:
-            return is_one_of(field, values)
+            return [is_one_of(field, values)]
         case [field, "not_one_of", *values]:
-            return is_not(is_one_of(field, values))
+            return [is_not(is_one_of(field, values))]
 
         case [field, "equals_ignore_case", value]:
-            return equals_ignore_case(field, value)
+            return [equals_ignore_case(field, value)]
         case [field, "not_equals_ignore_case ", value]:
-            return is_not(equals_ignore_case(field, value))
+            return [is_not(equals_ignore_case(field, value))]
 
         case [field, "contains", value]:
-            return contains(field, value)
+            return [contains(field, value)]
         case [field, "not_contains ", value]:
-            return is_not(contains(field, value))
+            return [is_not(contains(field, value))]
 
         case [field, "starts_with", value]:
-            return starts_with(field, value)
+            return [starts_with(field, value)]
         case [field, "not_starts_with", value]:
-            return is_not(starts_with(field, value))
+            return [is_not(starts_with(field, value))]
 
         case [field, "ends_with", value]:
-            return ends_with(field, value)
+            return [ends_with(field, value)]
         case [field, "not_ends_with", value]:
-            return is_not(ends_with(field, value))
+            return [is_not(ends_with(field, value))]
 
-        case [field, "between_inclusive", *values]:
-            return between_inclusive(field, *values)
-        case [field, "not_between_inclusive", *values]:
-            return is_not(between_inclusive(field, *values))
+        case [field, "between", *values]:
+            return [between_inclusive(field, *values)]
+        case [field, "not_between", *values]:
+            return [is_not(between_inclusive(field, *values))]
 
         case [field, "greater_than", value]:
-            return greater_than(field, value)
+            return [greater_than(field, value)]
         case [field, "less_than", value]:
-            return less_than(field, value)
+            return [less_than(field, value)]
         case _:
             raise ValueError(f"Invalid criteria: {criteria}")
 
@@ -148,10 +159,10 @@ def _get_field(record: Record, field: str, default=None) -> Any:
 def get_records(
     *args: Criterion,
     connection: Slims,
-    slims_id: Optional[str | list[str]] = None,
-    max_age: Optional[int | str] = None,
-    content_type: Optional[int | list[int]] = None,
-    derived_from: Optional[str | list[str]] = None,
+    slims_id: str | list[str] | None = None,
+    content_type: int | list[int] | None = None,
+    max_age: int | str | None = None,
+    derived_from: str | list[str] | None = None,
     **kwargs: str | int | list[str | int],
 ) -> list[Record]:
     """Get records from SLIMS"""
@@ -166,22 +177,20 @@ def get_records(
         case _ if slims_id is not None:
             raise TypeError(f"Invalid type for id: {type(slims_id)}")
 
+    match content_type:
+        case int():
+            criteria = criteria.add(equals("cntn_fk_contentType", content_type))
+        case [*types]:
+            criteria = criteria.add(is_one_of("cntn_fk_contentType", types))
+        case _ if content_type is not None:
+            raise TypeError(f"Invalid type for content_type: {type(content_type)}")
+
     match max_age:
         case int() | str():
             min_mtime = int(time() - parse_timespan(str(max_age))) * 1e3
             criteria = criteria.add(greater_than("cntn_modifiedOn", min_mtime))
         case _ if max_age is not None:
             raise TypeError(f"Expected int or str, got {type(max_age)}")
-
-    match content_type:
-        case None:
-            pass
-        case int():
-            criteria = criteria.add(equals("cntn_fk_contentType", content_type))
-        case [*_, int()]:
-            criteria = criteria.add(is_one_of("cntn_fk_contentType", content_type))
-        case _:
-            raise TypeError(f"Expected int(s), got {type(content_type)}")
 
     match derived_from:
         case None:
@@ -209,8 +218,8 @@ def get_records(
 class SlimsSample:
     """A sample container with SLIMS integration"""
 
-    record: Optional[Record]
-    bioinformatics: Optional[Record]
+    record: Record | None
+    bioinformatics: Record | None
 
     @classmethod
     def from_record(cls, record: Record, config: cfg.Config, **kwargs):
@@ -262,7 +271,7 @@ class SlimsSample:
                 raise ValueError(f"Invalid state: {state}")
 
     @cached_property
-    def _connection(self) -> Optional[Slims]:
+    def _connection(self) -> Slims | None:
         """Get a connection to SLIMS from the record"""
 
         return (
@@ -323,7 +332,7 @@ def slims_samples(
     config: cfg.Config,
     logger: LoggerAdapter,
     **_,
-) -> Optional[SlimsSamples]:
+) -> SlimsSamples | None:
     """Load novel samples from SLIMS."""
     if "slims" in config:
         slims_connection = Slims(
@@ -333,14 +342,20 @@ def slims_samples(
             password=config.slims.password,
         )
 
-        if "derived_from" in config.slims:
-            logger.info("Fetching derived from records")
-            parent_records = get_records(
-                _parse_criteria(config.slims.derived_from.criteria),
-                content_type=config.slims.derived_from.content_type,
-                connection=slims_connection,
-            )
-            samples_kwargs = {"derived_from": parent_records}
+        criteria = _parse_criteria(config.slims.criteria)
+
+        parent_ids: list[str] | None = None
+        for criterion in criteria[:-1]:
+            parent_ids = [
+                r.cntn_id.value
+                for r in get_records(
+                    criterion,
+                    connection=slims_connection,
+                    derived_from=parent_ids,
+                )
+            ]
+
+        logger.debug(f"Feound parent records with ids {parent_ids}")
 
         if samples:
             logger.info("Augmenting existing samples with info from SLIMS")
@@ -357,8 +372,8 @@ def slims_samples(
         logger.debug(f"Fetching samples with {samples_kwargs}")
         records = get_records(
             _parse_criteria(config.slims.criteria),
-            content_type=config.slims.content_type,
             connection=slims_connection,
+            derived_from=parent_ids,
             **samples_kwargs,
         )
 
