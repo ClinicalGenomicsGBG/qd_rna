@@ -90,7 +90,7 @@ The following operators are supported:
 
 Complex boolean criteria can be constructed using `and`/`or` and parentheses.
 
-To find derived records, the "->" operator can be used between two criteria. This will find all records that match the first criteria and then find all records that match the second criteria and are derived from the first (and so on). This operator can not be used inside parentheses. In order to limit the search space, parent records are expected to have the same ID as the derived records. This behaviour can be disabled using the `slims.unrestrict_parents` option.
+To find derived records, the "->" operator can be used between two criteria. This will find all records that match the first criteria and then find all records that match the second criteria and are derived from the first (and so on). This operator can not be used inside parentheses. In order to limit the search space, parent records are expected to have the same ID as the derived records. This behaviour can be disabled using the `slims.unrestrict_parents` option. The `slims.bioinfo_check_criteria` currently does not support this operator.
 
 eg. `cntn_cstm_foo equals a -> cntn_cstm_foo equals b and (cntn_cstm_bar not_between_inclusive c d or cntn_cstm_baz equals e)`
 
