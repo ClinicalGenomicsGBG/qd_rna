@@ -72,7 +72,7 @@ def rnafusion(
                     dest_dir = Path(sample.id) / "fusioninspector",
                 ),
                 Output(
-                    src = (outdir / "fusionreport").glob(f"{sample.id}/*.html"),
+                    src = outdir / "fusionreport" / sample.id,
                     dest_dir = Path(sample.id) / "fusionreport",
                 ),
                 Output(

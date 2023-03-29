@@ -68,15 +68,15 @@ def rnaseq(
                 dest_dir=Path(samples[0].id) / "salmon",
             ),
             Output(
-                src=(outdir / "star_salmon" / samples[0].id).glob("*"),
+                src=outdir / "star_salmon" / samples[0].id,
                 dest_dir=Path(samples[0].id) / "salmon" / samples[0].id,
             ),
             Output(
-                src=(outdir / config.rnaseq.aligner / "stringtie").glob("*"),
+                src=outdir / config.rnaseq.aligner / "stringtie",
                 dest_dir=Path(samples[0].id) / "stringtie",
             ),
             Output(
-                src=(outdir / "multiqc" / config.rnaseq.aligner).glob("*"),
+                src=outdir / "multiqc" / config.rnaseq.aligner,
                 dest_dir=Path(samples[0].id) / "multiqc",
             ),
         ]
