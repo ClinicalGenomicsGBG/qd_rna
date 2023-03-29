@@ -26,6 +26,7 @@ Option                            | Type      | Required | Default | Description
 `slims.allow_duplicates`          | bool      |          | false   | Allow duplicate samples (eg. if a pre-hook can handle this)
 `slims.dry_run`                   | bool      |          | false   | Do not create/update SLIMS bioinformatics objects
 `slims.novel_max_age`             | str       |          | 1 year  | Maximum age of novel samples (eg. "4 days", "2 months", "1 year")
+`slims.unrestrict_parents`        | bool      |          | false   | Allow derived records to have different IDs than parent records
 
 ## Hooks
 
@@ -89,7 +90,7 @@ The following operators are supported:
 
 Complex boolean criteria can be constructed using `and`/`or` and parentheses.
 
-To find derived records, the "->" operator can be used between two criteria. This will find all records that match the first criteria and then find all records that match the second criteria and are derived from the first (and so on). This operator can not be used inside parentheses. When finding sample records by id or from exisitng samples, these will be added to the final criteria (i.e. the most derived records).
+To find derived records, the "->" operator can be used between two criteria. This will find all records that match the first criteria and then find all records that match the second criteria and are derived from the first (and so on). This operator can not be used inside parentheses. In order to limit the search space, parent records are expected to have the same ID as the derived records. This behaviour can be disabled using the `slims.unrestrict_parents` option.
 
 eg. `cntn_cstm_foo equals a -> cntn_cstm_foo equals b and (cntn_cstm_bar not_between_inclusive c d or cntn_cstm_baz equals e)`
 
