@@ -1,12 +1,11 @@
 """Module for getting samples from SLIMS"""
 
 from copy import deepcopy
-from functools import cached_property, reduce, singledispatch
+from functools import cached_property, reduce
 from json import loads
 from logging import LoggerAdapter
 from time import time
 from typing import Any
-from collections import UserList, UserDict
 import re
 
 from humanfriendly import parse_timespan
@@ -51,7 +50,7 @@ def _split_criteria(criteria: str) -> list[str]:
             if depth > 1:
                 part += ")"
             depth -= 1
-            parts += part,
+            parts += (part,)
         elif _criteria[1:4] == "and" and depth == 0:
             parts += part, "and"
             _criteria, part = _criteria[4:], ""
@@ -75,8 +74,6 @@ def _split_criteria(criteria: str) -> list[str]:
 
 def _parse_criteria(criteria: str | list[str]) -> list[Criterion]:
     """Parse criteria"""
-
-    print("Parsing criteria:", criteria)
 
     match criteria:
         case str(criteria) if "->" in criteria:
@@ -342,39 +339,44 @@ def slims_samples(
             password=config.slims.password,
         )
 
-        criteria = _parse_criteria(config.slims.criteria)
-
-        parent_ids: list[str] | None = None
-        for criterion in criteria[:-1]:
-            parent_ids = [
-                r.cntn_id.value
-                for r in get_records(
-                    criterion,
-                    connection=slims_connection,
-                    derived_from=parent_ids,
-                )
-            ]
-
-        logger.debug(f"Feound parent records with ids {parent_ids}")
-
         if samples:
             logger.info("Augmenting existing samples with info from SLIMS")
-            samples_kwargs = {"slims_id": [s.id for s in samples]}
+            slims_ids = [s.id for s in samples]
+            max_age = None
 
         elif "id" in config.slims:
             logger.info("Fetching samples from SLIMS by ID")
-            samples_kwargs = {"slims_id": config.slims.id}
+            slims_ids = config.slims.id
+            max_age = None
 
         else:
             logger.info(f"Fetching samples from the last {config.slims.novel_max_age}")
-            samples_kwargs = {"max_age": config.slims.novel_max_age}
+            slims_ids = None
+            max_age: str = config.slims.novel_max_age
 
-        logger.debug(f"Fetching samples with {samples_kwargs}")
+        criteria = _parse_criteria(config.slims.criteria)
+
+        parent_records: list[Record] | None = None
+        for criterion in criteria[:-1]:
+            parent_records = get_records(
+                criterion,
+                connection=slims_connection,
+                derived_from=parent_records,
+                slims_id=slims_ids if not config.slims.unrestrict_parents else None,
+                max_age=max_age if not config.slims.unrestrict_parents else None,
+            )
+
+        if parent_records:
+            logger.debug(
+                f"Found parent records: {[r.cntn_id.value for r in parent_records]}"
+            )
+
         records = get_records(
-            _parse_criteria(config.slims.criteria),
+            criteria[-1],
             connection=slims_connection,
-            derived_from=parent_ids,
-            **samples_kwargs,
+            derived_from=parent_records,
+            slims_id=slims_ids,
+            max_age=max_age,
         )
 
         if config.slims.bioinfo.check:
@@ -443,7 +445,7 @@ def slims_bioinformatics(
     logger: LoggerAdapter,
     **_,
 ) -> None:
-    """Load novel samples from SLIMS."""
+    """Add bioinformatics content to SLIMS samples"""
     if config.slims.dry_run:
         logger.debug("Dry run - Not adding bioinformatics")
     elif config.slims.bioinfo.create and samples:

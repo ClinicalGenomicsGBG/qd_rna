@@ -21,10 +21,6 @@ properties:
         description: SLIMS password
         type: string
         secret: true
-      
-      content_type:
-        description: Content type PK for sample records
-        type: integer
 
       criteria:
         description: SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
@@ -33,18 +29,6 @@ properties:
       map_field:
         description: "Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields)"
         type: mapping
-
-      derived_from:
-        type: object
-        required:
-          - content_type
-          - criteria
-        criteria:
-          description: SLIMS criteria for finding parent samples (see slims_criteria)
-          type: string
-        content_type:
-          description: Content type PK for parent records
-          type: integer
 
 
       bioinfo:
@@ -94,6 +78,11 @@ properties:
 
       allow_duplicates:
         description: Allow duplicate samples (eg. if a pre-hook can handle this)
+        default: false
+        type: boolean
+
+      unrestrict_parents:
+        description: Allow parent records to have different IDs than the child records
         default: false
         type: boolean
 
