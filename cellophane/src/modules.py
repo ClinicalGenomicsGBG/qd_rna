@@ -147,7 +147,19 @@ class Hook:
     overwrite: bool
     when: Literal["pre", "post"]
     condition: Literal["complete", "partial", "always"] = "always"
-    priority: int | float = float("inf")
+    before: list[str] = []
+    after: list[str] = []
+
+    def __post_init__(self) -> None:
+        if "all" in self.before:
+            self.before = ["before-all"]
+        if "all" in self.after:
+            self.after = ["after-all"]
+        if self.before or self.after:
+            self.before += ["after-all"]
+            self.after += ["before-all"]
+        else:
+            self.after = ["after-all"]
 
     def __call__(
         self,
@@ -179,7 +191,8 @@ class Hook:
 def pre_hook(
     label: Optional[str] = None,
     overwrite: bool = False,
-    priority: int | float = float("inf"),
+    before: list[str] = [],
+    after: list[str] = [],
 ):
     """Decorator for hooks that will run before all runners."""
 
@@ -191,7 +204,8 @@ def pre_hook(
             overwrite=overwrite,
             when="pre",
             condition="always",
-            priority=priority,
+            before=before,
+            after=after,
         )
 
     return wrapper
@@ -200,7 +214,6 @@ def pre_hook(
 def post_hook(
     label: Optional[str] = None,
     overwrite: bool = False,
-    priority: int | float = float("inf"),
     condition: Literal["complete", "partial", "always"] = "always",
 ):
     """Decorator for hooks that will run after all runners."""
