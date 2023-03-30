@@ -5,7 +5,6 @@ import sys
 from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
-from typing import Optional
 
 from NGPIris import hcp
 
@@ -27,7 +26,7 @@ class HCPSamples(data.Mixin, sample_mixin=HCPSample):
 def _fetch(
     config: cfg.Config,
     local_path: Path,
-    remote_key: Optional[str] = None,
+    remote_key: str|None = None,
 ) -> None:
     sys.stdout = open(
         config.logdir / f"iris.{local_path.name}.out", "w", encoding="utf-8"
@@ -77,7 +76,7 @@ def _fetch_callback(
         samples[s_idx].files[f_idx] = str(local_path)
 
 
-@modules.pre_hook(label="HCP", priority=10)
+@modules.pre_hook(label="HCP", after=["slims_fetch"])
 def hcp_fetch(
     samples: data.Samples,
     config: cfg.Config,
@@ -100,7 +99,7 @@ def hcp_fetch(
                     sample.backup = [None] * len(sample.files)
 
                 for f_idx, local_key in enumerate(sample.files):
-                    remote_key: Optional[str] = sample.backup[f_idx]
+                    remote_key: str|None = sample.backup[f_idx]
                     _local_key = local_key or remote_key or f"{sample.id}_{f_idx}"
                     local_path = config.iris.fastq_temp / Path(_local_key).name
 
