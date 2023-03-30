@@ -78,7 +78,7 @@ def _extract_callback(
         samples[s_idx].files[f_idx] = None
 
 
-@modules.pre_hook(label="unpack", priority=15)
+@modules.pre_hook(label="unpack", after=["hcp_fetch"])
 def petagene_extract(
     samples: data.Samples,
     config: cfg.Config,
