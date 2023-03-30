@@ -323,8 +323,8 @@ class SlimsSamples(data.Mixin, sample_mixin=SlimsSample):
                 raise ValueError(f"Invalid state: {state}")
 
 
-@modules.pre_hook(label="SLIMS Fetch", priority=0)
-def slims_samples(
+@modules.pre_hook(label="SLIMS Fetch", before=["hcp_fetch", "slims_bioinformatics"])
+def slims_fetch(
     samples: data.Samples,
     config: cfg.Config,
     logger: LoggerAdapter,
@@ -438,7 +438,7 @@ def slims_samples(
         return None
 
 
-@modules.pre_hook(label="SLIMS Add Bioinfo")
+@modules.pre_hook(label="SLIMS Add Bioinfo", after=["slims_fetch"])
 def slims_bioinformatics(
     samples: data.Samples,
     config: cfg.Config,

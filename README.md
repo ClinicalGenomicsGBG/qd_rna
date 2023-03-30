@@ -30,11 +30,11 @@ Option                            | Type      | Required | Default | Description
 
 ## Hooks
 
-Name                    | When | Condition | Description
-------------------------|------|-----------|-------------
-`slims_samples`         | Pre  |           | Fetch sample info from SLIMS 
-`slims_bioinformatics`  | Pre  |           | Add bioinformatics records for samples
-`slims_update`          | Post | Always    | Update bioinformatics state in SLIMS
+Name                   | When | Condition | Description
+-----------------------|------|-----------|-------------
+`slims_fetch`          | Pre  |           | Fetch sample info from SLIMS 
+`slims_bioinformatics` | Pre  |           | Add bioinformatics records for samples
+`slims_update`         | Post | Always    | Update bioinformatics state in SLIMS
 
 ## Mixins
 
