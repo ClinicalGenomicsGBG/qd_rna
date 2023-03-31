@@ -55,7 +55,7 @@ def copy_results(
     **_,
 ) -> None:
     logger.info(f"Copying output to {config.results.base}")
-    outputs = [o for s in samples for o in s.output]
+    outputs: list[Output] = [o for s in samples for o in s.output]
 
     for dest_dir in set(config.results.base / o.dest_dir for o in outputs):
         if [*dest_dir.glob("*")] and not config.results.overwrite:
@@ -72,12 +72,13 @@ def copy_results(
         for s in o.src
     ]:
         try:
-            dest_dir.mkdir(parents=True, exist_ok=True)
-            dest = dest_dir / (dest_name or src.name)
-            logger.debug(f"Copying {src} to {dest}")
             if Path(src).is_dir():
-                copytree(src, dest)
+                logger.debug(f"Copying directory {src} to {dest_dir}")
+                copytree(src, dest_dir)
             else:
-                copy(src, dest)
+                dest_dir.mkdir(parents=True, exist_ok=True)
+                dest_path = dest_dir / (dest_name or src.name)
+                logger.debug(f"Copying file {src} to {dest_path}")
+                copy(src, dest_path)
         except Exception as e:
             logger.warning(f"Failed to copy {src}: {e}")
