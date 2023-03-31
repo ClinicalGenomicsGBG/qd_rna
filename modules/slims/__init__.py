@@ -8,6 +8,7 @@ from time import time
 from typing import Any
 import re
 
+from datetime import datetime, timedelta
 from humanfriendly import parse_timespan
 from slims.criteria import (
     Criterion,
@@ -184,8 +185,9 @@ def get_records(
 
     match max_age:
         case int() | str():
-            min_mtime = int(time() - parse_timespan(str(max_age))) * 1e3
-            criteria = criteria.add(greater_than("cntn_modifiedOn", min_mtime))
+            now = datetime.now()
+            max_date = now - timedelta(seconds=parse_timespan(str(max_age)))
+            criteria = criteria.add(between_inclusive("cntn_modifiedOn", max_date, now))
         case _ if max_age is not None:
             raise TypeError(f"Expected int or str, got {type(max_age)}")
 
