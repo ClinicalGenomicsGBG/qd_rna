@@ -339,8 +339,8 @@ def slims_fetch(
             password=config.slims.password,
         )
 
-        slims_ids: list[str] | None
-        max_age: str | None
+        slims_ids: list[str] | None = None
+        max_age: str | None = None
         if samples:
             logger.info("Augmenting existing samples with info from SLIMS")
             slims_ids = [s.id for s in samples]
