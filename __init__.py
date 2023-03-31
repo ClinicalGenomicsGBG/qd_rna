@@ -339,19 +339,18 @@ def slims_fetch(
             password=config.slims.password,
         )
 
+        slims_ids: list[str] | None
+        max_age: str | None
         if samples:
             logger.info("Augmenting existing samples with info from SLIMS")
             slims_ids = [s.id for s in samples]
-            max_age = None
 
-        elif "id" in config.slims:
+        elif config.slims.id:
             logger.info("Fetching samples from SLIMS by ID")
             slims_ids = config.slims.id
-            max_age = None
 
         else:
             logger.info(f"Fetching samples from the last {config.slims.novel_max_age}")
-            slims_ids = None
             max_age: str = config.slims.novel_max_age
 
         criteria = _parse_criteria(config.slims.criteria)
