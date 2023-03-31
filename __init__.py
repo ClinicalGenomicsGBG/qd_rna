@@ -378,7 +378,7 @@ def slims_fetch(
             max_age=max_age,
         )
 
-        if config.slims.bioinfo.check:
+        if records and config.slims.bioinfo.check:
             logger.info("Checking SLIMS for completed bioinformatics")
             bioinfo = get_records(
                 _parse_criteria(config.slims.bioinfo.check_criteria)[0],
