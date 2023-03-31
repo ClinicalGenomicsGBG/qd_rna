@@ -33,7 +33,7 @@ class QDRNASamples(data.Mixin, sample_mixin=QDRNASample):
     pass
 
 
-@modules.pre_hook(label="Sample ID")
+@modules.pre_hook(label="Sample ID", after="all")
 def set_sample_id(
     samples: data.Samples,
     logger: LoggerAdapter,
