@@ -49,7 +49,7 @@ class Runner(mp.Process):
         cls.__module__ = func.__module__
         cls.name = func.__name__
         cls.label = label or func.__name__
-        cls.func = staticmethod(func)
+        cls.main = staticmethod(func)
         cls.label = label or cls.__name__
         cls.individual_samples = individual_samples
         super().__init_subclass__()
@@ -132,12 +132,6 @@ class Runner(mp.Process):
                 case _:
                     logger.warning(f"Unexpected return type {type(returned)}")
                     self.output_queue.put((samples, self.id))
-
-
-    @staticmethod
-    def main(**_) -> Optional[data.Samples[data.Sample]]:
-        """Main function for the runner."""
-        raise NotImplementedError
 
 
 class Hook:
