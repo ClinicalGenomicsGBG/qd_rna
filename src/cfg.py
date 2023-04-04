@@ -3,7 +3,7 @@
 from copy import deepcopy
 from functools import reduce
 from pathlib import Path
-from typing import Sequence, Optional, Type, Iterator, Mapping
+from typing import Sequence, Optional, Type, Iterator, Mapping, Any
 
 import rich_click as click
 from jsonschema import Draft7Validator, Validator, validators, ValidationError
@@ -108,6 +108,25 @@ def _get_options(cls: Type[Validator]) -> Type[Validator]:
     return validators.extend(
         cls, {k: None for k in cls.VALIDATORS} | {"properties": func}
     )
+
+def parse_mapping(string_mapping: dict | list[str] | str) -> list[dict[str, Any]]:
+    match string_mapping:
+        case dict(mapping):
+            return [mapping]
+        case list(strings):
+            return [m for s in strings for m in parse_mapping(s)]
+        case str(string):
+            mapping: dict[str, Any] = {}
+            for kv in string.split():
+                for k, v in [kv.split("=")]:
+                    identifier = k.strip("{}")
+                    if not identifier.isidentifier():
+                        raise ValueError(f"{identifier} is not a valid identifier")
+                    else:
+                        mapping[identifier] = v
+            return [mapping]    
+        case _:
+            raise ValueError("format must be 'key=value ...'")
 
 
 class Schema(data.Container):

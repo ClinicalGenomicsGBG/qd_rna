@@ -41,13 +41,11 @@ def _cleanup(logger):
                 logger.debug(f"Failed to terminate {proc.label}: {exception}")
 
 
-def _convert_mapping(ctx, param, value):
-    if isinstance(value, dict):
-        return value
+def _click_mapping(ctx, param, value):
     try:
-        return {k: v for k, v in [kv.split("=") for kv in value]}
-    except:
-        raise click.BadParameter("format must be 'key=value'")
+        return cfg.parse_mapping(value)
+    except Exception as exception:
+        raise click.BadParameter(f"Invalid mapping: {exception}")
 
 
 def _load_modules(
@@ -301,7 +299,7 @@ def cellophane(
         inner = click.option(
             f"--{flag}",
             type=str if _type in (list, dict) else _type,
-            callback=_convert_mapping if _type == dict else None,
+            callback=_click_mapping if _type == dict else None,
             is_flag=_type == bool,
             multiple=_type in (list, dict),
             default=default,
