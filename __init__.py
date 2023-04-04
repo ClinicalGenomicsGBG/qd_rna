@@ -295,7 +295,7 @@ class SlimsSample:
 
         for idx, (record, map) in enumerate(self.derived):
             fields = {key: value.format(self) for key, value in map.items()}
-            fields | {
+            fields |= {
                 "cntn_fk_originalContent": self.record.pk(),
                 "cntn_fk_user": config.slims.username,
             }
@@ -409,7 +409,7 @@ def slims_fetch(
 
         else:
             logger.info(f"Fetching samples from the last {config.slims.novel_max_age}")
-            max_age: str = config.slims.novel_max_age
+            max_age = config.slims.novel_max_age
 
         records = get_records(
             string_criteria=config.slims.find_criteria,
