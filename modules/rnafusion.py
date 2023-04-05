@@ -40,8 +40,8 @@ def rnafusion(
             f"--arriba_ref_blacklist {config.rnafusion.arriba_blacklist}",
             f"--arriba_ref_protein_domain {config.rnafusion.arriba_protein_domain}",
             f"--fusionreport_tool_cutoff {config.rnafusion.fusionreport_tool_cutoff}",
-            f"--fusioncatcher_limitSjdbInsertNsj {config.rnafusion.fusioncatcher_limitSjdbInsertNsj}",
             f"--read_length {config.read_length}",
+            "--fusioncatcher_limitSjdbInsertNsj 4000000"
             "--all",
             "--fusioninspector_filter",
             config=config,

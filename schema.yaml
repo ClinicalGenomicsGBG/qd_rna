@@ -144,11 +144,6 @@ properties:
         type: integer
         description: Minimum number of callers for fusion to be reported
         default: 1
-      
-      fusioncatcher_limitSjdbInsertNsj:
-        type: integer
-        description: Maximum number of junctions to be inserted into the genome index
-        default: 2000000
     
     if:
       properties:
