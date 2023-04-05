@@ -16,17 +16,52 @@ Option                            | Type      | Required | Default | Description
 `slims.username`                  | str       | x        |         | SLIMS username
 `slims.password`                  | str       | x        |         | SLIMS password
 `slims.content_type`              | int       | x        |         | Content type PK for sample records
-`slims.criteria`                  | str       | x        |         | SLIMS criteria for finding records (see [Criteria](#Criteria))
-`slims.map_field`                 | list[str] |          |         | Mapping of keys to SLIMS field(s) (see [Fields](#Fields)/[Mappings](#Mappings))
-`slims.bioinfo.state_field`       | str       |          |         | Field with state of bioinformatics objects (see [Fields](#Fields))
-`slims.bioinfo.create`            | bool      |          | false   | Create bioinformatics objects
-`slims.bioinfo.check`             | bool      |          | false   | Check state of existing bioinformatics records
-`slims.bioinfo.check_criteria`    | str       |          |         | Criteria for checking completed bioinformatics (see [Criteria](#Criteria))
+`slims.map`                       | list[str] |          |         | Mapping of keys to SLIMS field(s) (see [Fields](#Fields)/[Mappings](#Mappings))
+`slims.derive`                    | list[str] |          |         | Mapping of keys to SLIMS field(s) (see [Derivations](#Derivations)/[Fields](#Fields)/[Mappings](#Mappings))
+`slims.find_criteria`             | str       | x        |         | SLIMS criteria for finding records (see [Criteria](#Criteria))
+`slims.check_criteria`            | str       |          |         | SLIMS criteria for checking completed records (see [Criteria](#Criteria))
 `slims.id`                        | list[str] |          |         | Manually select SLIMS Sample ID(s)
 `slims.allow_duplicates`          | bool      |          | false   | Allow duplicate samples (eg. if a pre-hook can handle this)
 `slims.dry_run`                   | bool      |          | false   | Do not create/update SLIMS bioinformatics objects
 `slims.novel_max_age`             | str       |          | 1 year  | Maximum age of novel samples (eg. "4 days", "2 months", "1 year")
 `slims.unrestrict_parents`        | bool      |          | false   | Allow derived records to have different IDs than parent records
+
+
+### Example
+
+```yaml
+slims:
+  # Ask your IT people for credentials (Remember to say please)
+  url: 'http://slims.example.com/slimsrest'
+  username: apiusername
+  password: apipassword
+  # Find sample records with content type 22 (Fastq) and qdrna in the samplesheet decription field
+  # Exclude samples explicitly marked as "Do not include"
+  find_criteria: |
+    cntn_fk_contentType equals 22
+    and cntn_cstm_doNotInclude not_equals true
+    and cntn_cstm_rawSheetDescription contains qdrna
+  # Check for derived records (->) with contentType 23 (Bioinformatics) and complete secondary analysis state
+  check_criteria: |
+    -> cntn_fk_contentType equals 23
+    and cntn_cstm_SecondaryAnalysisState equals complete
+  # Get file path from slims (unless specified in samples file)
+  # Add backup remote keys for HCP hook
+  # Add run information to samples
+  map:
+    - files=json:cntn_cstm_demuxerSampleResult.fastq_paths
+      run=cntn_cstm_runTag
+      backup=json:cntn_cstm_demuxerBackupSampleResult.remote_keys
+  # Create derived records with content type = 23 (Bioinformatics)
+  # Include state from cellophane sample (access key using curly braces)
+  # Other parameters are required by SLIMS or records will not be created
+  derive:
+    - cntn_fk_contentType=23
+      cntn_fk_location=83
+      cntn_cstm_SecondaryAnalysisState={state}
+      cntn_status=10
+```
+
 
 ## Hooks
 
@@ -46,12 +81,7 @@ from_records(records: list[Record], config: cfg.Config) -> data.Samples
 Create a new data.Samples object from a list of SLIMS records.
 
 ```
-add_bioinformatics(config: cfg.Config) -> None
-```
-Add bioinformatics content to SLIMS for all samples.
-
-```
-set_bioinformatics_state(state: str, config: cfg.Config) -> None
+update_derived(config: cfg.Config) -> None
 ```
 Update bioinformatics state for all samples in SLIMS.
 
@@ -63,12 +93,7 @@ from_record(record: Record, config: cfg.Config) -> data.Samples
 Create a new data.Sample object from a single SLIMS record.
 
 ```
-add_bioinformatics(self, config: cfg.Config) -> None
-```
-Add bioinformatics content to SLIMS for individual sample.
-
-```
-set_bioinformatics_state(self, state: str, config: cfg.Config) -> None
+update_derived(str, config: cfg.Config) -> None
 ```
 Update bioinformatics state for single sample in SLIMS.
 
@@ -100,4 +125,10 @@ Fields are specified using the full SLIMS field name (eg. `cntn_fk_contentType`)
 
 ## Mappings
 
-SLIMS fields can be mapped to keys on the `data.Samples` object using `<KEY>=<FIELD>` with the same field syntax as above. This can be used to override any field on the `data.Samples` object (eg. `files=json:cntn_cstm_myJSONField.fastq_paths`).
+SLIMS fields can be mapped to keys on the `data.Samples` object using `<KEY>=<FIELD>` with the same field syntax as above. This can be used to override any field on the `data.Samples` object (eg. `files=json:cntn_cstm_myJSONField.fastq_paths`). Use whitespace/newline to separate each `<KEY>=<FIELD>` pair in the desired mapping.
+
+## Derivations
+
+Derived records can be automatically created by specifying a mapping using `<FIELD>=<VALUE>` syntax (eg. `cntn_fk_contentType=1234 cntn_cstm_foo={state}`). Curly braces can be used to reference keys on the Sample object. The value of the field will be used as the value for the derived record. The derived record will be created if it does not exist and updated if it does. The derived record will be linked to the parent record using the `cntn_fk_originalContent` field. The `cntn_fk_contentType` field must be specified on the derived record. SLIMS may fail to create a records silently if required fields are not specified, and there is currently no way to explicitly check for required fields.
+
+To create multiple derived records, multiple mappings can be specified as a list (or by passing the `--slims_derive` flag multiple times).

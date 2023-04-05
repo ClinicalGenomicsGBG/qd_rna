@@ -2,11 +2,17 @@ type: object
 properties:
   slims:
     type: object
-    required:
-      - username
-      - password
-      - url
-      - criteria
+    allOf:
+      - required:
+        - username
+        - password
+        - url
+        - find_criteria
+      - if: {properties: {check: {const: true}}}
+        then:
+          required:
+            - check_criteria
+
     properties:
       url:
         description: SLIMS URL
@@ -21,55 +27,26 @@ properties:
         type: string
         secret: true
 
-      criteria:
-        description: SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
-        type: string
-
-      map_field:
+      map:
         description: "Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields)"
         type: mapping
+      
+      derive:
+        description: "Mapping for creating derived records in SLIMS (Use curly braces to access keys in the samples object)"
+        type: mapping
 
+      find_criteria:
+        description: SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
+        type: string
+      
+      check_criteria:
+        description: SLIMS criteria for checking completed records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
+        type: string
 
-      bioinfo:
-        type: object
-        allOf:
-        - if:
-            anyOf:
-              - properties: {check: {const: true}}
-              - properties: {create: {const: true}}
-          then:
-            required:
-              - content_type
-              - state_field  
-        - if:
-            properties: {check: {const: true}}
-          then:
-            required:
-              - check_criteria
-
-        properties:
-          content_type:
-            description: Content type PK for bioinformatics records
-            type: integer
-
-          state_field:
-            description: "Field with state of bioinformatics objects (Use json: prefix and dot notation for JSON fields)"
-            type: string
-
-          create:
-            description: Create bioinformatics objects
-            default: true
-            type: boolean
-
-          check:
-            description: Check state of existing bioinformatics records
-            type: boolean
-            default: false
-
-          check_criteria:
-            description: Criteria for checking completed bioinformatics (see slims_criteria)
-            type: string
-            default: ""
+      check:
+        description: Check state of samples
+        type: boolean
+        default: true
 
       id:
         description: Manually select SLIMS Sample ID(s)
