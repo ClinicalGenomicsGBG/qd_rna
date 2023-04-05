@@ -106,10 +106,6 @@ def _main(
 ) -> None:
     """Run cellophane"""
     logger.setLevel(config.log_level)
-    if "samples_file" in config:
-        samples = data.Samples.from_file(config.samples_file)
-    else:
-        samples = data.Samples()
 
     hooks: list[type[modules.Hook]] = []
     runners: list[type[modules.Runner]] = []
@@ -132,7 +128,12 @@ def _main(
         data.Samples.__bases__ = (*data.Samples.__bases__, mixin)
         if mixin.sample_mixin is not None:
             data.Sample.__bases__ = (*data.Sample.__bases__, mixin.sample_mixin)
-
+    
+    if "samples_file" in config:
+        samples = data.Samples.from_file(config.samples_file)
+    else:
+        samples = data.Samples()
+    
     for hook in [h() for h in hooks if h.when == "pre"]:
         result = hook(
             samples=deepcopy(samples),
@@ -151,7 +152,7 @@ def _main(
 
     
     result_samples = data.Samples()
-    sample_pids: dict(str, list[UUID]) = {}
+    sample_pids: dict(str, set[UUID]) = {s.id: set() for s in samples}
 
     failed_samples = data.Samples()
     partial_samples = data.Samples()
@@ -176,22 +177,25 @@ def _main(
             for proc in _PROCS.values():
                 proc.start()
 
-            while not all(proc.done for proc in _PROCS.values()):
-                result, pid = _OUTPUT_QUEUE.get()
-                result_samples += result
-                logger.debug(f"Received result from {_PROCS[pid].name}")
+        while not all(proc.done for proc in _PROCS.values()):
+            result, pid = _OUTPUT_QUEUE.get()
+            result_samples += result
+            for sample in result:
                 if sample.complete:
+                    logger.info(f"Runner {_PROCS[pid].name} completed sample {sample.id}")
                     sample_pids[sample.id] -= {pid}
                     if not sample_pids[sample.id]:
+                        logger.info(f"Sample {sample.id} completed by all runners")
                         partial_samples = data.Samples(s for s in result_samples if s.id == sample.id)
-                        complete_samples += sample
+                        complete_samples += [sample]
                     else:
-                        partial_samples += sample
+                        partial_samples += [sample]
                 else:
-                    failed_samples += sample
+                    logger.warning(f"Runner {_PROCS[pid].name} failed sample {sample.id}")
+                    failed_samples += [sample]
 
-                _PROCS[pid].join()
-                _PROCS[pid].done = True
+            _PROCS[pid].join()
+            _PROCS[pid].done = True
         
     except KeyboardInterrupt:
         logger.critical("Received SIGINT, telling runners to shut down...")
@@ -202,7 +206,7 @@ def _main(
         _cleanup(logger)
 
     finally:
-        failed_samples += data.Samples(s for s in samples if s.id not in result_samples)
+        failed_samples += data.Samples(s for s in samples if s.id not in [r.id for r in result_samples]
         for hook in [h() for h in hooks if h.when == "post"]:
 
             hook(
@@ -219,25 +223,6 @@ def _main(
                 log_level=config.log_level,
                 root=root,
             )
-
-        original_ids = [s.id for s in samples]
-        for runner in runners:
-            n_completed = sum(
-                s.runner == runner.label and s.id in original_ids
-                for s in [*complete_samples, *partial_samples]
-            )
-            n_failed = sum(
-                s.runner == runner.label and s.id in original_ids for s in failed_samples
-            )
-            n_extra = sum(
-                s.id not in original_ids for s in [*complete_samples, *failed_samples]
-            )
-            if n_completed:
-                logger.info(f"Runner {runner.label} completed {n_completed} samples")
-            if n_extra:
-                logger.info(f"Runner {runner.label} introduced {n_extra} extra samples")
-            if n_failed:
-                logger.warning(f"Runner {runner.label} failed for {n_failed} samples")
 
         logger.info(f"Execution complete in {format_timespan(time.time() - _STARTTIME)}")
 
