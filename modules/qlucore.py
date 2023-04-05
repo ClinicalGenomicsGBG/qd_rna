@@ -48,7 +48,7 @@ process {
         '--alignSplicedMateMapLminOverLmate 0',
         '--alignSplicedMateMapLmin 30',
         '--chimOutType Junctions',
-        '--outFilterMultimapNmax 200'
+        '--outFilterMultimapNmax 200',
         '--limitSjdbInsertNsj 4000000'
     ].join(' ').trim()
   }
