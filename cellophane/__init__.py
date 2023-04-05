@@ -149,84 +149,97 @@ def _main(
     for invalid_sample in samples.validate():
         logger.warning(f"Removed invalid sample {invalid_sample.id}")
 
+    
     result_samples = data.Samples()
-    if samples:
+    sample_pids: dict(str, list[UUID]) = {}
+
+    failed_samples = data.Samples()
+    partial_samples = data.Samples()
+    complete_samples = data.Samples()
+    try:
+        if samples:
+            for runner in runners:
+                for _samples in samples.split() if runner.individual_samples else [samples]:
+                    proc = runner(
+                        samples=_samples,
+                        config=config,
+                        timestamp=_TIMESTAMP,
+                        output_queue=_OUTPUT_QUEUE,
+                        log_queue=_LOG_QUEUE,
+                        log_level=config.log_level,
+                        root=root,
+                    )
+                    _PROCS[proc.id] = proc
+                    for sample in _samples:
+                        sample_pids[sample.id] |= {proc.id}
+
+            for proc in _PROCS.values():
+                proc.start()
+
+            while not all(proc.done for proc in _PROCS.values()):
+                result, pid = _OUTPUT_QUEUE.get()
+                result_samples += result
+                logger.debug(f"Received result from {_PROCS[pid].name}")
+                if sample.complete:
+                    sample_pids[sample.id] -= {pid}
+                    if not sample_pids[sample.id]:
+                        partial_samples = data.Samples(s for s in result_samples if s.id == sample.id)
+                        complete_samples += sample
+                    else:
+                        partial_samples += sample
+                else:
+                    failed_samples += sample
+
+                _PROCS[pid].join()
+                _PROCS[pid].done = True
+        
+    except KeyboardInterrupt:
+        logger.critical("Received SIGINT, telling runners to shut down...")
+        _cleanup(logger)
+    
+    except Exception as e:
+        logger.critical(f"Unhandled exception in runner: {e}")
+        _cleanup(logger)
+
+    finally:
+        failed_samples += data.Samples(s for s in samples if s.id not in result_samples)
+        for hook in [h() for h in hooks if h.when == "post"]:
+
+            hook(
+                samples=data.Samples(
+                    [
+                        *complete_samples,
+                        *(partial_samples if hook.condition != "complete" else []),
+                        *(failed_samples if hook.condition == "always" else []),
+                    ]
+                ),
+                config=config,
+                timestamp=_TIMESTAMP,
+                log_queue=_LOG_QUEUE,
+                log_level=config.log_level,
+                root=root,
+            )
+
+        original_ids = [s.id for s in samples]
         for runner in runners:
-            for _samples in samples.split() if runner.individual_samples else [samples]:
-                proc = runner(
-                    samples=_samples,
-                    config=config,
-                    timestamp=_TIMESTAMP,
-                    output_queue=_OUTPUT_QUEUE,
-                    log_queue=_LOG_QUEUE,
-                    log_level=config.log_level,
-                    root=root,
-                )
-                _PROCS[proc.id] = proc
+            n_completed = sum(
+                s.runner == runner.label and s.id in original_ids
+                for s in [*complete_samples, *partial_samples]
+            )
+            n_failed = sum(
+                s.runner == runner.label and s.id in original_ids for s in failed_samples
+            )
+            n_extra = sum(
+                s.id not in original_ids for s in [*complete_samples, *failed_samples]
+            )
+            if n_completed:
+                logger.info(f"Runner {runner.label} completed {n_completed} samples")
+            if n_extra:
+                logger.info(f"Runner {runner.label} introduced {n_extra} extra samples")
+            if n_failed:
+                logger.warning(f"Runner {runner.label} failed for {n_failed} samples")
 
-        for proc in _PROCS.values():
-            proc.start()
-
-        while not all(proc.done for proc in _PROCS.values()):
-            result, pid = _OUTPUT_QUEUE.get()
-            result_samples += result
-            logger.debug(f"Received result from {_PROCS[pid].name}")
-            _PROCS[pid].join()
-            _PROCS[pid].done = True
-
-    failed_samples = data.Samples(
-        sample for sample in result_samples if not sample.complete
-    )
-    complete_samples = data.Samples(
-        sample
-        for sid in {s.id for s in result_samples}
-        for sample in result_samples
-        if sample.id == sid
-        if all(s.complete for s in result_samples if s.id == sid)
-    )
-    partial_samples = data.Samples(
-        sample
-        for sample in result_samples
-        if sample.complete and sample.id not in [s.id for s in complete_samples]
-    )
-
-    for hook in [h() for h in hooks if h.when == "post"]:
-
-        hook(
-            samples=data.Samples(
-                [
-                    *complete_samples,
-                    *(partial_samples if hook.condition != "complete" else []),
-                    *(failed_samples if hook.condition == "always" else []),
-                ]
-            ),
-            config=config,
-            timestamp=_TIMESTAMP,
-            log_queue=_LOG_QUEUE,
-            log_level=config.log_level,
-            root=root,
-        )
-
-    original_ids = [s.id for s in samples]
-    for runner in runners:
-        n_completed = sum(
-            s.runner == runner.label and s.id in original_ids
-            for s in [*complete_samples, *partial_samples]
-        )
-        n_failed = sum(
-            s.runner == runner.label and s.id in original_ids for s in failed_samples
-        )
-        n_extra = sum(
-            s.id not in original_ids for s in [*complete_samples, *failed_samples]
-        )
-        if n_completed:
-            logger.info(f"Runner {runner.label} completed {n_completed} samples")
-        if n_extra:
-            logger.info(f"Runner {runner.label} introduced {n_extra} extra samples")
-        if n_failed:
-            logger.warning(f"Runner {runner.label} failed for {n_failed} samples")
-
-    logger.info(f"Execution complete in {format_timespan(time.time() - _STARTTIME)}")
+        logger.info(f"Execution complete in {format_timespan(time.time() - _STARTTIME)}")
 
 
 def cellophane(
@@ -276,10 +289,6 @@ def cellophane(
         except CycleError as exception:
             logger.error(f"Circular dependency in hooks: {exception}")
             raise SystemExit(1)
-
-        except KeyboardInterrupt:
-            logger.critical("Received SIGINT, shutting down...")
-            _cleanup(logger)
 
         except ValidationError as exception:
             _config = cfg.Config(config_path, schema, validate=False, **kwargs)
