@@ -263,16 +263,18 @@ class SlimsSample:
     @classmethod
     def from_record(cls, record: Record, config: cfg.Config, **kwargs):
         """Create a sample from a SLIMS fastq record"""
-        return cls(
+        
+        _sample =  cls(
             id=record.cntn_id.value,
             state="novel",
-            record=record,
             **{
                 key: _get_field(record, field)
                 for key, field in config.slims.map[0].items()
             },
             **kwargs,
         )
+        _sample.record = record
+        return _sample
 
     def update_derived(
         self,
