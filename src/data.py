@@ -50,7 +50,9 @@ class Container(UserDict):
                 raise TypeError("Key {k} is not hashble or a sequence of hashables")
 
     def __getattr__(self, key: str) -> Any:
-        if "data" in self.__dict__ and key in self.data:
+        if key in dir(self):
+            super().__getattr__(key)
+        elif "data" in self.__dict__ and key in self.data:
             return self.data[key]
         else:
             raise AttributeError(
@@ -58,7 +60,7 @@ class Container(UserDict):
             )
 
     def __setattr__(self, key: str, value: Any) -> None:
-        if key == "data":
+        if key in dir(self) or key == "data":
             super().__setattr__(key, value)
         else:
             self[key] = value

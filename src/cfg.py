@@ -30,7 +30,7 @@ def _set_options(cls: Type[Validator], validate: bool) -> Type[Validator]:
         return isinstance(instance, Optional[Path | click.Path])
 
     def _is_mapping(_, instance):
-        return isinstance(instance, Mapping)
+        return isinstance(instance, Sequence) and all(isinstance(i, Mapping) for i in instance)
 
     def _set(cls, properties, instance, schema):
         for prop, subschema in properties.items():
@@ -109,11 +109,11 @@ def _get_options(cls: Type[Validator]) -> Type[Validator]:
         cls, {k: None for k in cls.VALIDATORS} | {"properties": func}
     )
 
-def parse_mapping(string_mapping: dict | list[str] | str) -> list[dict[str, Any]]:
+def parse_mapping(string_mapping: dict | Sequence[str] | str) -> list[dict[str, Any]]:
     match string_mapping:
         case dict(mapping):
             return [mapping]
-        case list(strings):
+        case [*strings]:
             return [m for s in strings for m in parse_mapping(s)]
         case str(string):
             mapping: dict[str, Any] = {}
