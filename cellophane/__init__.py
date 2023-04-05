@@ -206,7 +206,7 @@ def _main(
         _cleanup(logger)
 
     finally:
-        failed_samples += data.Samples(s for s in samples if s.id not in [r.id for r in result_samples]
+        failed_samples += data.Samples(s for s in samples if s.id not in [r.id for r in result_samples])
         for hook in [h() for h in hooks if h.when == "post"]:
 
             hook(
