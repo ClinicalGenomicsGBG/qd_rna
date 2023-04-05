@@ -10,7 +10,7 @@ from typing import Iterable, Optional
 class Output:
     """Output dataclass for QD-RNA samples."""
 
-    src: Iterable[Path]
+    src: list[Path]
     dest_dir: Path
     dest_name: Optional[str] = None
 
@@ -24,7 +24,7 @@ class Output:
 
 class QDRNASample:
     """QD-RNA sample class."""
-    output: list[Output]
+    output: list[Output] = []
 
 
 class QDRNASamples(data.Mixin, sample_mixin=QDRNASample):
@@ -64,7 +64,11 @@ def copy_results(
 
     for output in outputs:
         if not output.src:
-            logger.warning(f"No output for {output.dest_dir}")
+            logger.warning(f"No source paths for {output.dest_dir}")
+        else:
+            for src in [o for o in output.src if not o.exists()]:
+                logger.warning(f"Source path {src} does not exist")
+                output.src.remove(src)
 
     for dest_dir, dest_name, src in [
         (config.results.base / o.dest_dir, o.dest_name, s)
