@@ -89,6 +89,10 @@ def rnafusion(
                     dest_dir = Path(sample.id),
                 ),
                 Output(
+                    src = (outdir / "samtools_index_for_qc").glob(f"{sample.id}.*.bai"),
+                    dest_dir = Path(sample.id),
+                ),
+                Output(
                     src = (outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
                     dest_dir = Path(sample.id) / "starfusion",
                 ),
