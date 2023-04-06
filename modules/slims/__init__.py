@@ -283,27 +283,39 @@ class SlimsSample:
         """Update/add derived records for the sample"""
         if not self.derived:
             self.derived = [(None, key_map) for key_map in config.slims.derive]
+        if self.record:
+            for idx, (record, key_map) in enumerate(self.derived):
+                fields = {key: value.format(**self) for key, value in key_map.items()}
+                fields |= {
+                    "cntn_id": self.record.cntn_id.value,
+                    "cntn_fk_originalContent": self.record.pk(),
+                    "cntn_fk_user": config.slims.username,
+                }
+                if record:
+                    self.derived[idx] = (record.update(fields), key_map)
+                else:
+                    self.derived[idx] = (self._connection.add("Content", fields), key_map)
 
-        for idx, (record, key_map) in enumerate(self.derived):
-            fields = {key: value.format(**self) for key, value in key_map.items()}
-            fields |= {
-                "cntn_id": self.record.cntn_id.value,
-                "cntn_fk_originalContent": self.record.pk(),
-                "cntn_fk_user": config.slims.username,
-            }
-            if record:
-                self.derived[idx] = (record.update(fields), key_map)
-            else:
-                self.derived[idx] = (self._connection.add("Content", fields), key_map)
-
+    @property
+    def record(self) -> Record | None:
+        """Get the SLIMS record for the sample"""
+        if "_record" not in dir(self):
+            super().__setattr__("_record", None)
+        return self._record
+    
+    @record.setter
+    def record(self, record: Record | None):
+        if record is None or isinstance(record, Record):
+            super().__setattr__("_record", record)
+        else:
+            raise ValueError(f"Expected 'NoneType' or 'Record', got {record}")
+    
     @property
     def state(self) -> str:
         """Get the state of the sample"""
-        if "_state" in self.__dict__:
-            return self._state
-        else:
-            self._state = "novel"
-            return self.state
+        if "state" not in self.data:
+            self.data["state"] = "novel"
+        return self.data["state"]
     
     @state.setter
     def state(self, value: Literal["novel", "running", "complete", "error"]):
@@ -311,7 +323,7 @@ class SlimsSample:
         if value not in ["novel", "running", "complete", "error"]:
             raise ValueError(f"Invalid state: {value}")
         else:
-            self._state = value
+            self.data["state"] = value
 
     @cached_property
     def _connection(self) -> Slims | None:
@@ -486,8 +498,8 @@ def slims_derive(
 
 
 
-@modules.pre_hook(label="SLIMS Running", after="all")
-def slims_derive(
+@modules.pre_hook(label="SLIMS Mark Running", after="all")
+def slims_running(
     samples: data.Samples,
     config: cfg.Config,
     logger: LoggerAdapter,
@@ -501,7 +513,7 @@ def slims_derive(
     return samples
 
 
-@modules.post_hook(label="SLIMS Update")
+@modules.post_hook(label="SLIMS Update Derived")
 def slims_update(
     config: cfg.Config,
     samples: data.Samples,
@@ -509,22 +521,22 @@ def slims_update(
     **_,
 ) -> None:
     """Update SLIMS samples and derived records."""
-
+    unique_slims_samples = {
+        pk: [s for s in samples if s.record and s.record.pk() == pk]
+        for pk in set(s.record.pk() for s in samples if s.record)
+    }
     if config.slims.dry_run:
         logger.info("Dry run - Not updating SLIMS")
-    elif isinstance(samples, SlimsSamples):
-        unique = {
-            pk: [s for s in samples if s.record.pk() == pk]
-            for pk in set(s.record.pk() for s in samples)
-        }
-        for _samples in unique.values():
+    elif unique_slims_samples:
+
+        for _samples in unique_slims_samples.values():
             if all(s.complete for s in _samples):
-                logger.info(f"Marking {len(unique)} samples as complete")
+                logger.info(f"Marking {len(unique_slims_samples)} samples as complete")
                 _samples[0].state = "complete"
                 _samples[0].update_derived(config)
             else:
-                logger.warning(f"Marking {len(unique)} samples as failed")
+                logger.warning(f"Marking {len(unique_slims_samples)} samples as failed")
                 _samples[0].state = "error"
                 _samples[0].update_derived(config)
     else:
-        logger.info("No SLIMS samples to update")
+        logger.info("No samples to update")
