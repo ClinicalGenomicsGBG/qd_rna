@@ -51,7 +51,7 @@ class Container(UserDict):
 
     def __getattr__(self, key: str) -> Any:
         if key in dir(self):
-            super().__getattr__(key)
+            super().__getattribute__(key)
         elif "data" in self.__dict__ and key in self.data:
             return self.data[key]
         else:
