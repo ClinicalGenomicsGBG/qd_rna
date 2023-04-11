@@ -6,7 +6,7 @@ Cellophane is a library for creating modular wrappers.
 
 # ❗️ HERE BE DRAGONS 🐉 ❗️
 
-Cellophane is currently very unstable and may break, blow up, and/or eat your pet(s), etc.
+Cellophane is not battle tested and may break, blow up, and/or eat your pet(s), etc.
 
 ## Usage
 
@@ -22,10 +22,9 @@ git remote add -f cellophane https://github.com/ClinicalGenomicsGBG/cellophane
 git subtree add --prefix cellophane cellophane main --squash
 
 # Initialize an empty cellophane project
-python -m cellophane init --path .
+python -m cellophane init
 
 # To upgrade to the latest commit on main
-git fetch cellophane
 git subtree pull --prefix cellophane cellophane main --squash -m "Upgrade cellophane"
 ```
 
@@ -33,6 +32,7 @@ A wrapper directory structure should look something like this:
 
 ```
 ./my_awesome_wrapper/
+├── __init__.py
 │   # Cellophane module subtree
 ├── cellophane
 │   └── ...
@@ -92,7 +92,6 @@ git remote add -f modules https://github.com/ClinicalGenomicsGBG/cellophane_modu
 git subtree add --prefix modules/slims modules slims --squash -m "Add SLIMS module"
 
 # Upgrading is done the same way as cellophane
-git fetch modules
 git subtree pull --prefix modules/slims modules slims --squash -m "Upgrade SLIMS module"
 ```
 
@@ -108,18 +107,16 @@ python ./my_awesome_wrapper.py [...]
 
 ## Configuration
 
-Configuration options must be defined as a JSON Schema in a YAML file. By default, cellophane will use `schema.yaml` located in your project root. To oveerride use `cellophane.cellophane(schema_path=Path(...))`. The schema will be merged with base schema (`schema.yaml` in this repo) which contains configuration options required by all cellophane wrappers (eg. SLIMS API user/key). **NOTE:** *More complex JSON schemas may work, but are also more likely break the parsing.*
+Configuration options must be defined as a JSON Schema in a YAML file. By default, cellophane will use `schema.yaml` located in your project root. The schema will be merged with base schema (`schema.base.yaml` in this repo) which contains configuration options required by all cellophane wrappers (eg. SLIMS API user/key). **NOTE:** *Most features should be supported, but complex schemas may break the custom JSONSchema parisng done by cellophane*
 
 CLI flags for all configuration options specified in the schema are generated automagically. A YAML config file can be passed with the `--config_file` / `-c` flag.
 
-Here's the bease `schema.yaml` as an example:
-
+### Example schema
 ```yaml
 type: object
 required:
   - foo
   - bar
-  - nextflow
 
 properties:
   foo:
@@ -143,42 +140,6 @@ properties:
     required:
       - baz
     type: object
-
-  nextflow:
-    properties:
-      cluster_options:
-        description: Nextflow cluster options
-        type: string
-      config:
-        description: Nextflow config file
-        # The path type can be used to desingate strings that should be treated as paths 
-        type: path
-      profile:
-        description: Nextflow profile
-        type: string
-      resume:
-        default: false
-        description: Resume previous nextflow run
-        type: boolean
-      sge_pe:
-        description: SGE parallel environment for nextflow manager
-        type: string
-      sge_queue:
-        description: SGE queue for nextflow manager
-        type: string
-      sge_slots:
-        description: SGE slots (threads) for nextflow manager
-        type: integer
-      workdir:
-        description: Nextflow work directory
-        type: path
-    required:
-      - sge_queue
-      - sge_pe
-      - sge_slots
-      - profile
-      - workdir
-    type: object
 ```
 
 This is the resulting auto-generated CLI:
@@ -196,14 +157,6 @@ $ python -m my_awesome_wrapper
 │ --samples_file                          PATH                                 Path YAML file with sample names and paths to fastq files (eg. sample: {files: [fastq1, fastq2]}) │
 │ --foo_skip                                                                   Skip foo                                                                                          │
 │ --foo_baz                               [HELLO|WORLD]                        Some other parameter                                                                              │
-│ --nextflow_cluster_options              TEXT                                 Nextflow cluster options                                                                          │
-│ --nextflow_workdir                      PATH                                 Nextflow work directory                                                                           │
-│ --nextflow_resume                                                            Resume previous nextflow run                                                                      │
-│ --nextflow_profile                      TEXT                                 Nextflow profile                                                                                  │
-│ --nextflow_config                       PATH                                 Nextflow config file                                                                              │
-│ --nextflow_sge_slots                    INTEGER                              SGE slots (threads) for nextflow manager                                                          │
-│ --nextflow_sge_pe                       TEXT                                 SGE parallel environment for nextflow manager                                                     │
-│ --nextflow_sge_queue                    TEXT                                 SGE queue for nextflow manager                                                                    │
 │ --config                                PATH                                 Path to config file                                                                               │
 │ --help                                                                       Show this message and exit.                                                                       │
 ╰────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
@@ -213,18 +166,24 @@ $ python -m my_awesome_wrapper
 
 ## Defining pipeline modules
 
-At least one module must contain at least one `runner` decorated function. Runners are responsible for launching the pipeline with the provided samples. They are executed as separate processes in parallel. Optinally, if `individual_samples=True` is specified in the `runner` decorator cellophane will spawn one runner process per sample. A `runner` function must accept `samples`, `config`, `timestamp`, `label`, `logger`, `root` and `outdir` as arguments.
+At least one module must contain at least one `cellophane.modules.runner` decorated function. Runners are responsible for launching the pipeline with the provided samples. They are executed as separate processes in parallel. Optinally, if `individual_samples=True` is specified in the `runner` decorator cellophane will spawn one runner process per sample. A `runner` function will be called with `samples`, `config`, `timestamp`, `label`, `logger`, `root` and `outdir` as keyword arguments.
 
-A module may also define pre/post-hooks. These are functions that will be executed before or after the whle pipeline completes. A hook function must take `config`, `samples`, amd `logger` as arguments. Hooks are executed sequentially and can be given a numeric priority to ensure correct execution order. By default the priority will be `inf`. Setting a lower `priority` means the hook will be executed earlier.
+A module may also define pre/post-hooks. These should be decorated with `cellophane.modules.pre_hook` or `cellophane.modules.post_hook`. Hooks will be executed before or after the whle pipeline completes. Each hook function will be called with `samples`, `config`, `timestamp`, `logger`, and `root` as arguments. 
 
 The main use-case for pre-hooks is to modify `samples` before it is passed to the runners. This can be used to eg. download `.fastq.gz` files from a backup location, decompress `.fasterq` files, add related samples, remove samples with missing files, and so on. If a pre-hook returns a `cellophane.data.Samples` (or a subclass) object it will replace the current `samples`.
+
+The `cellophane.modules.pre_hook` decorator takes optional `before` and `after` arguments. These are lists of hook names that the decorated hook should be executed before or after. An exception will be raised if a circular dependency is detected. It is also possible to set `before` or `after` to `"all"` to execute the hook before or after all other hooks. If multiple hooks have `before` or `after` set to `"all"` the order is random.
 
 The use-case for post-hooks is mayble less obvious, ut they can be used to eg. clean up temporary files, or send an email when a pipeline completes/fails. If your runner returns a `cellophane.data.Samples` (or a subclass) object this will be used by post-hooks, otherwise the original samples will be used. The samples supplied to a post-hook differs from pre-hooks/runners:
 
 1. Samples are combined from all runners. If yout workflow has multiple runners you will get multiple instances of the same sample.
 3. Samples will contain `complete` (bool) and `runner` (str) attributes to designate what runner produced them and if it completed
 
-Note that hooks are not module specific, but rather ALL pre-hooks will be executed before ALL runners and ALL post-hooks will be executed afterwards. Module specific functionality should be handeled inside the runner function.
+Post-hooks cannot modify the samples object, and so the order in which they are executed is not defined.
+
+**Note:** *Hooks are not module specific, but rather ALL pre-hooks will be executed before ALL runners and ALL post-hooks will be executed afterwards. Module specific functionality should be handeled inside the runner function.*
+
+### Example module
 
 ```python
 # modules/my_module.py
@@ -299,9 +258,29 @@ def bar(samples, config, timestamp, logger, root, outdir):
 
 ```
 
+## Mixins
+
+When writing a module, it is sometimes desirable to add functionality to the `cellophane.data.Samples` class. This can be achieved by subclassing `cellophane.data.Mixin` in a module. Cellophane will detect these mixins on runtime and, any methods and/or class variables will be added to the `cellophane.data.Samples` class. This can be used to eg. add a `nfcore_samplesheet` method to the `Samples` class. Furthermore, a mixin class can be added to the `cellophane.data.Sample` class by setting `sample_mixin=<sample_mixin_class>` when subclassing `cellophane.data.Mixin`.
+
+**Note:** *`cellophane.data.Samples` mixins should only use cellophane.data.Mixin as a base class, and `cellophane.data.Sample` mixins should not have any base class. Including other base classes may work, but it may also break MRO resolution.*
+
+### Example mixin
+
+```python
+# modules/my_module.py
+
+from cellophane import data
+
+class MySampleMixin:
+    some_attr: str = "foo"
+
+class MySamplesMixin(data.Mixin):
+    def nfcore_samplesheet(self, location, **kwargs):
+        ...
+```
+
 ## To-do:
 
 - Improve logging to file
-- Handle of complex JSON schemas
 - Add functionality for generating `hydra-genetics` units.tsv/samples.tsv
-- Make hook priority overridable
+- Add functionality to cellophane for fetching modules from github
