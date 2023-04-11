@@ -531,11 +531,11 @@ def slims_update(
 
         for _samples in unique_slims_samples.values():
             if all(s.complete for s in _samples):
-                logger.info(f"Marking {len(unique_slims_samples)} samples as complete")
+                logger.info(f"Marking {_samples[0].id} as complete")
                 _samples[0].state = "complete"
                 _samples[0].update_derived(config)
             else:
-                logger.warning(f"Marking {len(unique_slims_samples)} samples as failed")
+                logger.warning(f"Marking {_samples[0].id} as failed")
                 _samples[0].state = "error"
                 _samples[0].update_derived(config)
     else:
