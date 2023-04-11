@@ -90,7 +90,7 @@ class Samples(UserList[S]):
             samples = []
             for sample in safe_load(handle):
                 id = sample.pop("id")
-                samples.append(Sample(id=id, **sample))
+                samples.append(Sample(id=str(id), **sample))
         return cls(samples)
 
     def split(self):
