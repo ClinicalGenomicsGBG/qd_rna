@@ -472,6 +472,7 @@ def slims_fetch(
                         id=_data.pop("id"),
                         **deepcopy(_data),
                     )
+                    samples[idx].record = match[0].record
             return samples
         else:
             return slims_samples
