@@ -44,13 +44,16 @@ def set_sample_id(
 ) -> data.Samples:
     logger.debug("Adding Run ID to sample IDs")
     _samples = deepcopy(samples)
+    known_dups: set[str] = set()
     for sample in samples:
         dups = [s for s in _samples if s.id == sample.id]
         runs = set(d.run for d in dups  if "run" in d)
         runs = sorted(runs)
 
         if (n := len(dups)) > 1 and config.merge:
-            logger.info(f"{n} samples with id {sample.id} will be merged")
+            if sample.id not in known_dups:
+                logger.info(f"{n} samples with id {sample.id} will be merged")
+            known_dups |= {sample.id}
             sample.id = f"{sample.id}_{sorted(runs)[-1]}" if runs else sample.id
             merge_file = config.outdir / f"{sample.id}.merged_runs.txt"
             merge_file.write_text("\n".join(runs))
@@ -58,7 +61,10 @@ def set_sample_id(
         elif n > 1 and not config.merge and "run" in sample:
             sample.id = f"{sample.id}_{sample.run}"
         elif n > 1 and not config.merge and "run" not in sample:
-            logger.warning(f"Will merge {n} samples with shared id {sample.id}")
+            if sample.id not in known_dups:
+                logger.warning(f"Will merge {n} samples with shared id {sample.id}")
+            known_dups |= {sample.id}
+
         else:
             sample.id = f"{sample.id}_{sample.run}" if "run" in sample else sample.id
 
