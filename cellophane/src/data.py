@@ -1,6 +1,7 @@
 """Utilities for interacting with SLIMS"""
 
 from collections import UserDict, UserList
+from copy import deepcopy
 from functools import reduce
 from pathlib import Path
 from typing import (
@@ -93,9 +94,14 @@ class Samples(UserList[S]):
                 samples.append(Sample(id=str(id), **sample))
         return cls(samples)
 
-    def split(self):
-        for sample in self:
-            yield self.__class__([sample])
+    def split(self, link_by: Optional[str]) -> "Samples":
+        if link_by is not None:
+            linked = {s[link_by]: [l for l in self if l[link_by] == s[link_by]] for s in self}
+            for linked in linked.values():
+                yield self.__class__(linked)
+        else:
+            for sample in self:
+                yield self.__class__([sample])
 
     def validate(self):
         for sample in self:
