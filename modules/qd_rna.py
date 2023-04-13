@@ -54,7 +54,7 @@ def set_sample_id(
             sample.id = f"{sample.id}_{sorted(runs)[-1]}" if runs else sample.id
             merge_file = config.outdir / f"{sample.id}.merged_runs.txt"
             merge_file.write_text("\n".join(runs))
-            sample.output += Output(src=[merge_file], dest_dir=Path(sample.id))
+            sample.output += [Output(src=[merge_file], dest_dir=Path(sample.id))]
         elif n > 1 and not config.merge and "run" in sample:
             sample.id = f"{sample.id}_{sample.run}"
         elif n > 1 and not config.merge and "run" not in sample:
