@@ -391,7 +391,7 @@ def slims_fetch(
     config: cfg.Config,
     logger: LoggerAdapter,
     **_,
-) -> SlimsSamples | None:
+) -> data.Samples | None:
     """Load novel samples from SLIMS."""
     if "slims" in config:
         slims_connection = Slims(
@@ -423,29 +423,9 @@ def slims_fetch(
             unrestrict_parents=config.slims.unrestrict_parents,
         )
 
-        if records and config.slims.check:
-            logger.info("Checking SLIMS for completed samples")
-            check = get_records(
-                string_criteria=config.slims.check_criteria,
-                connection=slims_connection,
-                derived_from=records,
-            )
-
-            original_ids = [r.cntn_id.value for r in records]
-            records = [
-                record
-                for record in records
-                if record.pk() not in [b.cntn_fk_originalContent.value for b in check]
-            ]
-
-            for sid in set(original_ids) - set([r.cntn_id.value for r in records]):
-                logger.info(f"Found completed bioinformatics for {sid}")
-
-        slims_samples = samples.from_records(records, config)
-
-        if samples:
+        if samples and records:
             for idx, sample in enumerate(samples):
-                match = [m for m in slims_samples if m.id == sample.id]
+                match = [m for m in samples.from_records(records, config) if m.id == sample.id]
                 common_keys = set([k for s in match for k in s]) & set(sample.keys())
                 common_keys -= set(["files", "backup", "complete"])
                 for key in common_keys:
@@ -472,10 +452,33 @@ def slims_fetch(
                         id=_data.pop("id"),
                         **deepcopy(_data),
                     )
-                    samples[idx].record = match[0].record
+        
             return samples
+        
+        elif records:
+            if config.slims.check:
+                logger.info("Checking SLIMS for completed samples")
+                check = get_records(
+                    string_criteria=config.slims.check_criteria,
+                    connection=slims_connection,
+                    derived_from=records,
+                )
+
+                original_ids = [r.cntn_id.value for r in records]
+                records = [
+                    record
+                    for record in records
+                    if record.pk() not in [b.cntn_fk_originalContent.value for b in check]
+                ]
+
+                for sid in set(original_ids) - set([r.cntn_id.value for r in records]):
+                    logger.info(f"Found completed bioinformatics for {sid}")
+
+            return samples.from_records(records, config)
+        
         else:
-            return slims_samples
+            logger.warning("No SLIMS samples found")
+            return None
 
     else:
         logger.warning("No SLIMS connection configured")
@@ -484,11 +487,11 @@ def slims_fetch(
 
 @modules.pre_hook(label="SLIMS Derive", after=["slims_fetch"])
 def slims_derive(
-    samples: data.Samples,
+    samples: SlimsSamples,
     config: cfg.Config,
     logger: LoggerAdapter,
     **_,
-) -> None:
+) -> SlimsSamples:
     """Add derived content to SLIMS samples"""
     if config.slims.dry_run:
         logger.debug("Dry run - Not adding derived records")
