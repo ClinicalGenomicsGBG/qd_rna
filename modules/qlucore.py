@@ -69,8 +69,6 @@ def qlucore(
     """Run nf-core/rnaseq (Mapping for qlucore)."""
 
     if not config.qlucore.skip:
-        logger.info("Running STAR + STAR-Fusion for qlucore")
-
         sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
             strandedness=config.strandedness,
@@ -163,4 +161,6 @@ def qlucore(
                     dest_dir=Path(sample.id) / "qlucore",
                 ),
             ]
+    
+    return samples
 

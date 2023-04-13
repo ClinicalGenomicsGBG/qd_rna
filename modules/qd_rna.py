@@ -4,6 +4,7 @@ from shutil import copy, copytree
 from cellophane import modules, data, cfg
 from logging import LoggerAdapter
 from typing import Iterable, Optional
+from copy import deepcopy
 
 
 @dataclass
@@ -24,6 +25,7 @@ class Output:
 
 class QDRNASample:
     """QD-RNA sample class."""
+
     output: list[Output] = []
 
 
@@ -35,15 +37,31 @@ class QDRNASamples(data.Mixin, sample_mixin=QDRNASample):
 
 @modules.pre_hook(label="Sample ID", after="all")
 def set_sample_id(
-    samples: data.Samples,
+    samples: data.Samples[data.Sample],
     logger: LoggerAdapter,
+    config: cfg.Config,
     **_,
 ) -> data.Samples:
     logger.debug("Adding Run ID to sample IDs")
+    _samples = deepcopy(samples)
     for sample in samples:
-        sample.id = (
-            f"{sample.id}_{sample.run}" if "run" in sample and sample.run else sample.id
-        )
+        dups = [s for s in _samples if s.id == sample.id]
+        runs = set(d.run for d in dups  if "run" in d)
+        runs = sorted(runs)
+
+        if (n := len(dups)) > 1 and config.qd_rna.merge:
+            logger.info(f"{n} samples with id {sample.id} will be merged")
+            sample.id = f"{sample.id}_{sorted(runs)[-1]}" if runs else sample.id
+            merge_file = config.outdir / f"{sample.id}.merged_runs.txt"
+            merge_file.write_text("\n".join(runs))
+            sample.output += Output(src=[merge_file], dest_dir=Path(sample.id))
+        elif n > 1 and not config.qd_rna.merge and "run" in sample:
+            sample.id = f"{sample.id}_{sample.run}"
+        elif n > 1 and not config.qd_rna.merge and "run" not in sample:
+            logger.warning(f"Will merge {n} samples with shared id {sample.id}")
+        else:
+            sample.id = f"{sample.id}_{sample.run}" if "run" in sample else sample.id
+
     return samples
 
 
@@ -70,11 +88,11 @@ def copy_results(
                 logger.warning(f"Source path {src} does not exist")
                 output.src.remove(src)
 
-    for dest_dir, dest_name, src in [
+    for dest_dir, dest_name, src in set([
         (config.results.base / o.dest_dir, o.dest_name, s)
         for o in outputs
         for s in o.src
-    ]:
+    ]):
         try:
             if Path(src).is_dir():
                 logger.debug(f"Copying directory {src} to {dest_dir}")

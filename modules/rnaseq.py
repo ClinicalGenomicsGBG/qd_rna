@@ -16,14 +16,12 @@ def rnaseq(
     logger: LoggerAdapter,
     root: Path,
     outdir: Path,
-) -> None:
+) -> data.Samples:
     """Run nf-core/rnaseq."""
 
     if not config.rnaseq.skip:
         if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
             logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
-
-        logger.info("Running nf-core/rnaseq")
 
         sample_sheet = samples.nfcore_samplesheet(
             location=outdir,
@@ -62,21 +60,24 @@ def rnaseq(
         )
 
     if not config.rnaseq.skip or config.results.copy_skipped:
-        samples[0].output = [
-            Output(
-                src=(outdir / "star_salmon").glob("salmon.*"),
-                dest_dir=Path(samples[0].id) / "salmon",
-            ),
-            Output(
-                src=outdir / "star_salmon" / samples[0].id,
-                dest_dir=Path(samples[0].id) / "salmon" / samples[0].id,
-            ),
-            Output(
-                src=outdir / config.rnaseq.aligner / "stringtie",
-                dest_dir=Path(samples[0].id) / "stringtie",
-            ),
-            Output(
-                src=outdir / "multiqc" / config.rnaseq.aligner,
-                dest_dir=Path(samples[0].id) / "multiqc",
-            ),
-        ]
+        for sample in samples:
+            sample.output = [
+                Output(
+                    src=(outdir / "star_salmon").glob("salmon.*"),
+                    dest_dir=Path(samples[0].id) / "salmon",
+                ),
+                Output(
+                    src=outdir / "star_salmon" / samples[0].id,
+                    dest_dir=Path(samples[0].id) / "salmon" / samples[0].id,
+                ),
+                Output(
+                    src=outdir / config.rnaseq.aligner / "stringtie",
+                    dest_dir=Path(samples[0].id) / "stringtie",
+                ),
+                Output(
+                    src=outdir / "multiqc" / config.rnaseq.aligner,
+                    dest_dir=Path(samples[0].id) / "multiqc",
+                ),
+            ]
+
+    return samples

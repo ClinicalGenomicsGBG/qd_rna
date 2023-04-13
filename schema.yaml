@@ -21,6 +21,11 @@ properties:
     type: integer
     description: Sample read length
 
+  merge:
+    type: boolean
+    description: Merge samples with same ID
+    default: false
+
   results:
     type: object
     properties:
