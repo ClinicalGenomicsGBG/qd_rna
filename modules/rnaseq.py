@@ -7,7 +7,7 @@ from modules.nextflow import nextflow
 from modules.qd_rna import Output
 
 
-@modules.runner(individual_samples=True)
+@modules.runner(individual_samples=True, link_by="id")
 def rnaseq(
     samples: data.Samples,
     config: cfg.Config,
