@@ -34,6 +34,7 @@ class Runner(mp.Process):
 
     label: ClassVar[str]
     individual_samples: ClassVar[bool]
+    link_by: ClassVar[Optional[str]]
     func: ClassVar[Callable]
     wait: ClassVar[bool]
     main: ClassVar[Callable]
@@ -45,6 +46,7 @@ class Runner(mp.Process):
         func: Callable,
         label: Optional[str],
         individual_samples: bool = False,
+        link_by: Optional[str] = None,
     ) -> None:
         cls.__name__ = func.__name__
         cls.__qualname__ = func.__qualname__
@@ -54,6 +56,7 @@ class Runner(mp.Process):
         cls.main = staticmethod(func)
         cls.label = label or cls.__name__
         cls.individual_samples = individual_samples
+        cls.link_by = link_by
         super().__init_subclass__()
 
     def __init__(
@@ -260,6 +263,7 @@ def post_hook(
 def runner(
     label: Optional[str] = None,
     individual_samples: bool = False,
+    link_by: Optional[str] = None,
 ):
     """Decorator for runners."""
 
@@ -269,6 +273,7 @@ def runner(
             label=label,
             func=func,
             individual_samples=individual_samples,
+            link_by=link_by,
         ):
             pass
         return _runner
