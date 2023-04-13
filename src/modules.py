@@ -9,6 +9,7 @@ from typing import Callable, Optional, ClassVar, Literal
 from pathlib import Path
 from queue import Queue
 from uuid import uuid4, UUID
+from copy import deepcopy
 
 import psutil
 
@@ -35,6 +36,7 @@ class Runner(mp.Process):
     individual_samples: ClassVar[bool]
     func: ClassVar[Callable]
     wait: ClassVar[bool]
+    main: ClassVar[Callable]
     id: UUID
     done: bool = False
 
@@ -69,11 +71,12 @@ class Runner(mp.Process):
         self.log_level = log_level
         self.n_samples = len(samples)
         self.id = uuid4()
+        
         super().__init__(
             target=self._main,
             kwargs={
                 "config": config,
-                "samples": samples,
+                "samples": deepcopy(samples),
                 "timestamp": timestamp,
                 "root": root,
             },
@@ -104,7 +107,6 @@ class Runner(mp.Process):
         if self.individual_samples:
             outdir /= samples[0].id
 
-        logger.debug(f"Passing {self.n_samples} samples to {self.label}")
         try:
             returned = self.main(
                 samples=samples,
@@ -121,14 +123,21 @@ class Runner(mp.Process):
             self.output_queue.put((samples, self.id))
 
         else:
-            logger.info(f"Finished {self.label} runner")
             match returned:
                 case None:
+                    logger.info(f"Runner {self.label} completed {self.n_samples} samples")
+                    logger.debug(f"Runner {self.label} did not return any samples, marking all as complete")
                     for sample in samples:
                         sample.complete = True
+                        logger.debug(f"Runner {self.label} completed sample {sample.id}")
                     self.output_queue.put((samples, self.id))
+                
                 case returned if issubclass(type(returned), data.Samples):
+                    logger.info(f"Runner {self.label} completed {len(returned)} samples")
+                    for sample in returned:
+                        logger.debug(f"Runner {self.label} completed sample {sample.id}")
                     self.output_queue.put((returned, self.id))
+                
                 case _:
                     logger.warning(f"Unexpected return type {type(returned)}")
                     self.output_queue.put((samples, self.id))
@@ -215,16 +224,16 @@ def pre_hook(
 
     def wrapper(func):
         class _hook(
-                Hook,
-                label=label,
-                func=func,
-                when="pre",
-                condition="always",
-                # FIXME: Figure out if this is a bug in mypy
-                before=before,  # type: ignore
-                after=after,  # type: ignore
-            ):
-                pass
+            Hook,
+            label=label,
+            func=func,
+            when="pre",
+            condition="always",
+            # FIXME: Figure out if this is a bug in mypy
+            before=before,  # type: ignore
+            after=after,  # type: ignore
+        ):
+            pass
         return _hook
     return wrapper
 

@@ -160,6 +160,7 @@ def _main(
     try:
         if samples:
             for runner in runners:
+                logger.info(f"Starting runner {runner.__name__} for {len(samples)} samples")
                 for _samples in samples.split() if runner.individual_samples else [samples]:
                     proc = runner(
                         samples=_samples,
