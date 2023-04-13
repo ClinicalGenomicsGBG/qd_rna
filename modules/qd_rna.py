@@ -49,15 +49,15 @@ def set_sample_id(
         runs = set(d.run for d in dups  if "run" in d)
         runs = sorted(runs)
 
-        if (n := len(dups)) > 1 and config.qd_rna.merge:
+        if (n := len(dups)) > 1 and config.merge:
             logger.info(f"{n} samples with id {sample.id} will be merged")
             sample.id = f"{sample.id}_{sorted(runs)[-1]}" if runs else sample.id
             merge_file = config.outdir / f"{sample.id}.merged_runs.txt"
             merge_file.write_text("\n".join(runs))
             sample.output += Output(src=[merge_file], dest_dir=Path(sample.id))
-        elif n > 1 and not config.qd_rna.merge and "run" in sample:
+        elif n > 1 and not config.merge and "run" in sample:
             sample.id = f"{sample.id}_{sample.run}"
-        elif n > 1 and not config.qd_rna.merge and "run" not in sample:
+        elif n > 1 and not config.merge and "run" not in sample:
             logger.warning(f"Will merge {n} samples with shared id {sample.id}")
         else:
             sample.id = f"{sample.id}_{sample.run}" if "run" in sample else sample.id
