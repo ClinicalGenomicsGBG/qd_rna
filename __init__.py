@@ -183,8 +183,7 @@ def _main(
             result, pid = _OUTPUT_QUEUE.get()
             result_samples += result
             for sample in result:
-                if sample.complete:
-                    logger.info(f"Runner {_PROCS[pid].name} completed sample {sample.id}")
+                if sample.done:
                     sample_pids[sample.id] -= {pid}
                     if not sample_pids[sample.id]:
                         logger.info(f"Sample {sample.id} completed by all runners")
@@ -193,7 +192,6 @@ def _main(
                     else:
                         partial_samples += [sample]
                 else:
-                    logger.warning(f"Runner {_PROCS[pid].name} failed sample {sample.id}")
                     failed_samples += [sample]
 
             _PROCS[pid].join()

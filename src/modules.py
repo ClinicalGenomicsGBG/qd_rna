@@ -93,7 +93,7 @@ class Runner(mp.Process):
         root: Path,
     ) -> Optional[data.Samples[data.Sample]]:
         for sample in samples:
-            sample.complete = False
+            sample.done = None
             sample.runner = self.label
 
         logger = logs.get_logger(
@@ -131,15 +131,27 @@ class Runner(mp.Process):
                     logger.info(f"Runner {self.label} completed {self.n_samples} samples")
                     logger.debug(f"Runner {self.label} did not return any samples, marking all as complete")
                     for sample in samples:
-                        sample.complete = True
+                        sample.done = True
                         logger.debug(f"Runner {self.label} completed sample {sample.id}")
                     self.output_queue.put((samples, self.id))
                 
                 case returned if issubclass(type(returned), data.Samples):
-                    logger.info(f"Runner {self.label} completed {len(returned)} samples")
                     for sample in returned:
-                        logger.debug(f"Runner {self.label} completed sample {sample.id}")
+                        sample.done = True if sample.done is None else sample.done    
+                        n_done, n_failed = 0, 0
+                        if sample.done:
+                            n_done += 1
+                            logger.debug(f"Runner {self.label} completed sample {sample.id}")
+                        else:
+                            n_failed += 1
+                            logger.debug(f"Runner {self.label} failed sample {sample.id}")
+                    if n_done:
+                        logger.info(f"Runner {self.label} completed {n_done} samples")
+                    if n_failed:
+                        logger.warning(f"Runner {self.label} failed {n_failed} samples")
                     self.output_queue.put((returned, self.id))
+                    
+                    
                 
                 case _:
                     logger.warning(f"Unexpected return type {type(returned)}")
