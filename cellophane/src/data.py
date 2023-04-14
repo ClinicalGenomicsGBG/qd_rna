@@ -11,6 +11,7 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Literal,
     TypeVar,
 )
 
@@ -72,10 +73,10 @@ class Sample(Container):
 
     id: str
     files: Optional[list[str]]
-    complete: bool
+    done: Optional[bool]
 
-    def __init__(self, /, id, files=None, complete=False, **kwargs):
-        super().__init__(id=id, files=files, complete=complete, **kwargs)
+    def __init__(self, /, id, files=None, done=None, **kwargs):
+        super().__init__(id=id, files=files, done=done, **kwargs)
 
 
 S = TypeVar("S", bound=Sample)
