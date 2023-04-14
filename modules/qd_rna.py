@@ -102,7 +102,7 @@ def copy_results(
         try:
             if Path(src).is_dir():
                 logger.debug(f"Copying directory {src} to {dest_dir}")
-                copytree(src, dest_dir)
+                copytree(src, dest_dir, dirs_exist_ok=True)
             else:
                 dest_dir.mkdir(parents=True, exist_ok=True)
                 dest_path = dest_dir / (dest_name or src.name)
