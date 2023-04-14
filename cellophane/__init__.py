@@ -187,8 +187,9 @@ def _main(
                     sample_pids[sample.id] -= {pid}
                     if not sample_pids[sample.id]:
                         logger.info(f"Sample {sample.id} completed by all runners")
+                        complete_samples += [s for s in result_samples if s.id == sample.id]
                         partial_samples = data.Samples(s for s in result_samples if s.id == sample.id)
-                        complete_samples += [sample]
+                        
                     else:
                         partial_samples += [sample]
                 else:
