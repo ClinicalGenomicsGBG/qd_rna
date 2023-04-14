@@ -427,7 +427,7 @@ def slims_fetch(
             for idx, sample in enumerate(samples):
                 match = [m for m in samples.from_records(records, config) if m.id == sample.id]
                 common_keys = set([k for s in match for k in s]) & set(sample.keys())
-                common_keys -= set(["files", "backup", "complete"])
+                common_keys -= set(["files", "backup", "done"])
                 for key in common_keys:
                     _match = []
                     for match_sample in match:
