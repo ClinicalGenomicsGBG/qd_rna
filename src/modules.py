@@ -136,9 +136,9 @@ class Runner(mp.Process):
                     self.output_queue.put((samples, self.id))
                 
                 case returned if issubclass(type(returned), data.Samples):
+                    n_done, n_failed = 0, 0
                     for sample in returned:
                         sample.done = True if sample.done is None else sample.done    
-                        n_done, n_failed = 0, 0
                         if sample.done:
                             n_done += 1
                             logger.debug(f"Runner {self.label} completed sample {sample.id}")
