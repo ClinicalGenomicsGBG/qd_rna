@@ -76,8 +76,10 @@ class Sample(Container):
     done: Optional[bool]
 
     def __init__(self, /, id, files=None, done=None, **kwargs):
-        super().__init__(id=id, files=files, done=done, **kwargs)
-
+        super().__init__(id=str(id), files=files, done=done, **kwargs)
+    
+    def __str__(self):
+        return self.id
 
 S = TypeVar("S", bound=Sample)
 class Samples(UserList[S]):
@@ -112,6 +114,9 @@ class Samples(UserList[S]):
 
     def __reduce__(self) -> Callable | tuple:
         return self.__class__, (self.data,)
+
+    def __str__(self):
+        return "\n".join([str(s) for s in self])
 
 
 class Mixin:
