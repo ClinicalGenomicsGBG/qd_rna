@@ -35,7 +35,6 @@ properties:
               {% for id in samples.unique_ids %}
               {{ id }}
               {% endfor %}
-              {% endif %}
           from_addr:
             type: string
             description: "From address to use"
