@@ -26,6 +26,7 @@ def _extract(
             args = [
                 "-d",
                 "-g",
+                "-w $TMPDIR",
                 f"-t {config.unpack.sge_slots}",
                 f"-i {compressed_path}",
                 f"-o {extract_path}",
