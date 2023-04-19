@@ -96,15 +96,21 @@ def unpack(
                         continue
 
                     extract_path = compressed_path.with_suffix(".fastq.gz")
+
                     alt_paths = [
                         extract_path.parent
                         / f"{extract_path.name.partition('.')[0]}_1.fastq.gz",
                         extract_path.parent
                         / f"{extract_path.name.partition('.')[0]}_2.fastq.gz",
                     ]
-                    if extract_path.exists() or all(p.exists() for p in alt_paths):
+
+                    if extract_path.exists():
                         logger.debug(f"Extracted file found for {sample.id}")
                         sample.files[f_idx] = extract_path
+                        continue
+                    elif all(p.exists() for p in alt_paths):
+                        logger.debug(f"Extracted files found for {sample.id}")
+                        sample.files = alt_paths
                         continue
                     else:
                         logger.info(f"Extracting {compressed_path}")
