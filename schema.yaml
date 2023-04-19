@@ -79,11 +79,14 @@ properties:
         allOf:
           - required:
             - host
-          - if: {properties: {authentication: {const: true}}}
+          - if: {properties: {user: {const: true}}}
+            then:
+              required:
+                - password
+          - if: {properties: {password: {const: true}}}
             then:
               required:
                 - user
-                - password
         properties:
           host:
             type: string
@@ -95,10 +98,6 @@ properties:
           tls:
             type: boolean
             description: "Use TLS"
-            default: false
-          authentication:
-            type: bool
-            description: "Use SMTP authentication"
             default: false
           user:
             type: string
