@@ -1,17 +1,14 @@
 """Utilities for interacting with SLIMS"""
 
 from collections import UserDict, UserList
-from copy import deepcopy
 from functools import reduce
 from pathlib import Path
 from typing import (
     Any,
-    Callable,
     Hashable,
     Mapping,
     Optional,
     Sequence,
-    Literal,
     TypeVar,
 )
 
@@ -20,6 +17,7 @@ from yaml import safe_load
 
 class Container(UserDict):
     """A dict that allows attribute access to its items"""
+
     def __contains__(self, key: Hashable | Sequence[Hashable]) -> bool:
         try:
             self[key]
@@ -35,7 +33,7 @@ class Container(UserDict):
         match key:
             case k if isinstance(k, Hashable):
                 self.data[k] = item
-            case *k,:
+            case *k, :
                 reduce(lambda d, k: d.setdefault(k, Container()), k[:-1], self.data)[
                     k[-1]
                 ] = item
@@ -44,7 +42,7 @@ class Container(UserDict):
 
     def __getitem__(self, key: Hashable | Sequence[Hashable]) -> Any:
         match key:
-            case *k,:
+            case *k, :
                 return reduce(lambda d, k: d[k], k, self.data)
             case k if isinstance(k, Hashable):
                 return self.data[k]
@@ -77,11 +75,14 @@ class Sample(Container):
 
     def __init__(self, /, id, files=None, done=None, **kwargs):
         super().__init__(id=str(id), files=files, done=done, **kwargs)
-    
+
     def __str__(self):
         return self.id
 
+
 S = TypeVar("S", bound=Sample)
+
+
 class Samples(UserList[S]):
     """A list of sample containers"""
 
@@ -97,44 +98,61 @@ class Samples(UserList[S]):
                 samples.append(Sample(id=str(id), **sample))
         return cls(samples)
 
-    def split(self, link_by: Optional[str]) -> "Samples":
+    def split(self, link_by: Optional[str]):
         if link_by is not None:
-            linked = {s[link_by]: [l for l in self if l[link_by] == s[link_by]] for s in self}
-            for linked in linked.values():
-                yield self.__class__(linked)
+            linked = {
+                sample[link_by]: [
+                    li for li in self if li[link_by] == sample[link_by]
+                ]
+                for sample in self
+            }
+            for li in linked.values():
+                yield self.__class__(li)
         else:
             for sample in self:
                 yield self.__class__([sample])
 
     def validate(self):
         for sample in self:
-            if None in sample.files or not isinstance(sample.id, str):
+            if (
+                sample.files is None
+                or None in sample.files
+                or not isinstance(sample.id, str)
+            ):
                 yield sample
-        self.data = [s for s in self if None not in s.files]
-    
+        self.data = [
+            sample
+            for sample in self
+            if sample.files is not None and None not in sample.files
+        ]
+
     @property
     def unique_ids(self):
         return set(s.id for s in self)
 
     @property
     def complete(self):
-        return [
-            sample
-            for samples_by_id in self.split(link_by=id)
-            if all(sample.done for sample in samples_by_id)
-            for sample in samples_by_id
-        ]
-    
+        return self.__class__(
+            [
+                sample
+                for samples_by_id in self.split(link_by="id")
+                if all(sample.done for sample in samples_by_id)
+                for sample in samples_by_id
+            ]
+        )
+
     @property
     def failed(self):
-        return [
-            sample
-            for samples_by_id in self.split(link_by=id)
-            if not all(sample.done for sample in samples_by_id)
-            for sample in samples_by_id
-        ]
+        return self.__class__(
+            [
+                sample
+                for samples_by_id in self.split(link_by="id")
+                if not all(sample.done for sample in samples_by_id)
+                for sample in samples_by_id
+            ]
+        )
 
-    def __reduce__(self) -> Callable | tuple:
+    def __reduce__(self):
         return self.__class__, (self.data,)
 
     def __str__(self):
@@ -145,5 +163,6 @@ class Mixin:
     sample_mixin: Optional[type]
 
     """Mixin class for adding properties to Samples"""
+
     def __init_subclass__(cls, sample_mixin: Optional[type] = None) -> None:
         cls.sample_mixin = sample_mixin
