@@ -35,7 +35,7 @@ class QDRNASamples(data.Mixin, sample_mixin=QDRNASample):
     pass
 
 
-@modules.pre_hook(label="Sample ID", after="all")
+@modules.pre_hook(label="Sample ID", after=["unpack"], before=["start_mail"])
 def set_sample_id(
     samples: data.Samples[data.Sample],
     logger: LoggerAdapter,
@@ -47,8 +47,7 @@ def set_sample_id(
     known_dups: set[str] = set()
     for sample in samples:
         dups = [s for s in _samples if s.id == sample.id]
-        runs = set(d.run for d in dups  if "run" in d)
-        runs = sorted(runs)
+        runs = set(sorted(d.run for d in dups if "run" in d))
 
         if (n := len(dups)) > 1 and config.merge:
             if sample.id not in known_dups:
