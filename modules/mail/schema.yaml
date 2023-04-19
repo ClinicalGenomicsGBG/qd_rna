@@ -17,6 +17,11 @@ properties:
         description: "Don't send mail"
       start:
         type: object
+        required:
+          - subject
+          - body
+          - from_addr
+          - to_addr
         properties: &message
           subject:
             type: string
@@ -41,6 +46,11 @@ properties:
             description: "List of CC recipients" 
       end:
         type: object
+        required:
+          - subject
+          - body
+          - from_addr
+          - to_addr
         properties:
           <<: *message
           subject:
