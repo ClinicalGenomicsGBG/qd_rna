@@ -22,24 +22,24 @@ def _extract(
 
     match method:
         case "petagene":
-            args = (
-                "-d"
-                f"-t {config.unpack.sge_slots}"
+            args = [
+                "-d",
+                f"-t {config.unpack.sge_slots}",
                 f"{compressed_path}"
-            )
+            ]
         case "spring":
-            args = (
-                "-d"
-                f"-t {config.unpack.sge_slots}"
-                f"-i {compressed_path}"
+            args = [
+                "-d",
+                f"-t {config.unpack.sge_slots}",
+                f"-i {compressed_path}",
                 f"-o {extract_path}"
-            )
+            ]
         case _:
             raise ValueError(f"Unknown unpack method: {method}")
 
     sge.submit(
         str(Path(__file__).parent / "scripts" / f"{method}.sh"),
-        args,
+        *args,
         queue=config.unpack.sge_queue,
         pe=config.unpack.sge_pe,
         slots=config.unpack.sge_slots,
@@ -79,7 +79,7 @@ def _extract_callback(
 
 
 @modules.pre_hook(label="unpack", after=["hcp_fetch"])
-def petagene_extract(
+def unpack(
     samples: data.Samples,
     config: cfg.Config,
     logger: LoggerAdapter,

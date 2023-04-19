@@ -1,30 +1,8 @@
-# SLIMS module for Cellophane
+# Unpacking module for Cellophane
 
 Module for unpacking compressed files. Supports SPRING (.spring) and Petagene (.fasterq) compressed FASTQ via SGE.
 
 ## Configuration
-
-  unpack:
-    type: object
-    properties:
-      sge_queue:
-        type: string
-        description: SGE queue for decompression
-      sge_pe:
-        type: string
-        description: SGE parallel environment for decompression
-      sge_slots:
-        type: integer
-        description: SGE slots (threads) for decompression
-        default: 40
-      parallel:
-        type: integer
-        description: Maximum number of decompression jobs to submit at once
-        default: 100
-    required:
-      - sge_queue
-      - sge_pe
-
 
 Option             | Type | Required | Default | Description
 -------------------|------|----------|---------|-------------
@@ -35,6 +13,6 @@ Option             | Type | Required | Default | Description
 
 ## Hooks
 
-Name                    | When | Condition | Description
-------------------------|------|-----------|-------------
-`petagene_extract`      | Pre  |           | Extract sample files
+Name     | When | Condition | Description
+---------|------|-----------|-------------
+`unpack` | Pre  |           | Extract sample files
