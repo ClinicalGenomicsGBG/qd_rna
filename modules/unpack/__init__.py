@@ -6,7 +6,6 @@ import sys
 from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
-
 from cellophane import cfg, data, modules, sge
 
 
@@ -22,17 +21,14 @@ def _extract(
 
     match method:
         case "petagene":
-            args = [
-                "-d",
-                f"-t {config.unpack.sge_slots}",
-                f"{compressed_path}"
-            ]
+            args = ["-d", f"-t {config.unpack.sge_slots}", f"{compressed_path}"]
         case "spring":
             args = [
                 "-d",
+                "-g",
                 f"-t {config.unpack.sge_slots}",
                 f"-i {compressed_path}",
-                f"-o {extract_path}"
+                f"-o {extract_path}",
             ]
         case _:
             raise ValueError(f"Unknown unpack method: {method}")
@@ -67,11 +63,12 @@ def _extract_callback(
     elif extract_path.exists():
         logger.debug(f"Extracted {extract_path}")
         samples[s_idx].files[f_idx] = extract_path
-    elif (
-        (fq1 := extract_path.with_suffix(".1")).exists() and
+    elif ((fq1 := extract_path.with_suffix(".1")).exists()) and (
         (fq2 := extract_path.with_suffix(".2")).exists()
     ):
         logger.debug(f"Extracted {fq1} and {fq2}")
+        fq1.rename(fq1.parent / f"{fq1.name.partition('.')[0]}_1.fastq.gz")
+        fq2.rename(fq2.parent / f"{fq2.name.partition('.')[0]}_2.fastq.gz")
         samples[s_idx].files = [fq1, fq2]
     else:
         logger.error(f"Extraction completed, but {extract_path} does not exist")
@@ -98,7 +95,13 @@ def unpack(
                         continue
 
                     extract_path = compressed_path.with_suffix(".fastq.gz")
-                    if extract_path.exists():
+                    alt_paths = [
+                        extract_path.parent
+                        / f"{extract_path.name.partition('.')[0]}_1.fastq.gz",
+                        extract_path.parent
+                        / f"{extract_path.name.partition('.')[0]}_2.fastq.gz",
+                    ]
+                    if extract_path.exists() or all(p.exists() for p in alt_paths):
                         logger.debug(f"Extracted file found for {sample.id}")
                         sample.files[f_idx] = extract_path
                         continue
