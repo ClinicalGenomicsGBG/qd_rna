@@ -5,10 +5,8 @@ properties:
     if: {properties: {skip: {const: false}}}
     then:
       required:
-        - subject
-        - body
-        - from
-        - to
+        - start
+        - end
         - smtp
     properties:
       skip:
