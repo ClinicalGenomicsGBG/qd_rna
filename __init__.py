@@ -12,12 +12,12 @@ def _send_mail(
     *,
     from_addr: str,
     to_addr: list[str] | str,
-    cc_addr: list[str] | str,
     subject: str,
     body: str,
     host: str,
     port: int,
     tls: bool = False,
+    cc_addr: Optional[list[str] | str] = None,
     user: Optional[str] = None,
     password: Optional[str] = None,
     attachments: Optional[list[Path]] = None,
@@ -33,7 +33,8 @@ def _send_mail(
     msg["Subject"] = subject
     msg["From"] = from_addr
     msg["To"] = ", ".join(to_addr) if isinstance(to_addr, list) else to_addr
-    msg["Cc"] = ", ".join(cc_addr) if isinstance(cc_addr, list) else cc_addr
+    if cc_addr is not None:
+        msg["Cc"] = ", ".join(cc_addr) if isinstance(cc_addr, list) else cc_addr
 
     for attachment in attachments or []:
         ctype, encoding = guess_type(attachment)
@@ -64,7 +65,8 @@ def _render_mail(subject, body, **kwargs):
     return subject, body
 
 
-def _hook_proto(
+@modules.pre_hook(label="Send start mail", after="all")
+def start_mail(
     samples: data.Samples[data.Sample],
     logger: LoggerAdapter,
     config: cfg.Config,
@@ -77,8 +79,38 @@ def _hook_proto(
             **config.mail.start,
             samples=samples,
         )
-        _send_mail(**config.mail.smtp, body=body, subject=subject)
+
+        cc_addr = config.mail.start.cc_addr if "cc_addr" in config.mail.start else None
+        _send_mail(
+            **config.mail.smtp,
+            body=body,
+            subject=subject,
+            to_addr=config.mail.start.to_addr,
+            from_addr=config.mail.start.from_addr,
+            cc_addr=cc_addr,
+        )
 
 
-start_mail = modules.pre_hook(label="Send start mail", after="all")(_hook_proto)
-end_mail = modules.post_hook(label="Send end mail", condition="always")(_hook_proto)
+@modules.post_hook(label="Send end mail", condition="always")
+def end_mail(
+    samples: data.Samples[data.Sample],
+    logger: LoggerAdapter,
+    config: cfg.Config,
+    **_,
+):
+    if not config.mail.skip:
+        logger.debug(f"Sending end mail to {config.mail.end.to_addr}")
+        subject, body = _render_mail(
+            **config.mail,
+            **config.mail.end,
+            samples=samples,
+        )
+        cc_addr = config.mail.end.cc_addr if "cc_addr" in config.mail.end else None
+        _send_mail(
+            **config.mail.smtp,
+            body=body,
+            subject=subject,
+            to_addr=config.mail.end.to_addr,
+            from_addr=config.mail.end.from_addr,
+            cc_addr=cc_addr,
+        )
