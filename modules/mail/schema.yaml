@@ -37,10 +37,10 @@ properties:
             type: string
             description: "From address to use"
           to_addr:
-            type: list
+            type: array
             description: "List of recipients"
           cc_addr:
-            type: list
+            type: array
             description: "List of CC recipients" 
       end:
         type: object
@@ -79,14 +79,11 @@ properties:
         allOf:
           - required:
             - host
-          - if: {properties: {user: {const: true}}}
-            then:
-              required:
-                - password
-          - if: {properties: {password: {const: true}}}
+          - if: {properties: {authentication: {const: true}}}
             then:
               required:
                 - user
+                - password
         properties:
           host:
             type: string
@@ -98,6 +95,10 @@ properties:
           tls:
             type: boolean
             description: "Use TLS"
+            default: false
+          authentication:
+            type: bool
+            description: "Use SMTP authentication"
             default: false
           user:
             type: string

@@ -77,7 +77,7 @@ def _hook_proto(
             **config.mail.start,
             samples=samples,
         )
-        _send_mail(**config.mail, body=body, subject=subject)
+        _send_mail(**config.mail.smtp, body=body, subject=subject)
 
 
 start_mail = modules.pre_hook(label="Send start mail", after="all")(_hook_proto)
