@@ -70,9 +70,14 @@ def _hook_proto(
     config: cfg.Config,
     **_,
 ):
-    logger.debug(f"Sending start mail to {config.mail.start.to_addrs}")
-    subject, body = _render_mail(**config.mail, **config.mail.start, samples=samples)
-    _send_mail(**config.mail, body=body, subject=subject)
+    if not config.mail.skip:
+        logger.debug(f"Sending start mail to {config.mail.start.to_addrs}")
+        subject, body = _render_mail(
+            **config.mail,
+            **config.mail.start,
+            samples=samples,
+        )
+        _send_mail(**config.mail, body=body, subject=subject)
 
 
 start_mail = modules.pre_hook(label="Send start mail", after="all")(_hook_proto)
