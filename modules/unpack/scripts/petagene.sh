@@ -3,5 +3,13 @@
 set -e -o pipefail
 
 module load petasuite
-echo "CMD: petasuite $@"
-petasuite $@
+
+echo "CMD: petasuite \
+--decompress \
+--numthreads $THREADS \
+$COMPRESSED_PATH"
+
+petasuite \
+    --decompress \
+    --numthreads $THREADS \
+    $COMPRESSED_PATH

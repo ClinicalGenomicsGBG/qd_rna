@@ -21,22 +21,22 @@ def _extract(
 
     match method:
         case "petagene":
-            args = ["-d", f"-t {config.unpack.sge_slots}", f"{compressed_path}"]
+            env = dict(
+                COMPRESSED_PATH=compressed_path,
+                THREADS=config.unpack.sge_slots,
+            )
         case "spring":
-            args = [
-                "-d",
-                "-g",
-                "-w $TMPDIR",
-                f"-t {config.unpack.sge_slots}",
-                f"-i {compressed_path}",
-                f"-o {extract_path}",
-            ]
+            env = dict(
+                COMPRESSED_PATH=compressed_path,
+                EXTRACT_PATH=extract_path,
+                THREADS=config.unpack.sge_slots,
+            )
         case _:
             raise ValueError(f"Unknown unpack method: {method}")
 
     sge.submit(
         str(Path(__file__).parent / "scripts" / f"{method}.sh"),
-        *args,
+        env=env,
         queue=config.unpack.sge_queue,
         pe=config.unpack.sge_pe,
         slots=config.unpack.sge_slots,
