@@ -30,7 +30,6 @@ name = "qd-rna"
 [tool.poetry2conda.dependencies]
 ngpiris = { channel = "pip" }
 slims-python-api = { channel = "pip" }
-xxhash = { channel = "pip" }
 rich-click = { channel = "conda-forge" }
 
 
