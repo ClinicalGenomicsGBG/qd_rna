@@ -17,27 +17,28 @@ properties:
         description: "Don't send mail"
       start: &message
         type: object
-        subject:
-          type: string
-          description: "Subject of the mail (jinja2 template)"
-          default: "{{ analysis }} started"
-        body:
-          type: string
-          description: "Body of the mail (jinja2 template)"
-          default: |
-            {{ analysis }} has started for {{ len(samples.unique_ids) }} sample(s).
-            
-            The following samples are being analyzed:
-            {{ samples.unique_ids }}
-        from_addr:
-          type: string
-          description: "From address to use"
-        to_addr:
-          type: list
-          description: "List of recipients"
-        cc_addr:
-          type: list
-          description: "List of CC recipients" 
+        properties:
+          subject:
+            type: string
+            description: "Subject of the mail (jinja2 template)"
+            default: "{{ analysis }} started"
+          body:
+            type: string
+            description: "Body of the mail (jinja2 template)"
+            default: |
+              {{ analysis }} has started for {{ len(samples.unique_ids) }} sample(s).
+              
+              The following samples are being analyzed:
+              {{ samples.unique_ids }}
+          from_addr:
+            type: string
+            description: "From address to use"
+          to_addr:
+            type: list
+            description: "List of recipients"
+          cc_addr:
+            type: list
+            description: "List of CC recipients" 
       end:
         <<: *message
         subject:
