@@ -64,12 +64,12 @@ def _extract_callback(
     elif extract_path.exists():
         logger.debug(f"Extracted {extract_path}")
         samples[s_idx].files[f_idx] = extract_path
-    elif ((fq1 := extract_path.with_suffix(".1")).exists()) and (
-        (fq2 := extract_path.with_suffix(".2")).exists()
+    elif ((fq1 := extract_path.with_suffix(".gz.1")).exists()) and (
+        (fq2 := extract_path.with_suffix(".gz.2")).exists()
     ):
-        logger.debug(f"Extracted {fq1} and {fq2}")
         fq1.rename(fq1.parent / f"{fq1.name.partition('.')[0]}_1.fastq.gz")
         fq2.rename(fq2.parent / f"{fq2.name.partition('.')[0]}_2.fastq.gz")
+        logger.debug(f"Extracted {fq1} and {fq2}")
         samples[s_idx].files = [fq1, fq2]
     else:
         logger.error(f"Extraction completed, but {extract_path} does not exist")
