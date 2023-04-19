@@ -34,7 +34,7 @@ properties:
               The following samples are being analyzed:
               {% for id in samples.unique_ids %}
               {{ id }}
-              {% endfor %}
+              {%- endfor %}
           from_addr:
             type: string
             description: "From address to use"
@@ -62,19 +62,17 @@ properties:
             description: "Body of the mail (jinja2 template)"
             default: |
               {{ analysis }} has finished processing {{ samples.unique_ids|length }} sample(s).
-
               {% if samples.failed|length > 0 %}
               Analysis completed successfully for the following samples:
               {% for id in samples.failed.unique_ids %}
               {{ id }}
-              {% endfor %}
+              {%- endfor %}
               {% endif %}
-
-              {% if samples.complete|length > 0 %}
+              {%- if samples.complete|length > 0 %}
               Analysis completed with warnings for the following samples:
               {% for id in samples.complete.unique_ids %}
               {{ id }}
-              {% endfor %}
+              {%- endfor %}
               {% endif %}
       smtp:
         type: object

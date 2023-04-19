@@ -77,6 +77,7 @@ def start_mail(
         subject, body = _render_mail(
             **config.mail,
             **config.mail.start,
+            analysis=config.analysis,
             samples=samples,
         )
 
@@ -103,6 +104,7 @@ def end_mail(
         subject, body = _render_mail(
             **config.mail,
             **config.mail.end,
+            analysis=config.analysis,
             samples=samples,
         )
         cc_addr = config.mail.end.cc_addr if "cc_addr" in config.mail.end else None
