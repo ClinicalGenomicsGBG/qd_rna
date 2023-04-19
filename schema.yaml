@@ -79,11 +79,11 @@ properties:
         allOf:
           - required:
             - host
-          - if: {properties: {user: {const: true}}}
+          - if: {properties: {user: {pattern: ".+"}}}
             then:
               required:
                 - password
-          - if: {properties: {password: {const: true}}}
+          - if: {properties: {password: {pattern: ".+"}}}
             then:
               required:
                 - user
