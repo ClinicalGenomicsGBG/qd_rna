@@ -71,7 +71,7 @@ def _hook_proto(
     **_,
 ):
     if not config.mail.skip:
-        logger.debug(f"Sending start mail to {config.mail.start.to_addrs}")
+        logger.debug(f"Sending start mail to {config.mail.start.to_addr}")
         subject, body = _render_mail(
             **config.mail,
             **config.mail.start,
