@@ -174,7 +174,7 @@ class Hook:
         func: Callable,
         when: Literal["pre", "post"],
         label: str | None = None,
-        condition: Literal["complete", "partial", "always"] = "always",
+        condition: Literal["always", "complete", "failed"] = "always",
         before: list[str] = [],
         after: list[str] = [],
     ) -> None:

@@ -154,9 +154,6 @@ def _main(
     result_samples = data.Samples()
     sample_pids: dict(str, set[UUID]) = {s.id: set() for s in samples}
 
-    failed_samples = data.Samples()
-    partial_samples = data.Samples()
-    complete_samples = data.Samples()
     try:
         if samples:
             for runner in runners:
@@ -183,16 +180,8 @@ def _main(
             result, pid = _OUTPUT_QUEUE.get()
             result_samples += result
             for sample in result:
-                if sample.done:
-                    sample_pids[sample.id] -= {pid}
-                    if not sample_pids[sample.id]:
-                        logger.info(f"Sample {sample.id} completed by all runners")
-                        complete_samples += [s for s in result_samples if s.id == sample.id]
-                        partial_samples = data.Samples(s for s in result_samples if s.id != sample.id)
-                    else:
-                        partial_samples += [sample]
-                else:
-                    failed_samples += [sample]
+                if sample.id in samples.complete.unique_ids:
+                    logger.info(f"Sample {sample.id} completed by all runners")
 
             _PROCS[pid].join()
             _PROCS[pid].done = True
@@ -206,15 +195,13 @@ def _main(
         _cleanup(logger)
 
     finally:
-        failed_samples += data.Samples(s for s in samples if s.id not in [r.id for r in result_samples])
         for hook in [h() for h in hooks if h.when == "post"]:
 
             hook(
                 samples=data.Samples(
                     [
-                        *complete_samples,
-                        *(partial_samples if hook.condition != "complete" else []),
-                        *(failed_samples if hook.condition == "always" else []),
+                        *(samples.complete if hook.condition in ("complete", "always") else []),
+                        *(samples.failed if hook.condition in ("failed", "always") else []),
                     ]
                 ),
                 config=config,
@@ -264,6 +251,7 @@ def cellophane(
     )
     def inner(config_path, logger, **kwargs) -> Any:
         _config = cfg.Config(config_path, schema, **kwargs)
+        _config.analysis = label
         try:
             return _main(
                 config=_config,

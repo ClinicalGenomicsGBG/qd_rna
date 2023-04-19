@@ -111,6 +111,28 @@ class Samples(UserList[S]):
             if None in sample.files or not isinstance(sample.id, str):
                 yield sample
         self.data = [s for s in self if None not in s.files]
+    
+    @property
+    def unique_ids(self):
+        return set(s.id for s in self)
+
+    @property
+    def complete(self):
+        return [
+            sample
+            for samples_by_id in self.split(link_by=id)
+            if all(sample.done for sample in samples_by_id)
+            for sample in samples_by_id
+        ]
+    
+    @property
+    def failed(self):
+        return [
+            sample
+            for samples_by_id in self.split(link_by=id)
+            if not all(sample.done for sample in samples_by_id)
+            for sample in samples_by_id
+        ]
 
     def __reduce__(self) -> Callable | tuple:
         return self.__class__, (self.data,)
