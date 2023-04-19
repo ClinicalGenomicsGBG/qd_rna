@@ -15,9 +15,9 @@ properties:
         type: boolean
         default: false
         description: "Don't send mail"
-      start: &message
+      start:
         type: object
-        properties:
+        properties: &message
           subject:
             type: string
             description: "Subject of the mail (jinja2 template)"
@@ -40,30 +40,32 @@ properties:
             type: list
             description: "List of CC recipients" 
       end:
-        <<: *message
-        subject:
-          type: string
-          description: "Subject of the mail (jinja2 template)"
-          default: "{{ analysis }} finished"
-        body:
-          type: string
-          description: "Body of the mail (jinja2 template)"
-          default: |
-            {{ analysis }} has finished processing {{ len(samples) }} sample(s).
+        type: object
+        properties:
+          <<: *message
+          subject:
+            type: string
+            description: "Subject of the mail (jinja2 template)"
+            default: "{{ analysis }} finished"
+          body:
+            type: string
+            description: "Body of the mail (jinja2 template)"
+            default: |
+              {{ analysis }} has finished processing {{ len(samples) }} sample(s).
 
-            {% if len(samples.failed) > 0 %}
-            Analysis completed successfully for the following samples:
-            {% for id in samples.failed.unique_ids %}
-            {{ id }}
-            {% endfor %}
-            {% endif %}
+              {% if len(samples.failed) > 0 %}
+              Analysis completed successfully for the following samples:
+              {% for id in samples.failed.unique_ids %}
+              {{ id }}
+              {% endfor %}
+              {% endif %}
 
-            {% if len(samples.complete) > 0 %}
-            Analysis completed with warnings for the following samples:
-            {% for id in samples.complete.unique_ids %}
-            {{ id }}
-            {% endfor %}
-            {% endif %}
+              {% if len(samples.complete) > 0 %}
+              Analysis completed with warnings for the following samples:
+              {% for id in samples.complete.unique_ids %}
+              {{ id }}
+              {% endfor %}
+              {% endif %}
       smtp:
         type: object
         allOf:
