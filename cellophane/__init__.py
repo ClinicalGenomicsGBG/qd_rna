@@ -72,11 +72,15 @@ def _load_modules(
                             logging.root.removeHandler(handler)
 
                     for obj in [getattr(module, a) for a in dir(module)]:
-                        if isinstance(obj, type) and (
-                            issubclass(obj, modules.Hook)
-                            or issubclass(obj, data.Mixin)
-                            or issubclass(obj, modules.Runner)
-                        ) and inspect.getmodule(obj) == module:
+                        if (
+                            isinstance(obj, type)
+                            and (
+                                issubclass(obj, modules.Hook)
+                                or issubclass(obj, data.Mixin)
+                                or issubclass(obj, modules.Runner)
+                            )
+                            and inspect.getmodule(obj) == module
+                        ):
                             yield base, obj
 
 
@@ -128,12 +132,12 @@ def _main(
         data.Samples.__bases__ = (*data.Samples.__bases__, mixin)
         if mixin.sample_mixin is not None:
             data.Sample.__bases__ = (*data.Sample.__bases__, mixin.sample_mixin)
-    
+
     if "samples_file" in config:
         samples = data.Samples.from_file(config.samples_file)
     else:
         samples = data.Samples()
-    
+
     for hook in [h() for h in hooks if h.when == "pre"]:
         result = hook(
             samples=deepcopy(samples),
@@ -150,16 +154,21 @@ def _main(
     for invalid_sample in samples.validate():
         logger.warning(f"Removed invalid sample {invalid_sample.id}")
 
-    
     result_samples = data.Samples()
-    sample_pids: dict(str, set[UUID]) = {s.id: set() for s in samples}
+    sample_pids: dict[str, set[UUID]] = {s.id: set() for s in samples}
 
     try:
         if samples:
             for runner in runners:
-                logger.info(f"Starting runner {runner.__name__} for {len(samples)} samples")
+                logger.info(
+                    f"Starting runner {runner.__name__} for {len(samples)} samples"
+                )
 
-                for _samples in samples.split(link_by=runner.link_by) if runner.individual_samples else [samples]:
+                for _samples in (
+                    samples.split(link_by=runner.link_by)
+                    if runner.individual_samples
+                    else [samples]
+                ):
                     proc = runner(
                         samples=_samples,
                         config=config,
@@ -185,11 +194,11 @@ def _main(
 
             _PROCS[pid].join()
             _PROCS[pid].done = True
-        
+
     except KeyboardInterrupt:
         logger.critical("Received SIGINT, telling runners to shut down...")
         _cleanup(logger)
-    
+
     except Exception as e:
         logger.critical(f"Unhandled exception in runner: {e}")
         _cleanup(logger)
@@ -200,8 +209,16 @@ def _main(
             hook(
                 samples=data.Samples(
                     [
-                        *(samples.complete if hook.condition in ("complete", "always") else []),
-                        *(samples.failed if hook.condition in ("failed", "always") else []),
+                        *(
+                            samples.complete
+                            if hook.condition in ("complete", "always")
+                            else []
+                        ),
+                        *(
+                            samples.failed
+                            if hook.condition in ("failed", "always")
+                            else []
+                        ),
                     ]
                 ),
                 config=config,
@@ -211,7 +228,9 @@ def _main(
                 root=root,
             )
 
-        logger.info(f"Execution complete in {format_timespan(time.time() - _STARTTIME)}")
+        logger.info(
+            f"Execution complete in {format_timespan(time.time() - _STARTTIME)}"
+        )
 
 
 def cellophane(

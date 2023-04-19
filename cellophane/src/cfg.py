@@ -12,7 +12,7 @@ from yaml import safe_load
 from . import data, util
 
 
-def _set_options(cls: Type[Validator], validate: bool) -> Type[Validator]:
+def _set_options(cls, validate: bool) -> Type[Validator]:
     """Set default values when validating"""
     validate_properties = cls.VALIDATORS["properties"]
 
@@ -30,7 +30,9 @@ def _set_options(cls: Type[Validator], validate: bool) -> Type[Validator]:
         return isinstance(instance, Optional[Path | click.Path])
 
     def _is_mapping(_, instance):
-        return isinstance(instance, Sequence) and all(isinstance(i, Mapping) for i in instance)
+        return isinstance(instance, Sequence) and all(
+            isinstance(i, Mapping) for i in instance
+        )
 
     def _set(cls, properties, instance, schema):
         for prop, subschema in properties.items():
@@ -54,7 +56,7 @@ def _set_options(cls: Type[Validator], validate: bool) -> Type[Validator]:
     return validators.extend(cls, {"properties": _set}, type_checker=type_checker)
 
 
-def _get_options(cls: Type[Validator]) -> Type[Validator]:
+def _get_options(cls) -> Type[Validator]:
     """Parse options from schema and ignore validation errors"""
     validate_properties = cls.VALIDATORS["properties"]
 
@@ -109,6 +111,7 @@ def _get_options(cls: Type[Validator]) -> Type[Validator]:
         cls, {k: None for k in cls.VALIDATORS} | {"properties": func}
     )
 
+
 def parse_mapping(string_mapping: dict | Sequence[str] | str) -> list[dict[str, Any]]:
     match string_mapping:
         case dict(mapping):
@@ -116,15 +119,15 @@ def parse_mapping(string_mapping: dict | Sequence[str] | str) -> list[dict[str, 
         case [*strings]:
             return [m for s in strings for m in parse_mapping(s)]
         case str(string):
-            mapping: dict[str, Any] = {}
+            _mapping: dict[str, Any] = {}
             for kv in string.split():
                 for k, v in [kv.split("=")]:
                     identifier = k.strip("{}")
                     if not identifier.isidentifier():
                         raise ValueError(f"{identifier} is not a valid identifier")
                     else:
-                        mapping[identifier] = v
-            return [mapping]    
+                        _mapping[identifier] = v
+            return [_mapping]
         case _:
             raise ValueError("format must be 'key=value ...'")
 
@@ -210,7 +213,11 @@ class Config(data.Container):
         super().__init__(_data)
 
 
-def set_defaults(ctx: click.Context, config_path: Optional[Path | click.Path], schema: Schema,):
+def set_defaults(
+    ctx: click.Context,
+    config_path: Optional[Path | click.Path],
+    schema: Schema,
+):
     """Set click defaults from schema and configuration file"""
     if config_path is not None:
         with open(str(config_path), "r", encoding="utf-8") as handle:

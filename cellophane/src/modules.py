@@ -74,7 +74,7 @@ class Runner(mp.Process):
         self.log_level = log_level
         self.n_samples = len(samples)
         self.id = uuid4()
-        
+
         super().__init__(
             target=self._main,
             kwargs={
@@ -91,7 +91,7 @@ class Runner(mp.Process):
         samples: data.Samples[data.Sample],
         timestamp: str,
         root: Path,
-    ) -> Optional[data.Samples[data.Sample]]:
+    ) -> None:
         for sample in samples:
             sample.done = None
             sample.runner = self.label
@@ -126,33 +126,37 @@ class Runner(mp.Process):
             self.output_queue.put((samples, self.id))
 
         else:
+            logger.info(f"Runner {self.label} processed {self.n_samples} samples")
             match returned:
                 case None:
-                    logger.info(f"Runner {self.label} completed {self.n_samples} samples")
-                    logger.debug(f"Runner {self.label} did not return any samples, marking all as complete")
+                    logger.debug(f"Runner {self.label} did not return any samples")
                     for sample in samples:
                         sample.done = True
-                        logger.debug(f"Runner {self.label} completed sample {sample.id}")
+                        logger.debug(
+                            f"Runner {self.label} processed sample {sample.id}"
+                        )
                     self.output_queue.put((samples, self.id))
-                
+
                 case returned if issubclass(type(returned), data.Samples):
                     n_done, n_failed = 0, 0
                     for sample in returned:
-                        sample.done = True if sample.done is None else sample.done    
+                        sample.done = True if sample.done is None else sample.done
                         if sample.done:
                             n_done += 1
-                            logger.debug(f"Runner {self.label} completed sample {sample.id}")
+                            logger.debug(
+                                f"Runner {self.label} completed sample {sample.id}"
+                            )
                         else:
                             n_failed += 1
-                            logger.debug(f"Runner {self.label} failed sample {sample.id}")
+                            logger.debug(
+                                f"Runner {self.label} failed sample {sample.id}"
+                            )
                     if n_done:
                         logger.info(f"Runner {self.label} completed {n_done} samples")
                     if n_failed:
                         logger.warning(f"Runner {self.label} failed {n_failed} samples")
                     self.output_queue.put((returned, self.id))
-                    
-                    
-                
+
                 case _:
                     logger.warning(f"Unexpected return type {type(returned)}")
                     self.output_queue.put((samples, self.id))
@@ -165,7 +169,7 @@ class Hook:
     label: ClassVar[str]
     func: ClassVar[Callable]
     when: ClassVar[Literal["pre", "post"]]
-    condition: ClassVar[Literal["complete", "partial", "always"]]
+    condition: ClassVar[Literal["always", "complete", "failed"]]
     before: ClassVar[list[str]]
     after: ClassVar[list[str]]
 
@@ -178,7 +182,7 @@ class Hook:
         before: list[str] = [],
         after: list[str] = [],
     ) -> None:
-        
+
         cls.__name__ = func.__name__
         cls.__qualname__ = func.__qualname__
         cls.__module__ = func.__module__
@@ -221,7 +225,7 @@ class Hook:
 def pre_hook(
     label: Optional[str] = None,
     before: list[str] | Literal["all"] = [],
-    after: list[str] | Literal["all"]= []
+    after: list[str] | Literal["all"] = []
 ):
 
     """Decorator for hooks that will run before all runners."""
@@ -232,8 +236,8 @@ def pre_hook(
         case list(), "all":
             after = ["after_all"]
         case list(before), list(after):
-            before=[*before, "after_all"]
-            after=[*after, "before_all"]
+            before = [*before, "after_all"]
+            after = [*after, "before_all"]
         case _:
             raise ValueError("Invalid dependencies: {before=}, {after=}")
 
@@ -255,7 +259,7 @@ def pre_hook(
 
 def post_hook(
     label: Optional[str] = None,
-    condition: Literal["complete", "partial", "always"] = "always",
+    condition: Literal["always", "complete", "failed"] = "always",
 ):
     """Decorator for hooks that will run after all runners."""
 
