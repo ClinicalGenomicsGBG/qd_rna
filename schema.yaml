@@ -76,17 +76,8 @@ properties:
               {% endif %}
       smtp:
         type: object
-        allOf:
-          - required:
-            - host
-          - if: {properties: {user: {pattern: ".+"}}}
-            then:
-              required:
-                - password
-          - if: {properties: {password: {pattern: ".+"}}}
-            then:
-              required:
-                - user
+        required:
+          - host
         properties:
           host:
             type: string
