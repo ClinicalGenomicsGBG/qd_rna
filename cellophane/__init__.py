@@ -154,7 +154,7 @@ def _main(
     for invalid_sample in samples.validate():
         logger.warning(f"Removed invalid sample {invalid_sample.id}")
 
-    result_samples = data.Samples()
+    result_samples: data.Samples = data.Samples()
     sample_pids: dict[str, set[UUID]] = {s.id: set() for s in samples}
 
     try:
@@ -210,12 +210,12 @@ def _main(
                 samples=data.Samples(
                     [
                         *(
-                            samples.complete
+                            result_samples.complete
                             if hook.condition in ("complete", "always")
                             else []
                         ),
                         *(
-                            samples.failed
+                            result_samples.failed
                             if hook.condition in ("failed", "always")
                             else []
                         ),
