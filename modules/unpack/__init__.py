@@ -43,7 +43,7 @@ def _extract(
         queue=config.unpack.sge_queue,
         pe=config.unpack.sge_pe,
         slots=config.unpack.sge_slots,
-        name="petagene",
+        name=f"unpack_{compressed_path.name}",
         stderr=config.logdir / f"{compressed_path.name}.{method}.err",
         stdout=config.logdir / f"{compressed_path.name}.{method}.out",
         cwd=compressed_path.parent,
