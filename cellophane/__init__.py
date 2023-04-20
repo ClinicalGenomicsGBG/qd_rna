@@ -142,7 +142,7 @@ def _main(
             result, pid = _OUTPUT_QUEUE.get()
             result_samples += result
             for sample in result:
-                if sample.id in samples.complete.unique_ids:
+                if sample.id in result_samples.complete.unique_ids:
                     logger.info(f"Sample {sample.id} completed by all runners")
 
             _PROCS[pid].join()
