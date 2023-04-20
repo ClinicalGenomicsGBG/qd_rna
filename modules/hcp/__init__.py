@@ -10,14 +10,16 @@ from NGPIris import hcp
 
 from cellophane import cfg, data, modules
 
+
 class HCPSample:
     """Sample with HCP backup."""
     backup: list[str]
 
     def __init__(self, *args, backup: list[str] = [], **kwargs):
-        super().__init__(*args, backup=backup, **kwargs)
+        super().__init__(*args, backup=backup, **kwargs)  # type: ignore[call-arg]
 
-class HCPSamples(data.Mixin, sample_mixin=HCPSample):
+
+class HCPSamples(data.Mixin, sample_mixin=HCPSample):  # type: ignore[call-arg]
     """Samples with HCP backup."""
 
     pass
@@ -26,7 +28,7 @@ class HCPSamples(data.Mixin, sample_mixin=HCPSample):
 def _fetch(
     config: cfg.Config,
     local_path: Path,
-    remote_key: str|None = None,
+    remote_key: str | None = None,
 ) -> None:
     sys.stdout = open(
         config.logdir / f"iris.{local_path.name}.out", "w", encoding="utf-8"
@@ -101,7 +103,7 @@ def hcp_fetch(
                     sample.backup = [None] * len(sample.files)
 
                 for f_idx, local_key in enumerate(sample.files):
-                    remote_key: str|None = sample.backup[f_idx]
+                    remote_key: str | None = sample.backup[f_idx]
                     _local_key = local_key or remote_key or f"{sample.id}_{f_idx}"
                     local_path = config.iris.fastq_temp / Path(_local_key).name
 
