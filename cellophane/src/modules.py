@@ -5,12 +5,15 @@ import os
 import sys
 import logging
 from signal import SIGTERM, signal
-from typing import Callable, Optional, ClassVar, Literal
+from typing import Callable, Optional, ClassVar, Literal, Iterator
 from pathlib import Path
 from queue import Queue
 from uuid import uuid4, UUID
 from copy import deepcopy
+from graphlib import TopologicalSorter
+from importlib.util import module_from_spec, spec_from_file_location
 
+import inspect
 import psutil
 
 from . import cfg, data, logs
@@ -179,18 +182,27 @@ class Hook:
         when: Literal["pre", "post"],
         label: str | None = None,
         condition: Literal["always", "complete", "failed"] = "always",
-        before: list[str] = [],
-        after: list[str] = [],
+        before: Literal["all"] | list[str] | None = None,
+        after: Literal["all"] | list[str] | None = None,
     ) -> None:
-
+        before = before or []
+        after = after or []
+        match before, after:
+            case "all", list():
+                cls.before = ["before_all"]
+            case list(), "all":
+                cls.after = ["after_all"]
+            case list(before), list(after):
+                cls.before = [*before, "after_all"]
+                cls.after = [*after, "before_all"]
+            case _:
+                raise ValueError(f"{func.__name__}: {before=}, {after=}")
         cls.__name__ = func.__name__
         cls.__qualname__ = func.__qualname__
         cls.__module__ = func.__module__
         cls.name = func.__name__
         cls.label = label or func.__name__
         cls.condition = condition
-        cls.before = before
-        cls.after = after
         cls.func = staticmethod(func)
         cls.when = when
         super().__init_subclass__()
@@ -222,6 +234,60 @@ class Hook:
             return samples
 
 
+def resolve_hook_dependencies(
+    hooks: list[type[Hook]],
+) -> list[type[Hook]]:
+    deps = {
+        name: {
+            *[d for h in hooks if h.__name__ == name for d in h.after],
+            *[h.__name__ for h in hooks if name in h.before],
+        }
+        for name in {
+            *[n for h in hooks for n in h.before + h.after],
+            *[h.__name__ for h in hooks],
+        }
+    }
+
+    order = [*TopologicalSorter(deps).static_order()]
+    return [*sorted(hooks, key=lambda h: order.index(h.__name__))]
+
+
+def load_modules(
+    path: Path,
+) -> Iterator[tuple[str, type[Hook] | type[Runner] | type[data.Mixin]]]:
+    for file in [*path.glob("*.py"), *path.glob("*/__init__.py")]:
+        base = file.stem if file.stem != "__init__" else file.parent.name
+        name = f"_cellophane_module_{base}"
+        spec = spec_from_file_location(name, file)
+        original_handlers = logging.root.handlers.copy()
+        if spec is not None:
+            module = module_from_spec(spec)
+            if spec.loader is not None:
+                try:
+                    sys.modules[name] = module
+                    spec.loader.exec_module(module)
+                except ImportError:
+                    pass
+                else:
+                    # Reset logging handlers to avoid duplicate messages
+                    for handler in logging.root.handlers:
+                        if handler not in original_handlers:
+                            handler.close()
+                            logging.root.removeHandler(handler)
+
+                    for obj in [getattr(module, a) for a in dir(module)]:
+                        if (
+                            isinstance(obj, type)
+                            and (
+                                issubclass(obj, Hook)
+                                or issubclass(obj, data.Mixin)
+                                or issubclass(obj, Runner)
+                            )
+                            and inspect.getmodule(obj) == module
+                        ):
+                            yield base, obj
+
+
 def pre_hook(
     label: Optional[str] = None,
     before: list[str] | Literal["all"] = [],
@@ -230,17 +296,6 @@ def pre_hook(
 
     """Decorator for hooks that will run before all runners."""
 
-    match before, after:
-        case "all", list():
-            before = ["before_all"]
-        case list(), "all":
-            after = ["after_all"]
-        case list(before), list(after):
-            before = [*before, "after_all"]
-            after = [*after, "before_all"]
-        case _:
-            raise ValueError("Invalid dependencies: {before=}, {after=}")
-
     def wrapper(func):
         class _hook(
             Hook,
@@ -248,9 +303,8 @@ def pre_hook(
             func=func,
             when="pre",
             condition="always",
-            # FIXME: Figure out if this is a bug in mypy
-            before=before,  # type: ignore
-            after=after,  # type: ignore
+            before=before,
+            after=after,
         ):
             pass
         return _hook
@@ -260,6 +314,8 @@ def pre_hook(
 def post_hook(
     label: Optional[str] = None,
     condition: Literal["always", "complete", "failed"] = "always",
+    before: list[str] | Literal["all"] = [],
+    after: list[str] | Literal["all"] = []
 ):
     """Decorator for hooks that will run after all runners."""
 
@@ -270,6 +326,8 @@ def post_hook(
             func=func,
             when="post",
             condition=condition,
+            before=before,
+            after=after,
         ):
             pass
         return _hook
