@@ -5,18 +5,37 @@ properties:
     properties:
       sge_queue:
         type: string
-        description: SGE queue for decompression
+        description: SGE queue for rsync
       sge_pe:
         type: string
-        description: SGE parallel environment for decompression
+        description: SGE parallel environment for rsync
       sge_slots:
         type: integer
-        description: SGE slots (threads) for decompression
+        description: SGE slots (threads) for rsync
         default: 1
       parallel:
         type: integer
-        description: Maximum number of decompression jobs to submit at once
+        description: Maximum number of rsync jobs to submit at once
         default: 10
+      base:
+        type: path
+        description: Base of directory where results will be stored
+      overwrite:
+        type: boolean
+        description: Overwrite existing results
+        default: false
+      copy_skipped:
+        type: boolean
+        description: Copy results from skipped modules
+        default: false
+      large_file_threshold:
+        type: string
+        description: Files larger than this will be copied in a separate job (eg. 100M, 1 GB)
+        default: "100M"
+      files_per_job:
+        type: integer
+        description: Maximum number of files to copy in a single job
+        default: 100
     required:
       - sge_queue
       - sge_pe
