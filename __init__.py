@@ -4,7 +4,6 @@ from copy import deepcopy
 from functools import cached_property, reduce
 from json import loads
 from logging import LoggerAdapter
-from time import time
 from typing import Any, Literal
 import re
 
@@ -73,7 +72,10 @@ def _split_criteria(criteria: str) -> list[str]:
     return parts
 
 
-def _parse_criteria(criteria: str | list[str], parent_records: Record | None = None) -> list[Criterion]:
+def _parse_criteria(  # type: ignore[return]
+    criteria: str | list[str],
+    parent_records: list[Record] | None = None,
+) -> list[Criterion]:
     """Parse criteria"""
 
     match criteria:
@@ -81,18 +83,22 @@ def _parse_criteria(criteria: str | list[str], parent_records: Record | None = N
             raise ValueError("Cannot use leading '->' without parent record(s)")
         case str(criteria) if criteria.startswith("->"):
             _parsed = _parse_criteria(criteria[2:])
+            if parent_records is None:
+                raise ValueError("Cannot use leading '->' without parent record(s)")
+            else:
+                parent_pks = [p.pk() for p in parent_records]
             return [
                 conjunction()
-                    .add(is_one_of("cntn_fk_originalContent", [p.pk() for p in parent_records]))
-                    .add(_parsed[0]),
+                .add(is_one_of("cntn_fk_originalContent", parent_pks))
+                .add(_parsed[0]),
                 *_parsed[1:],
             ]
         case str(criteria) if parent_records:
             _parsed = _parse_criteria(criteria)
             return [
                 conjunction()
-                    .add(is_one_of("cntn_pk", [p.pk() for p in parent_records]))
-                    .add(_parsed[0]),
+                .add(is_one_of("cntn_pk", [p.pk() for p in parent_records]))
+                .add(_parsed[0]),
                 *_parsed[1:],
             ]
         case str(criteria) if "->" in criteria:
@@ -179,16 +185,21 @@ def get_records(
     slims_id: str | list[str] | None = None,
     content_type: int | list[int] | None = None,
     max_age: int | str | None = None,
-    derived_from: str | list[str] | None = None,
+    derived_from: Record | list[Record] | None = None,
     unrestrict_parents: bool = False,
     **kwargs: str | int | list[str | int],
 ) -> list[Record]:
     """Get records from SLIMS"""
 
+    if derived_from is None:
+        derived_from = []
+    elif isinstance(derived_from, Record):
+        derived_from = [derived_from]
+
     if string_criteria:
-        criteria = _parse_criteria(string_criteria, parent_records=derived_from)
+        _parsed = _parse_criteria(string_criteria, parent_records=derived_from)
         parent_records: list[Record] | None = None
-        for criterion in criteria[:-1]:
+        for criterion in _parsed[:-1]:
             parent_records = get_records(
                 criterion,
                 connection=connection,
@@ -198,7 +209,7 @@ def get_records(
             )
 
         return get_records(
-            criteria[-1],
+            _parsed[-1],
             connection=connection,
             derived_from=parent_records,
             slims_id=slims_id,
@@ -227,7 +238,9 @@ def get_records(
             case int() | str():
                 now = datetime.now()
                 max_date = now - timedelta(seconds=parse_timespan(str(max_age)))
-                criteria = criteria.add(between_inclusive("cntn_modifiedOn", max_date, now))
+                criteria = criteria.add(
+                    between_inclusive("cntn_modifiedOn", max_date, now)
+                )
             case _ if max_age is not None:
                 raise TypeError(f"Expected int or str, got {type(max_age)}")
 
@@ -236,10 +249,14 @@ def get_records(
                 pass
             case record if isinstance(record, Record):
                 original = {record.pk(): record}
-                criteria = criteria.add(is_one_of("cntn_fk_originalContent", [*original]))
+                criteria = criteria.add(
+                    is_one_of("cntn_fk_originalContent", [*original])
+                )
             case [*records] if all(isinstance(r, Record) for r in records):
                 original = {r.pk(): r for r in records}
-                criteria = criteria.add(is_one_of("cntn_fk_originalContent", [*original]))
+                criteria = criteria.add(
+                    is_one_of("cntn_fk_originalContent", [*original])
+                )
             case _:
                 raise TypeError(f"Expected Record(s), got {derived_from}")
 
@@ -257,14 +274,14 @@ def get_records(
 class SlimsSample:
     """A sample container with SLIMS integration"""
 
-    record: Record | None = None
     derived: list[tuple[Record | None, dict]] = []
+    data: dict
 
     @classmethod
     def from_record(cls, record: Record, config: cfg.Config, **kwargs):
         """Create a sample from a SLIMS fastq record"""
-        
-        _sample =  cls(
+
+        _sample = cls(
             id=record.cntn_id.value,
             state="novel",
             **{
@@ -272,7 +289,7 @@ class SlimsSample:
                 for key, field in config.slims.map[0].items()
             },
             **kwargs,
-        )
+        )  # type: ignore[call-arg]
         _sample.record = record
         return _sample
 
@@ -293,30 +310,33 @@ class SlimsSample:
                 }
                 if record:
                     self.derived[idx] = (record.update(fields), key_map)
-                else:
-                    self.derived[idx] = (self._connection.add("Content", fields), key_map)
+                elif self._connection:
+                    self.derived[idx] = (
+                        self._connection.add("Content", fields),
+                        key_map,
+                    )
 
     @property
     def record(self) -> Record | None:
         """Get the SLIMS record for the sample"""
         if "_record" not in dir(self):
             super().__setattr__("_record", None)
-        return self._record
-    
+        return self.__getattribute__("_record")
+
     @record.setter
     def record(self, record: Record | None):
         if record is None or isinstance(record, Record):
             super().__setattr__("_record", record)
         else:
             raise ValueError(f"Expected 'NoneType' or 'Record', got {record}")
-    
+
     @property
     def state(self) -> str:
         """Get the state of the sample"""
         if "state" not in self.data:
             self.data["state"] = "novel"
         return self.data["state"]
-    
+
     @state.setter
     def state(self, value: Literal["novel", "running", "complete", "error"]):
         """Set the state of the sample"""
@@ -348,7 +368,7 @@ class SlimsSample:
         return super().__reduce__()
 
 
-class SlimsSamples(data.Mixin, sample_mixin=SlimsSample):
+class SlimsSamples(data.Mixin, sample_mixin=SlimsSample):  # type: ignore[call-arg]
     """A list of sample containers with SLIMS integration"""
 
     @classmethod
@@ -367,14 +387,13 @@ class SlimsSamples(data.Mixin, sample_mixin=SlimsSample):
         )
 
     def update_derived(
-            self,
-            config: cfg.Config,
-        ) -> None:
+        self,
+        config: cfg.Config,
+    ) -> None:
         """Update derived records in SLIMS"""
         for sample in self:
             sample.update_derived(config)
 
-    
     def set_state(self, value: Literal["novel", "running", "complete", "error"]):
         """Set the state of the samples"""
         if value not in ["novel", "running", "complete", "error"]:
@@ -382,7 +401,6 @@ class SlimsSamples(data.Mixin, sample_mixin=SlimsSample):
         else:
             for sample in self:
                 sample.state = value
-
 
 
 @modules.pre_hook(label="SLIMS Fetch", before=["hcp_fetch", "slims_bioinformatics"])
@@ -425,7 +443,11 @@ def slims_fetch(
 
         if samples and records:
             for idx, sample in enumerate(samples):
-                match = [m for m in samples.from_records(records, config) if m.id == sample.id]
+                match = [
+                    m
+                    for m in samples.from_records(records, config)
+                    if m.id == sample.id
+                ]
                 common_keys = set([k for s in match for k in s]) & set(sample.keys())
                 common_keys -= set(["files", "backup", "done"])
                 for key in common_keys:
@@ -444,7 +466,7 @@ def slims_fetch(
                 elif len(match) == 0:
                     logger.warning(f"SLIMS sample not found for {sample.id}")
                 else:
-                    if sample.files == None:
+                    if sample.files is None:
                         sample.pop("files")
                     _data = {**match[0]} | {**sample}
 
@@ -452,9 +474,9 @@ def slims_fetch(
                         id=_data.pop("id"),
                         **deepcopy(_data),
                     )
-        
+
             return samples
-        
+
         elif records:
             if config.slims.check:
                 logger.info("Checking SLIMS for completed samples")
@@ -468,14 +490,15 @@ def slims_fetch(
                 records = [
                     record
                     for record in records
-                    if record.pk() not in [b.cntn_fk_originalContent.value for b in check]
+                    if record.pk()
+                    not in [b.cntn_fk_originalContent.value for b in check]
                 ]
 
                 for sid in set(original_ids) - set([r.cntn_id.value for r in records]):
                     logger.info(f"Found completed bioinformatics for {sid}")
 
             return samples.from_records(records, config)
-        
+
         else:
             logger.warning("No SLIMS samples found")
             return None
@@ -499,7 +522,6 @@ def slims_derive(
         logger.info("Creating derived records")
         samples.update_derived(config)
     return samples
-
 
 
 @modules.pre_hook(label="SLIMS Mark Running", after="all")
@@ -532,7 +554,6 @@ def slims_update(
     if config.slims.dry_run:
         logger.info("Dry run - Not updating SLIMS")
     elif unique_slims_samples:
-
         for _samples in unique_slims_samples.values():
             if all(s.complete for s in _samples):
                 logger.info(f"Marking {_samples[0].id} as complete")
