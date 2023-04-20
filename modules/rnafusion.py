@@ -1,11 +1,9 @@
 """Module for running nf-core/rnafusion."""
 
-from logging import LoggerAdapter
 from pathlib import Path
 
 from cellophane import cfg, modules, data
 from modules.nextflow import nextflow
-from modules.qd_rna import Output
 
 
 @modules.runner()
@@ -14,9 +12,8 @@ def rnafusion(
     config: cfg.Config,
     timestamp: str,
     label: str,
-    logger: LoggerAdapter,
-    root: Path,
     outdir: Path,
+    **_,
 ) -> data.Samples:
     """Run nf-core/rnafusion."""
 
@@ -55,42 +52,42 @@ def rnafusion(
     if not config.rnafusion.skip or config.results.copy_skipped:
         for sample in samples:
             sample.output = [
-                Output(
+                data.Output(
                     src=[
                         *(outdir / "arriba_visualisation").glob(f"{sample.id}.pdf"),
                         *(outdir / "arriba").glob(f"{sample.id}.*.tsv"),
                     ],
                     dest_dir=Path(sample.id) / "arriba",
                 ),
-                Output(
+                data.Output(
                     src=(outdir / "fusioncatcher").glob(f"{sample.id}.*.txt"),
                     dest_dir=Path(sample.id) / "fusioncatcher",
                 ),
-                Output(
+                data.Output(
                     src=(outdir / "fusioninspector").glob(f"{sample.id}.*"),
                     dest_dir=Path(sample.id) / "fusioninspector",
                 ),
-                Output(
+                data.Output(
                     src=outdir / "fusionreport" / sample.id,
                     dest_dir=Path(sample.id) / "fusionreport",
                 ),
-                Output(
+                data.Output(
                     src=(outdir / "pizzly").glob(f"{sample.id}.*"),
                     dest_dir=Path(sample.id) / "pizzly",
                 ),
-                Output(
+                data.Output(
                     src=(outdir / "squid").glob(f"{sample.id}.*.txt"),
                     dest_dir=Path(sample.id) / "squid",
                 ),
-                Output(
+                data.Output(
                     src=(outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
                     dest_dir=Path(sample.id),
                 ),
-                Output(
+                data.Output(
                     src=(outdir / "samtools_index_for_qc").glob(f"{sample.id}.*.bai"),
                     dest_dir=Path(sample.id),
                 ),
-                Output(
+                data.Output(
                     src=(outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
                     dest_dir=Path(sample.id) / "starfusion",
                 ),

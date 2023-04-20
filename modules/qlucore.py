@@ -6,7 +6,6 @@ from pathlib import Path
 
 from cellophane import cfg, modules, data, sge
 
-from modules.qd_rna import Output
 from modules.nextflow import nextflow
 
 
@@ -148,15 +147,15 @@ def qlucore(
     if not config.qlucore.skip or config.results.copy_skipped:
         for sample in samples:
             sample.output = [
-                Output(
+                data.Output(
                     src=outdir.glob(f"{sample.id}.qlucore.txt"),
                     dest_dir=Path(sample.id) / "qlucore",
                 ),
-                Output(
+                data.Output(
                     src=(outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
                     dest_dir=Path(sample.id) / "qlucore",
                 ),
-                Output(
+                data.Output(
                     src=(outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
                     dest_dir=Path(sample.id) / "qlucore",
                 ),

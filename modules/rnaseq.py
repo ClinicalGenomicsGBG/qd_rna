@@ -4,7 +4,6 @@ from logging import LoggerAdapter
 from pathlib import Path
 from cellophane import cfg, modules, data
 from modules.nextflow import nextflow
-from modules.qd_rna import Output
 
 
 @modules.runner(individual_samples=True, link_by="id")
@@ -62,19 +61,19 @@ def rnaseq(
     if not config.rnaseq.skip or config.results.copy_skipped:
         for sample in samples:
             sample.output = [
-                Output(
+                data.Output(
                     src=(outdir / "star_salmon").glob("salmon.*"),
                     dest_dir=Path(samples[0].id) / "salmon",
                 ),
-                Output(
+                data.Output(
                     src=outdir / "star_salmon" / samples[0].id,
                     dest_dir=Path(samples[0].id) / "salmon" / samples[0].id,
                 ),
-                Output(
+                data.Output(
                     src=outdir / config.rnaseq.aligner / "stringtie",
                     dest_dir=Path(samples[0].id) / "stringtie",
                 ),
-                Output(
+                data.Output(
                     src=outdir / "multiqc" / config.rnaseq.aligner,
                     dest_dir=Path(samples[0].id) / "multiqc",
                 ),
