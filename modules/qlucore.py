@@ -144,7 +144,7 @@ def qlucore(
             with open(outdir / f"{sample.id}.qlucore.txt", "w") as f:
                 f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
 
-    if not config.qlucore.skip or config.results.copy_skipped:
+    if not config.qlucore.skip or config.rsync.copy_skipped:
         for sample in samples:
             sample.output = [
                 data.Output(

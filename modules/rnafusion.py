@@ -49,7 +49,7 @@ def rnafusion(
             cwd=outdir,
         )
 
-    if not config.rnafusion.skip or config.results.copy_skipped:
+    if not config.rnafusion.skip or config.rsync.copy_skipped:
         for sample in samples:
             sample.output = [
                 data.Output(
