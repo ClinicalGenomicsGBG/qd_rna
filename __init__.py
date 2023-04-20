@@ -87,17 +87,18 @@ def _parse_criteria(  # type: ignore[return]
                 raise ValueError("Cannot use leading '->' without parent record(s)")
             else:
                 parent_pks = [p.pk() for p in parent_records]
-            return [
-                conjunction()
-                .add(is_one_of("cntn_fk_originalContent", parent_pks))
-                .add(_parsed[0]),
-                *_parsed[1:],
-            ]
+                return [
+                    conjunction()
+                    .add(is_one_of("cntn_fk_originalContent", parent_pks))
+                    .add(_parsed[0]),
+                    *_parsed[1:],
+                ]
         case str(criteria) if parent_records:
             _parsed = _parse_criteria(criteria)
+            parent_pks = [p.pk() for p in parent_records]
             return [
                 conjunction()
-                .add(is_one_of("cntn_pk", [p.pk() for p in parent_records]))
+                .add(is_one_of("cntn_pk", parent_pks))
                 .add(_parsed[0]),
                 *_parsed[1:],
             ]
@@ -191,9 +192,7 @@ def get_records(
 ) -> list[Record]:
     """Get records from SLIMS"""
 
-    if derived_from is None:
-        derived_from = []
-    elif isinstance(derived_from, Record):
+    if isinstance(derived_from, Record):
         derived_from = [derived_from]
 
     if string_criteria:
