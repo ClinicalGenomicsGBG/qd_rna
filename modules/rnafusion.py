@@ -56,44 +56,44 @@ def rnafusion(
         for sample in samples:
             sample.output = [
                 Output(
-                    src = [
+                    src=[
                         *(outdir / "arriba_visualisation").glob(f"{sample.id}.pdf"),
                         *(outdir / "arriba").glob(f"{sample.id}.*.tsv"),
                     ],
-                    dest_dir = Path(sample.id) / "arriba",
+                    dest_dir=Path(sample.id) / "arriba",
                 ),
                 Output(
-                    src = (outdir / "fusioncatcher").glob(f"{sample.id}.*.txt"),
-                    dest_dir = Path(sample.id) / "fusioncatcher",
+                    src=(outdir / "fusioncatcher").glob(f"{sample.id}.*.txt"),
+                    dest_dir=Path(sample.id) / "fusioncatcher",
                 ),
                 Output(
-                    src = (outdir / "fusioninspector").glob(f"{sample.id}.*"),
-                    dest_dir = Path(sample.id) / "fusioninspector",
+                    src=(outdir / "fusioninspector").glob(f"{sample.id}.*"),
+                    dest_dir=Path(sample.id) / "fusioninspector",
                 ),
                 Output(
-                    src = outdir / "fusionreport" / sample.id,
-                    dest_dir = Path(sample.id) / "fusionreport",
+                    src=outdir / "fusionreport" / sample.id,
+                    dest_dir=Path(sample.id) / "fusionreport",
                 ),
                 Output(
-                    src = (outdir / "pizzly").glob(f"{sample.id}.*"),
-                    dest_dir = Path(sample.id) / "pizzly",
+                    src=(outdir / "pizzly").glob(f"{sample.id}.*"),
+                    dest_dir=Path(sample.id) / "pizzly",
                 ),
                 Output(
-                    src = (outdir / "squid").glob(f"{sample.id}.*.txt"),
-                    dest_dir = Path(sample.id) / "squid",
+                    src=(outdir / "squid").glob(f"{sample.id}.*.txt"),
+                    dest_dir=Path(sample.id) / "squid",
                 ),
                 Output(
-                    src = (outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
-                    dest_dir = Path(sample.id),
+                    src=(outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
+                    dest_dir=Path(sample.id),
                 ),
                 Output(
-                    src = (outdir / "samtools_index_for_qc").glob(f"{sample.id}.*.bai"),
-                    dest_dir = Path(sample.id),
+                    src=(outdir / "samtools_index_for_qc").glob(f"{sample.id}.*.bai"),
+                    dest_dir=Path(sample.id),
                 ),
                 Output(
-                    src = (outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
-                    dest_dir = Path(sample.id) / "starfusion",
+                    src=(outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
+                    dest_dir=Path(sample.id) / "starfusion",
                 ),
             ]
-    
+
     return samples

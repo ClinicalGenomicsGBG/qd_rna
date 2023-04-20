@@ -1,7 +1,9 @@
 from dataclasses import dataclass
 from pathlib import Path
 from shutil import copy, copytree
-from cellophane import modules, data, cfg
+
+from cellophane import cfg, data, modules
+
 from logging import LoggerAdapter
 from typing import Iterable, Optional
 from copy import deepcopy
@@ -29,7 +31,7 @@ class QDRNASample:
     output: list[Output] = []
 
 
-class QDRNASamples(data.Mixin, sample_mixin=QDRNASample):
+class QDRNASamples(data.Mixin, sample_mixin=QDRNASample):  # type: ignore[call-arg]
     """Mixin for QD-RNA samples."""
 
     pass

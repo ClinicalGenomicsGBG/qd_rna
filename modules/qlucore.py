@@ -112,7 +112,7 @@ def qlucore(
             stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
-        
+
         _SUBSAMPLE_PROCS: dict[str, Process] = {}
         for sample in samples:
             _SUBSAMPLE_PROCS[sample.id] = sge.submit(
@@ -161,6 +161,5 @@ def qlucore(
                     dest_dir=Path(sample.id) / "qlucore",
                 ),
             ]
-    
-    return samples
 
+    return samples
