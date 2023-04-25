@@ -5,24 +5,30 @@ import sys
 from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
+from typing import Sequence
+
 
 from NGPIris import hcp
 
 from cellophane import cfg, data, modules
 
 
-class HCPSample:
+class HCPSample(data.Sample):
     """Sample with HCP backup."""
-    backup: list[str]
+    @property
+    def backup(self) -> list[str]:
+        if not hasattr(self, "_backup"):
+            self._backup: list[str] = []
+        return self._backup
 
-    def __init__(self, *args, backup: list[str] = [], **kwargs):
-        super().__init__(*args, backup=backup, **kwargs)  # type: ignore[call-arg]
-
-
-class HCPSamples(data.Mixin, sample_mixin=HCPSample):  # type: ignore[call-arg]
-    """Samples with HCP backup."""
-
-    pass
+    @backup.setter
+    def backup(self, value: str | Sequence[str]) -> None:
+        if isinstance(value, str):
+            self._backup = [value]
+        elif isinstance(value, Sequence) and all(isinstance(v, str) for v in value):
+            self._backup = [*value]
+        else:
+            raise ValueError(f"Invalid backup value: {value}")
 
 
 def _fetch(
