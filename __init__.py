@@ -1,5 +1,6 @@
 """Module for getting samples from SLIMS"""
 
+from dataclasses import dataclass, field
 from copy import deepcopy
 from functools import cached_property, reduce
 from json import loads
@@ -270,11 +271,10 @@ def get_records(
         return connection.fetch("Content", criteria)
 
 
-class SlimsSample:
+@dataclass
+class SlimsSample(data.Sample):
     """A sample container with SLIMS integration"""
-
-    derived: list[tuple[Record | None, dict]] = []
-    data: dict
+    derived: list[tuple[Record | None, dict]] = field(default_factory=list)
 
     @classmethod
     def from_record(cls, record: Record, config: cfg.Config, **kwargs):
@@ -332,9 +332,9 @@ class SlimsSample:
     @property
     def state(self) -> str:
         """Get the state of the sample"""
-        if "state" not in self.data:
-            self.data["state"] = "novel"
-        return self.data["state"]
+        if "_state" not in dir(self):
+            super().__setattr__("_state", "novel")
+        return self._state
 
     @state.setter
     def state(self, value: Literal["novel", "running", "complete", "error"]):
@@ -342,7 +342,7 @@ class SlimsSample:
         if value not in ["novel", "running", "complete", "error"]:
             raise ValueError(f"Invalid state: {value}")
         else:
-            self.data["state"] = value
+            self._state = value
 
     @cached_property
     def _connection(self) -> Slims | None:
@@ -367,9 +367,8 @@ class SlimsSample:
         return super().__reduce__()
 
 
-class SlimsSamples(data.Mixin, sample_mixin=SlimsSample):  # type: ignore[call-arg]
+class SlimsSamples(data.Samples):
     """A list of sample containers with SLIMS integration"""
-
     @classmethod
     def from_records(
         cls,
@@ -448,7 +447,6 @@ def slims_fetch(
                     if m.id == sample.id
                 ]
                 common_keys = set([k for s in match for k in s]) & set(sample.keys())
-                common_keys -= set(["files", "backup", "done"])
                 for key in common_keys:
                     _match = []
                     for match_sample in match:
