@@ -131,7 +131,7 @@ slims-python-api = "^6.8.0"
 type = "git"
 url = "https://github.com/ClinicalGenomicsGBG/cellophane.git"
 reference = "dev"
-resolved_reference = "7c5a4741b5d38e7de7d444ce878dc8ed4d91cb20"
+resolved_reference = "2fdcfe97c79181df1b255bd07dd9d7894de5faeb"
 
 [[package]]
 name = "certifi"
