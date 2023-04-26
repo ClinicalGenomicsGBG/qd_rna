@@ -1,6 +1,6 @@
 """Module for getting samples from SLIMS"""
 
-from dataclasses import dataclass, field
+from attrs import define, field
 from copy import deepcopy
 from functools import cached_property, reduce
 from json import loads
@@ -271,10 +271,10 @@ def get_records(
         return connection.fetch("Content", criteria)
 
 
-@dataclass
+@define(slots=False, init=False)
 class SlimsSample(data.Sample):
     """A sample container with SLIMS integration"""
-    derived: list[tuple[Record | None, dict]] = field(default_factory=list)
+    derived: list[tuple[Record | None, dict]] = field(factory=list)
 
     @classmethod
     def from_record(cls, record: Record, config: cfg.Config, **kwargs):
@@ -407,7 +407,7 @@ def slims_fetch(
     config: cfg.Config,
     logger: LoggerAdapter,
     **_,
-) -> data.Samples | None:
+) -> SlimsSamples | None:
     """Load novel samples from SLIMS."""
     if "slims" in config:
         slims_connection = Slims(
@@ -523,11 +523,11 @@ def slims_derive(
 
 @modules.pre_hook(label="SLIMS Mark Running", after="all")
 def slims_running(
-    samples: data.Samples,
+    samples: SlimsSamples,
     config: cfg.Config,
     logger: LoggerAdapter,
     **_,
-) -> None:
+) -> SlimsSamples:
     """Add derived content to SLIMS samples"""
     samples.set_state("running")
     if not config.slims.dry_run:
@@ -539,7 +539,7 @@ def slims_running(
 @modules.post_hook(label="SLIMS Update Derived")
 def slims_update(
     config: cfg.Config,
-    samples: data.Samples,
+    samples: SlimsSamples,
     logger: LoggerAdapter,
     **_,
 ) -> None:
