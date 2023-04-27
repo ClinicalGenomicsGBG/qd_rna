@@ -1,6 +1,6 @@
 """Module for getting samples from SLIMS"""
 
-from attrs import define, field
+from attrs import define
 from copy import deepcopy
 from functools import cached_property, reduce
 from json import loads
@@ -274,7 +274,7 @@ def get_records(
 @define(slots=False, init=False)
 class SlimsSample(data.Sample):
     """A sample container with SLIMS integration"""
-    derived: list[tuple[Record | None, dict]] = field(factory=list)
+    derived: list[tuple[Record, dict]] | None = None
 
     @classmethod
     def from_record(cls, record: Record, config: cfg.Config, **kwargs):
