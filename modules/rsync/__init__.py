@@ -73,11 +73,14 @@ def rsync_results(
     config: cfg.Config,
     **_,
 ) -> None:
+    if not any(s.output for s in samples):
+        return
+
     logger.info(f"Copying output to {config.rsync.base}")
 
     # Generate a set of unique outputs
     unique_outputs: set[data.Output] = set()
-    for sid, output in ((s.id, o) for s in samples for o in s.output):
+    for sid, output in ((s.id, o) for s in samples for o in s.output or []):
         if not output.src:
             logger.warning(f"No source paths for {output.dest_dir}")
         elif [*output.dest_dir.glob("*")] and not config.rsync.overwrite:
