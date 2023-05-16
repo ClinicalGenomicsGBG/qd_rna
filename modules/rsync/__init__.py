@@ -93,7 +93,10 @@ def rsync_results(
         ("directories", _directories),
     ):
         if category:
-            logger.debug(f"Syncing {len(category)} {label}")
+            logger.debug(f"Syncing {sum(len(o.src) for o in category)} {label}")
+
+        for o in category:
+            o.dest_dir.mkdir(parents=True, exist_ok=True)
 
         _proc = sge.submit(
             str(Path(__file__).parent / "scripts" / "rsync.sh"),
