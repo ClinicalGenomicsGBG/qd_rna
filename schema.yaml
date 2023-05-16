@@ -24,6 +24,11 @@ properties:
     type: boolean
     description: Merge samples with same ID
     default: false
+  
+  copy_skipped:
+    type: boolean
+    description: Copy skipped runner output
+    default: false
 
   rnaseq:
     type: object
