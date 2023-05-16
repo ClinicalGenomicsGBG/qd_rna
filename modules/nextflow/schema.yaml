@@ -33,6 +33,10 @@ properties:
         type: string
         description: Java module
         default: java
+      env:
+        type: mapping
+        description: Environment variables that will be passed to the nextflow process
+        default: [""]
     required:
       - sge_queue
       - sge_pe
