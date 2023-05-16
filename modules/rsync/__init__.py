@@ -95,32 +95,32 @@ def rsync_results(
         if category:
             logger.debug(f"Syncing {sum(len(o.src) for o in category)} {label}")
 
-        for o in category:
-            o.dest_dir.mkdir(parents=True, exist_ok=True)
+            for o in category:
+                o.dest_dir.mkdir(parents=True, exist_ok=True)
 
-        _proc = sge.submit(
-            str(Path(__file__).parent / "scripts" / "rsync.sh"),
-            queue=config.rsync.sge_queue,
-            pe=config.rsync.sge_pe,
-            slots=config.rsync.sge_slots,
-            name="rsync",
-            check=False,
-            env={
-                "SRC": " ".join(",".join(str(s) for s in o.src) for o in category),
-                "DST": " ".join(str(o.dest_dir) for o in category),
-            },
-            callback=partial(
-                _sync_callback,
-                logger=logger,
-                outputs=category,
-            ),
-            error_callback=partial(
-                _sync_error_callback,
-                logger=logger,
-                outputs=category,
-            ),
-        )
-        _procs.append(_proc)
+            _proc = sge.submit(
+                str(Path(__file__).parent / "scripts" / "rsync.sh"),
+                queue=config.rsync.sge_queue,
+                pe=config.rsync.sge_pe,
+                slots=config.rsync.sge_slots,
+                name="rsync",
+                check=False,
+                env={
+                    "SRC": " ".join(",".join(str(s) for s in o.src) for o in category),
+                    "DST": " ".join(str(o.dest_dir) for o in category),
+                },
+                callback=partial(
+                    _sync_callback,
+                    logger=logger,
+                    outputs=category,
+                ),
+                error_callback=partial(
+                    _sync_error_callback,
+                    logger=logger,
+                    outputs=category,
+                ),
+            )
+            _procs.append(_proc)
 
     for proc in _procs:
         proc.join()
