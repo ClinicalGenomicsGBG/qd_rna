@@ -12,13 +12,14 @@ def _sync_callback(
     logger: LoggerAdapter,
     outputs: list[data.Output],
 ):
-    logger.debug(f"Synced {len(outputs)} outputs")
+    logger.debug(f"Synced {sum(len(o.src) for o in outputs)} files")
     for o in outputs:
-        dest = o.dest_dir / o.src[0].name
-        if dest.exists():
-            logger.debug(f"Copied {o.src[0]} to {o.dest_dir}")
-        else:
-            logger.warning(f"{o.src[0]} is missing from {o.dest_dir}")
+        for s in o.src:
+            dest = o.dest_dir / s.name
+            if dest.exists():
+                logger.debug(f"Copied {dest}")
+            else:
+                logger.warning(f"{dest} is missing")
 
 
 def _sync_error_callback(
@@ -26,10 +27,9 @@ def _sync_error_callback(
     logger: LoggerAdapter,
     outputs: list[data.Output],
 ):
-    if len(outputs) == 1:
-        logger.error(f"Sync failed for {outputs[0].src} ({code=})")
-    else:
-        logger.error(f"Sync failed for {len(outputs)} outputs ({code=})")
+    logger.error(
+        f"Sync failed for {sum(len(o.src) for o in outputs)} outputs ({code=})"
+    )
 
 
 def _group_by_dest_dir(outputs: list[data.Output]):
