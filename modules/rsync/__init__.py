@@ -1,9 +1,8 @@
 import multiprocessing as mp
 from functools import partial
 from pathlib import Path
-from logging import LoggerAdapter, WARNING, DEBUG
-import sys
-import os
+from logging import LoggerAdapter
+from itertools import groupby
 from humanfriendly import parse_size
 
 from cellophane import modules, data, cfg, sge
@@ -15,7 +14,7 @@ def _sync_callback(
 ):
     logger.debug(f"Synced {len(outputs)} outputs")
     for o in outputs:
-        dest = (o.dest_dir / o.src[0].name)
+        dest = o.dest_dir / o.src[0].name
         if dest.exists():
             logger.debug(f"Copied {o.src[0]} to {o.dest_dir}")
         else:
@@ -33,109 +32,84 @@ def _sync_error_callback(
         logger.error(f"Sync failed for {len(outputs)} outputs ({code=})")
 
 
-@modules.post_hook(label="Output", condition="complete")
+def _group_by_dest_dir(outputs: list[data.Output]):
+    return [
+        data.Output(src=[s for o in g for s in o.src], dest_dir=k)
+        for k, g in groupby(sorted(outputs), lambda o: o.dest_dir)
+    ]
+
+
+@modules.post_hook(label="Sync Output", condition="complete")
 def rsync_results(
     samples: data.Samples,
     logger: LoggerAdapter,
     config: cfg.Config,
     **_,
 ) -> None:
-
-    if not any(s.output for s in samples):
+    if config.rsync.skip:
+        logger.info("Skipping output sync")
         return
+    elif not any(s.output for s in samples):
+        logger.warning("No output to sync")
+        return
+    else:
+        logger.info(f"Syncing output to {config.rsync.base}")
 
-    logger.info(f"Copying output to {config.rsync.base}")
+    _outputs = [o for s in samples for o in s.output or []]
 
-    # Generate a set of unique outputs
-    unique_outputs: set[data.Output] = set()
-    for sid, output in ((s.id, o) for s in samples for o in s.output or []):
-
-        _dst = output.dest_dir
-        
-        if not output.dest_dir.is_absolute():
-            _dst = (config.rsync.base / _dst).absolute()
-
-        if not _dst.is_relative_to(config.rsync.base):
-            logger.error(f"Output is not relative to {config.rsync.base}")
-            return
-        
-        if not output.src:
-            logger.warning(f"No source paths for {output.dest_dir}")
-        elif [*_dst.glob("*")] and not config.rsync.overwrite:
-            logger.error(f"Output directory {output.dest_dir} not empty")
-            return
-        else:
-            
-            for src in output.src:
-                if not src.exists():
-                    logger.warning(f"Source path {src} does not exist")
-                else:
-                    unique_outputs |= {data.Output(src=src, dest_dir=_dst)}
-    
-    # Split outputs into chunks
-    outputs: list[list[data.Output]] = []
-    chunk: list[data.Output] = []
-    idx = len(unique_outputs)
-    for output in [*unique_outputs]:
-        if [*output.src][0].is_dir():
-            logger.debug(f"Copying directory {output.src} to {output.dest_dir}")
-            _output = data.Output(src=output.src, dest_dir=output.dest_dir.parent)
-            outputs.append([output])
-            idx -= 1
-        elif [*output.src][0].stat().st_size > parse_size(
-            config.rsync.large_file_threshold
-        ):
-            logger.debug(f"Copying large file {output.src} to {output.dest_dir}")
-            outputs.append([output])
-            idx -= 1
-        elif len(chunk) >= config.rsync.files_per_job:
-            outputs.append(chunk)
-            idx -= len(chunk)
-            chunk = []
-        else:
-            chunk.append(output)
-
-        if len(chunk) == idx:
-            logger.debug(f"Copying {len(chunk)} files to {output.dest_dir}")
-            outputs.append(chunk)
-            break
-
-    for chunk in outputs:
-        src, dst = [], []
-        for output in chunk:
-            src += [output.src[0].absolute()]
-            if Path(output.src[0]).is_dir():
-                output.dest_dir.parent.mkdir(exist_ok=True)
-                dst += [output.dest_dir.absolute()]
+    # Split outputs into large files, small files, and directories
+    _large_files: list[data.Output] = []
+    _small_files: list[data.Output] = []
+    _directories: list[data.Output] = []
+    for output in _outputs:
+        for src in output.src:
+            _output = data.Output(src=src, dest_dir=output.dest_dir)
+            if src.is_dir():
+                _directories.append(_output)
+            elif src.stat().st_size > parse_size(config.rsync.large_file_threshold):
+                _large_files.append(_output)
             else:
-                output.dest_dir.mkdir(parents=True, exist_ok=True)
-                dst += [output.dest_dir.absolute() / output.src[0].name]
+                _small_files.append(_output)
 
-        logger.debug(f"Syncing chunk: {chunk}")
-        sge.submit(
+    # Merge outputs with the same destination directory
+    _large_files = _group_by_dest_dir(_large_files)
+    _small_files = _group_by_dest_dir(_small_files)
+    _directories = _group_by_dest_dir(_directories)
+
+    _procs: list[mp.Process] = []
+    for label, category in (
+        ("large files", _large_files),
+        ("small files", _small_files),
+        ("directories", _directories),
+    ):
+        if category:
+            logger.debug(f"Syncing {len(category)} {label}")
+
+        _proc = sge.submit(
             str(Path(__file__).parent / "scripts" / "rsync.sh"),
             queue=config.rsync.sge_queue,
             pe=config.rsync.sge_pe,
             slots=config.rsync.sge_slots,
             name="rsync",
+            check=False,
             env={
-                "SRC": " ".join(str(s) for s in src),
-                "DST": " ".join(str(d) for d in dst),
+                "SRC": " ".join(",".join(str(s) for s in o.src) for o in category),
+                "DST": " ".join(str(o.dest_dir) for o in category),
             },
-            check=True,
-            stdout=Path("/home/xdemer/test.out"),
-            stderr=Path("/home/xdemer/test.err"),
-            callback = partial(
+            callback=partial(
                 _sync_callback,
                 logger=logger,
-                outputs=chunk,
+                outputs=category,
             ),
-            error_callback = partial(
+            error_callback=partial(
                 _sync_error_callback,
                 logger=logger,
-                outputs=chunk,
+                outputs=category,
             ),
-            temporary_local_flag_please_delete=True
         )
+        _procs.append(_proc)
 
-    logger.debug("Finished syncing output")
+    for proc in _procs:
+        proc.join()
+
+    logger.info("Finished syncing output")
