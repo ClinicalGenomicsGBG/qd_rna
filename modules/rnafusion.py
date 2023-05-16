@@ -60,11 +60,11 @@ def rnafusion(
                     dest_dir=Path(sample.id) / "arriba",
                 ),
                 data.Output(
-                    src=(outdir / "fusioncatcher").glob(f"{sample.id}.*.txt"),
+                    src=[*(outdir / "fusioncatcher").glob(f"{sample.id}.*.txt")],
                     dest_dir=Path(sample.id) / "fusioncatcher",
                 ),
                 data.Output(
-                    src=(outdir / "fusioninspector").glob(f"{sample.id}.*"),
+                    src=[*(outdir / "fusioninspector").glob(f"{sample.id}.*")],
                     dest_dir=Path(sample.id) / "fusioninspector",
                 ),
                 data.Output(
@@ -72,23 +72,23 @@ def rnafusion(
                     dest_dir=Path(sample.id) / "fusionreport",
                 ),
                 data.Output(
-                    src=(outdir / "pizzly").glob(f"{sample.id}.*"),
+                    src=[*(outdir / "pizzly").glob(f"{sample.id}.*")],
                     dest_dir=Path(sample.id) / "pizzly",
                 ),
                 data.Output(
-                    src=(outdir / "squid").glob(f"{sample.id}.*.txt"),
+                    src=[*(outdir / "squid").glob(f"{sample.id}.*.txt")],
                     dest_dir=Path(sample.id) / "squid",
                 ),
                 data.Output(
-                    src=(outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
+                    src=[*(outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam")],
                     dest_dir=Path(sample.id),
                 ),
                 data.Output(
-                    src=(outdir / "samtools_index_for_qc").glob(f"{sample.id}.*.bai"),
+                    src=[*(outdir / "samtools_index_for_qc").glob(f"{sample.id}.*.bai")],
                     dest_dir=Path(sample.id),
                 ),
                 data.Output(
-                    src=(outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
+                    src=[*(outdir / "starfusion").glob(f"{sample.id}.*.tsv")],
                     dest_dir=Path(sample.id) / "starfusion",
                 ),
             ]

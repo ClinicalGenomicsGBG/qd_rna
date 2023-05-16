@@ -146,17 +146,18 @@ def qlucore(
 
     if not config.qlucore.skip or config.rsync.copy_skipped:
         for sample in samples:
+
             sample.output = [
                 data.Output(
-                    src=outdir.glob(f"{sample.id}.qlucore.txt"),
+                    src=[*outdir.glob(f"{sample.id}.qlucore.txt")],
                     dest_dir=Path(sample.id) / "qlucore",
                 ),
                 data.Output(
-                    src=(outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam"),
+                    src=[*(outdir / "star_for_starfusion").glob(f"{sample.id}.*.bam")],
                     dest_dir=Path(sample.id) / "qlucore",
                 ),
                 data.Output(
-                    src=(outdir / "starfusion").glob(f"{sample.id}.*.tsv"),
+                    src=[*(outdir / "starfusion").glob(f"{sample.id}.*.tsv")],
                     dest_dir=Path(sample.id) / "qlucore",
                 ),
             ]

@@ -62,7 +62,7 @@ def rnaseq(
         for sample in samples:
             sample.output = [
                 data.Output(
-                    src=(outdir / "star_salmon").glob("salmon.*"),
+                    src=[*(outdir / "star_salmon").glob("salmon.*")],
                     dest_dir=Path(samples[0].id) / "salmon",
                 ),
                 data.Output(
