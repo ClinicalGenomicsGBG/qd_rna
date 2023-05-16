@@ -63,8 +63,18 @@ def rsync_results(
     _directories: list[data.Output] = []
     for output in _outputs:
         for src in output.src:
-            _output = data.Output(src=src, dest_dir=output.dest_dir)
-            if src.is_dir():
+            _output = data.Output(
+                src=src,
+                dest_dir=(config.rsync.base / output.dest_dir).absolute()
+            )
+
+            if not src.exists():
+                logger.warning(f"{src} does not exist")
+            elif _output.dest_dir.glob("*") and not config.rsync.overwrite:
+                logger.warning(f"{_output.dest_dir} is not empty")
+            elif not _output.dest_dir.is_relative_to(config.rsync.base):
+                logger.warning(f"{_output.dest_dir} is outside {config.rsync.base}")
+            elif src.is_dir():
                 _directories.append(_output)
             elif src.stat().st_size > parse_size(config.rsync.large_file_threshold):
                 _large_files.append(_output)
