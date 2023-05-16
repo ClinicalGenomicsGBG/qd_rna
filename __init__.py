@@ -69,6 +69,7 @@ def nextflow(
         env={
             "_NXF_MODULE": config.nextflow.nf_module,
             "_JAVA_MODULE": config.nextflow.java_module,
+            **{k: v for m in config.nextflow.env for k, v in m.items()},
             **env,
         },
         queue=config.nextflow.sge_queue,
