@@ -12,7 +12,6 @@ def _sync_callback(
     logger: LoggerAdapter,
     outputs: list[data.Output],
 ):
-    logger.debug(f"Synced {sum(len(o.src) for o in outputs)} files")
     for o in outputs:
         for s in o.src:
             dest = o.dest_dir / s.name
@@ -88,12 +87,12 @@ def rsync_results(
 
     _procs: list[mp.Process] = []
     for label, category in (
-        ("large files", _large_files),
-        ("small files", _small_files),
+        (f"large file(s) (>{config.rsync.large_file_threshold})", _large_files),
+        (f"small file(s) (<{config.rsync.large_file_threshold})", _small_files),
         ("directories", _directories),
     ):
         if category:
-            logger.debug(f"Syncing {sum(len(o.src) for o in category)} {label}")
+            logger.info(f"Syncing {sum(len(o.src) for o in category)} {label}")
 
             for o in category:
                 o.dest_dir.mkdir(parents=True, exist_ok=True)
