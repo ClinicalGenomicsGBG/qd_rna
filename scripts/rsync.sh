@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e -o pipefail
 
-
 SRC_ARRAY=( $SRC )
 DST_ARRAY=( $DST )
 
