@@ -3,6 +3,10 @@ properties:
   rsync:
     type: object
     properties:
+      skip:
+        type: boolean
+        default: false
+        description: "Don't rsync results"
       sge_queue:
         type: string
         description: SGE queue for rsync
