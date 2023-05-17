@@ -92,7 +92,7 @@ def start_mail(
         )
 
 
-@modules.post_hook(label="Send end mail", condition="always")
+@modules.post_hook(label="Send end mail", condition="always", after="all")
 def end_mail(
     samples: data.Samples[data.Sample],
     logger: LoggerAdapter,
