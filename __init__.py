@@ -1,33 +1,33 @@
 """Module for getting samples from SLIMS"""
 
-from attrs import define
+import re
 from copy import deepcopy
+from datetime import datetime, timedelta
 from functools import cached_property, reduce
 from json import loads
 from logging import LoggerAdapter
 from typing import Any, Literal
-import re
 
-from datetime import datetime, timedelta
+from attrs import define, field
+from cellophane import cfg, data, modules
 from humanfriendly import parse_timespan
+
 from slims.criteria import (
     Criterion,
+    between_inclusive,
     conjunction,
+    contains,
     disjunction,
     ends_with,
-    starts_with,
-    contains,
-    is_one_of,
     equals,
     equals_ignore_case,
     greater_than,
-    less_than,
-    between_inclusive,
     is_not,
+    is_one_of,
+    less_than,
+    starts_with,
 )
 from slims.slims import Record, Slims
-
-from cellophane import cfg, data, modules
 
 
 def _split_criteria(criteria: str) -> list[str]:
@@ -98,9 +98,7 @@ def _parse_criteria(  # type: ignore[return]
             _parsed = _parse_criteria(criteria)
             parent_pks = [p.pk() for p in parent_records]
             return [
-                conjunction()
-                .add(is_one_of("cntn_pk", parent_pks))
-                .add(_parsed[0]),
+                conjunction().add(is_one_of("cntn_pk", parent_pks)).add(_parsed[0]),
                 *_parsed[1:],
             ]
         case str(criteria) if "->" in criteria:
@@ -274,7 +272,10 @@ def get_records(
 @define(slots=False, init=False)
 class SlimsSample(data.Sample):
     """A sample container with SLIMS integration"""
-    derived: list[tuple[Record, dict]] | None = None
+
+    derived: list[tuple[Record, dict]] | None = field(default=None)
+    record: Record | None = field(default=None)
+    state: Literal["novel", "running", "complete", "error"] = field(default="novel")
 
     @classmethod
     def from_record(cls, record: Record, config: cfg.Config, **kwargs):
@@ -315,34 +316,35 @@ class SlimsSample(data.Sample):
                         key_map,
                     )
 
-    @property
-    def record(self) -> Record | None:
-        """Get the SLIMS record for the sample"""
-        if "_record" not in dir(self):
-            super().__setattr__("_record", None)
-        return self.__getattribute__("_record")
+    @derived.validator
+    def validate_derived(self, attribute: str, value: list[tuple[Record, dict]] | None):
+        if not (value is None or isinstance(value, list)):
+            raise ValueError(f"Expected 'NoneType' or 'list', got {value}")
+        elif value is not None and not all(
+            isinstance(v, tuple)
+            and len(v) == 2
+            and isinstance(v[0], Record)
+            and isinstance(v[1], dict)
+            for v in value
+        ):
+            raise ValueError(
+                f"Expected list of tuples of 'Record' and 'dict', got {value}"
+            )
 
-    @record.setter
-    def record(self, record: Record | None):
-        if record is None or isinstance(record, Record):
-            super().__setattr__("_record", record)
-        else:
-            raise ValueError(f"Expected 'NoneType' or 'Record', got {record}")
+    @record.validator
+    def validate_record(self, attribute: str, value: Record | None):
+        if not (value is None or isinstance(value, Record)):
+            raise ValueError(
+                f"Expected 'NoneType' or 'Record' for {attribute}, got {value}"
+            )
 
-    @property
-    def state(self) -> str:
-        """Get the state of the sample"""
-        if "_state" not in dir(self):
-            super().__setattr__("_state", "novel")
-        return self._state
-
-    @state.setter
-    def state(self, value: Literal["novel", "running", "complete", "error"]):
+    @state.validator
+    def validate_state(
+        self, attribute: str, value: Literal["novel", "running", "complete", "error"]
+    ):
         """Set the state of the sample"""
         if value not in ["novel", "running", "complete", "error"]:
-            raise ValueError(f"Invalid state: {value}")
-        else:
-            self._state = value
+            raise ValueError(f"Invalid value for {attribute}: {value}")
 
     @cached_property
     def _connection(self) -> Slims | None:
@@ -369,6 +371,7 @@ class SlimsSample(data.Sample):
 
 class SlimsSamples(data.Samples):
     """A list of sample containers with SLIMS integration"""
+
     @classmethod
     def from_records(
         cls,
@@ -544,21 +547,32 @@ def slims_update(
     **_,
 ) -> None:
     """Update SLIMS samples and derived records."""
-    unique_slims_samples = {
-        pk: [s for s in samples if s.record and s.record.pk() == pk]
-        for pk in set(s.record.pk() for s in samples if s.record)
-    }
     if config.slims.dry_run:
         logger.info("Dry run - Not updating SLIMS")
-    elif unique_slims_samples:
-        for _samples in unique_slims_samples.values():
-            if all(s.complete for s in _samples):
-                logger.info(f"Marking {_samples[0].id} as complete")
-                _samples[0].state = "complete"
-                _samples[0].update_derived(config)
-            else:
-                logger.warning(f"Marking {_samples[0].id} as failed")
-                _samples[0].state = "error"
-                _samples[0].update_derived(config)
-    else:
+        return
+
+    complete = samples.__class__.from_records(
+        records=[*set(s.record for s in samples.complete)],
+        config=config
+    )
+    failed = samples.__class__.from_records(
+        records=[*set(s.record for s in samples.failed)],
+        config=config
+    )
+
+    if not complete and not failed:
         logger.info("No samples to update")
+
+    if complete:
+        logger.info(f"Marking {len(complete)} samples as complete")
+        for sample in complete:
+            logger.debug(f"Marking {sample.id} as complete")
+        complete.set_state("complete")
+        complete.update_derived(config)
+
+    if failed:
+        logger.warning(f"Marking {len(failed)} samples as failed")
+        for sample in failed:
+            logger.debug(f"Marking {sample.id} as failed")
+        failed.set_state("error")
+        failed.update_derived(config)
