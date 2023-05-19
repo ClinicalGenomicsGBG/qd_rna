@@ -19,7 +19,7 @@ class HCPSample(data.Sample):
     backup: list[str] | None = field(default=None)
 
     @backup.validator
-    def validate_backup(self, attribute: str, value: Sequence[str]) -> None:
+    def validate_backup(self, attribute: str, value: Sequence[str] | None) -> None:
         if not (
             value is None
             or (isinstance(value, Sequence) and all(isinstance(v, str) for v in value))
