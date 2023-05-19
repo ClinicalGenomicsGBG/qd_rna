@@ -556,10 +556,10 @@ def slims_update(
         return
 
     complete = samples.__class__.from_records(
-        records=[*set(s.record for s in samples.complete)], config=config
+        records=[*{s.pk: s.record for s in samples.complete}.values()], config=config
     )
     failed = samples.__class__.from_records(
-        records=[*set(s.record for s in samples.failed)], config=config
+        records=[*{s.pk: s.record for s in samples.failed}.values()], config=config
     )
 
     if not complete and not failed:
