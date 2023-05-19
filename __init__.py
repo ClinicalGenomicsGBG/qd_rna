@@ -317,18 +317,22 @@ class SlimsSample(data.Sample):
                     )
 
     @derived.validator
-    def validate_derived(self, attribute: str, value: list[tuple[Record, dict]] | None):
+    def validate_derived(
+        self,
+        attribute: str,
+        value: list[tuple[Record | None, dict]] | None,
+    ):
         if not (value is None or isinstance(value, list)):
-            raise ValueError(f"Expected 'NoneType' or 'list', got {value}")
+            raise ValueError(f"Expected 'None|list', got {value}")
         elif value is not None and not all(
             isinstance(v, tuple)
             and len(v) == 2
-            and isinstance(v[0], Record)
+            and (isinstance(v[0], Record) or v[0] is None)
             and isinstance(v[1], dict)
             for v in value
         ):
             raise ValueError(
-                f"Expected list of tuples of 'Record' and 'dict', got {value}"
+                f"Expected 'list[tuple[Record|None, dict]' for {attribute}, got {value}"
             )
 
     @record.validator
@@ -552,12 +556,10 @@ def slims_update(
         return
 
     complete = samples.__class__.from_records(
-        records=[*set(s.record for s in samples.complete)],
-        config=config
+        records=[*set(s.record for s in samples.complete)], config=config
     )
     failed = samples.__class__.from_records(
-        records=[*set(s.record for s in samples.failed)],
-        config=config
+        records=[*set(s.record for s in samples.failed)], config=config
     )
 
     if not complete and not failed:
