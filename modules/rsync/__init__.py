@@ -69,7 +69,7 @@ def rsync_results(
 
             if not src.exists():
                 logger.warning(f"{src} does not exist")
-            elif _output.dest_dir.glob("*") and not config.rsync.overwrite:
+            elif [*_output.dest_dir.glob("*")] and not config.rsync.overwrite:
                 logger.warning(f"{_output.dest_dir} is not empty")
             elif not _output.dest_dir.is_relative_to(config.rsync.base):
                 logger.warning(f"{_output.dest_dir} is outside {config.rsync.base}")
