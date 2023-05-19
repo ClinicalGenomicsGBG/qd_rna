@@ -1,34 +1,30 @@
 """Module for fetching files from HCP."""
 
-from concurrent.futures import ProcessPoolExecutor, Future
 import sys
+from concurrent.futures import Future, ProcessPoolExecutor
 from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 from typing import Sequence
 
-
+from attrs import define, field
+from cellophane import cfg, data, modules
 from NGPIris import hcp
 
-from cellophane import cfg, data, modules
 
-
+@define(slots=False, init=False)
 class HCPSample(data.Sample):
     """Sample with HCP backup."""
-    @property
-    def backup(self) -> list[str]:
-        if not hasattr(self, "_backup"):
-            self._backup: list[str] = []
-        return self._backup
 
-    @backup.setter
-    def backup(self, value: str | Sequence[str]) -> None:
-        if isinstance(value, str):
-            self._backup = [value]
-        elif isinstance(value, Sequence) and all(isinstance(v, str) for v in value):
-            self._backup = [*value]
-        else:
-            raise ValueError(f"Invalid backup value: {value}")
+    backup: list[str] | None = field(default=None)
+
+    @backup.validator
+    def validate_backup(self, attribute: str, value: Sequence[str]) -> None:
+        if not (
+            value is None
+            or (isinstance(value, Sequence) and all(isinstance(v, str) for v in value))
+        ):
+            raise ValueError(f"Invalid {attribute} value: {value}")
 
 
 def _fetch(
@@ -95,8 +91,7 @@ def hcp_fetch(
     with ProcessPoolExecutor(config.iris.parallel) as pool:
         for s_idx, sample in enumerate(samples):
             if all(
-                file is not None and Path(file).exists()
-                for file in sample.files or []
+                file is not None and Path(file).exists() for file in sample.files or []
             ):
                 logger.debug(f"Files found for {sample.id} {sample.files}")
 
