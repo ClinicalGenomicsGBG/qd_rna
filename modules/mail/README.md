@@ -29,18 +29,25 @@ Name                   | When | Condition | Description
 
 ## Start
 
-**Subject:** "{{ analysis }} started"
+**Subject:** `{{ analysis }} started`
+
 **Body:**
+
+```
 {{ analysis }} has started for {{ samples.unique_ids|length }} sample(s).
 The following samples are being analyzed:
 {% for id in samples.unique_ids %}
 {{ id }}
 {%- endfor %}
+```
 
 ## End
 
-**Subject:** "{{ analysis }} finished"
+**Subject:** `{{ analysis }} finished`
+
 **Body:**
+
+```
 {{ analysis }} has finished processing {{ samples.unique_ids|length }} sample(s).
 {% if samples.failed|length > 0 %}
 ❗️ Analysis failed for the following samples:
@@ -54,3 +61,4 @@ The following samples are being analyzed:
 {{ id }}
 {%- endfor %}
 {% endif %}
+```
