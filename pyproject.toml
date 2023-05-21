@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "qd-rna"
-version = "0.0.1"
+version = "0.0.2"
 description = "Quick and Dirty RNASeq analysis pipeline"
 authors = ["Erik Demitz-Helin <erik.demitz-helin@gu.se>"]
 readme = "README.md"
