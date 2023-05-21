@@ -350,6 +350,10 @@ class SlimsSample(data.Sample):
         if value not in ["novel", "running", "complete", "error"]:
             raise ValueError(f"Invalid value for {attribute}: {value}")
 
+    @property
+    def pk(self):
+        return self.record.pk()
+
     @cached_property
     def _connection(self) -> Slims | None:
         """Get a connection to SLIMS from the record"""
