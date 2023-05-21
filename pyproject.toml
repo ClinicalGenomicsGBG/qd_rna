@@ -9,7 +9,7 @@ readme = "README.md"
 python = "^3.10"
 ngpiris = "^4.2.0"
 slims-python-api = "^6.8.0"
-cellophane = {git = "https://github.com/ClinicalGenomicsGBG/cellophane.git", branch = "dev"}
+cellophane = {git = "https://github.com/ClinicalGenomicsGBG/cellophane.git", tag = "v0.0.2"}
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
