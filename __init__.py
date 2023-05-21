@@ -43,6 +43,8 @@ def rsync_results(
     samples: data.Samples,
     logger: LoggerAdapter,
     config: cfg.Config,
+    outdir: Path,
+    timestamp: str,
     **_,
 ) -> None:
     if config.rsync.skip:
@@ -54,6 +56,7 @@ def rsync_results(
     else:
         logger.info(f"Syncing output to {config.rsync.base}")
 
+    _outprefix = config.get("outprefix", timestamp)
     _outputs = [o for s in samples for o in s.output or []]
 
     # Split outputs into large files, small files, and directories
@@ -63,8 +66,8 @@ def rsync_results(
     for output in _outputs:
         for src in output.src:
             _output = data.Output(
-                src=src,
-                dest_dir=(config.rsync.base / output.dest_dir).absolute()
+                src=src.absolute(),
+                dest_dir=(config.rsync.base / output.dest_dir).absolute(),
             )
 
             if not src.exists():
@@ -86,13 +89,29 @@ def rsync_results(
     _directories = _group_by_dest_dir(_directories)
 
     _procs: list[mp.Process] = []
-    for label, category in (
-        (f"large file(s) (>{config.rsync.large_file_threshold})", _large_files),
-        (f"small file(s) (<{config.rsync.large_file_threshold})", _small_files),
-        ("directories", _directories),
+    for tag, label, category in (
+        (
+            "large",
+            f"large file(s) (>{config.rsync.large_file_threshold})",
+            _large_files,
+        ),
+        (
+            "small",
+            f"small file(s) (<{config.rsync.large_file_threshold})",
+            _small_files,
+        ),
+        (
+            "dir",
+            "directories",
+            _directories,
+        ),
     ):
         if category:
             logger.info(f"Syncing {sum(len(o.src) for o in category)} {label}")
+            manifest_path = outdir / f"rsync.{tag}.manifest"
+            with open(manifest_path, "w") as manifest:
+                for o in category:
+                    manifest.write(" ".join(str(s) for s in [*o.src, o.dest_dir, "\n"]))
 
             for o in category:
                 o.dest_dir.mkdir(parents=True, exist_ok=True)
@@ -104,10 +123,9 @@ def rsync_results(
                 slots=config.rsync.sge_slots,
                 name="rsync",
                 check=False,
-                env={
-                    "SRC": " ".join(",".join(str(s) for s in o.src) for o in category),
-                    "DST": " ".join(str(o.dest_dir) for o in category),
-                },
+                stderr=config.logdir / f"rsync.{_outprefix}.{tag}.err",
+                stdout=config.logdir / f"rsync.{_outprefix}.{tag}.out",
+                env={"MANIFEST": str(manifest_path)},
                 callback=partial(
                     _sync_callback,
                     logger=logger,
