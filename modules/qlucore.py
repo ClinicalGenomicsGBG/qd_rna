@@ -134,6 +134,7 @@ def qlucore(
                 slots=config.qlucore.subsample_threads,
                 cwd=outdir,
                 check=False,
+                config=config,
                 env={
                     "_QLUCORE_SUBSAMPLE_FRAC": config.qlucore.subsample_frac,
                     "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample_threads,
