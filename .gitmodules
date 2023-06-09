@@ -1,23 +1,23 @@
 [submodule "hcp"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/hcp
-	branch = refs/heads/hcp_v0.1.0
+	branch = refs/heads/hcp_v0.1.1
 [submodule "rsync"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/rsync
-	branch = refs/heads/rsync_v0.1.0
+	branch = refs/heads/rsync_v0.1.1
 [submodule "slims"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/slims
-	branch = refs/heads/slims_v0.1.0
+	branch = refs/heads/slims_v0.1.1
 [submodule "mail"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/mail
-	branch = refs/heads/mail_v0.1.0
+	branch = refs/heads/mail_v0.1.1
 [submodule "nextflow"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/nextflow
-	branch = refs/heads/nextflow_v0.1.0
+	branch = refs/heads/nextflow_v0.1.1
 [submodule "unpack"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/unpack

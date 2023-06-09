@@ -48,6 +48,9 @@ rsync:
   large_file_threshold: "100M"
 
 mail:
+  # Skip sending mail (skip)
+  skip:
+
   start:
     # Subject of the mail (jinja2 template) (string)
     subject: "{{ analysis }} started"
@@ -138,7 +141,7 @@ merge:
 copy_skipped:
 
 rnaseq:
-  # Skip nf-core/rnaseq (boolean)
+  # Skip nf-core/rnaseq (skip)
   skip:
 
   # Overwrite any existing output (boolean)
@@ -169,7 +172,7 @@ rnaseq:
   aligner:
 
 rnafusion:
-  # Skip nf-core/rnafusion (boolean)
+  # Skip nf-core/rnafusion (skip)
   skip:
 
   # Overwrite any existing output (boolean)
@@ -194,7 +197,7 @@ rnafusion:
   fusionreport_tool_cutoff: 1
 
 qlucore:
-  # Skip qlucore mapping (boolean)
+  # Skip qlucore mapping (skip)
   skip:
 
   # Overwrite any existing output (boolean)
