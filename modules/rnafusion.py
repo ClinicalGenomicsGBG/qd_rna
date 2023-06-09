@@ -42,10 +42,6 @@ def rnafusion(
             config=config,
             name=label,
             workdir=outdir / "work",
-            report=outdir / "logs" / f"{label}.{timestamp}.nextflow_report.html",
-            log=outdir / "logs" / f"{label}.{timestamp}.nextflow.log",
-            stderr=outdir / "logs" / f"{label}.{timestamp}.nextflow.err",
-            stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
 
@@ -84,7 +80,9 @@ def rnafusion(
                     dest_dir=Path(sample.id),
                 ),
                 data.Output(
-                    src=[*(outdir / "samtools_index_for_qc").glob(f"{sample.id}.*.bai")],
+                    src=[
+                        *(outdir / "samtools_index_for_qc").glob(f"{sample.id}.*.bai")
+                    ],
                     dest_dir=Path(sample.id),
                 ),
                 data.Output(

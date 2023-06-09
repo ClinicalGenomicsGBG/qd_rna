@@ -103,12 +103,7 @@ def qlucore(
             f"--read_length {config.read_length}",
             config=config,
             name=label,
-            nf_config=outdir / "nextflow.config",
             workdir=outdir / "work",
-            report=outdir / "logs" / f"{label}.{timestamp}.nextflow_report.html",
-            log=outdir / "logs" / f"{label}.{timestamp}.nextflow.log",
-            stderr=outdir / "logs" / f"{label}.{timestamp}.nextflow.err",
-            stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
 

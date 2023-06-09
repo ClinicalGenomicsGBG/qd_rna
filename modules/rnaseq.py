@@ -49,12 +49,8 @@ def rnaseq(
                 else f"--star_index {config.rnaseq.star_index}"
             ),
             config=config,
-            name="rnaseq",
+            name=label,
             workdir=outdir / "work",
-            report=outdir / "logs" / f"{label}.{timestamp}.nextflow_report.html",
-            log=outdir / "logs" / f"{label}.{timestamp}.nextflow.log",
-            stderr=outdir / "logs" / f"{label}.{timestamp}.nextflow.err",
-            stdout=outdir / "logs" / f"{label}.{timestamp}.nextflow.out",
             cwd=outdir,
         )
 
