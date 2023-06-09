@@ -1,0 +1,273 @@
+
+unpack:
+  # Threads for decompression (integer)
+  threads: 40
+
+hcp:
+  # IRIS credentials file (path)
+  credentials:
+
+  # Temporary directory for fastq files (path)
+  fastq_temp:
+
+  # Number of parallel HCP conenctions (integer)
+  parallel: 4
+
+nextflow:
+  # Threads for nextflow manager (integer)
+  threads: 2
+
+  # Nextflow config file (path)
+  config:
+
+  # Nextflow profile (string)
+  profile:
+
+  # Enable ANSI log (boolean)
+  ansi_log:
+
+  # Nextflow module (string)
+  nf_module: "nextflow"
+
+  # Java module (string)
+  java_module: "java"
+
+  # Environment variables that will be passed to the nextflow process (mapping)
+  env:
+  # - key=value
+  #   ...=...
+
+rsync:
+  # Base of directory where results will be stored (path)
+  base:
+
+  # Overwrite existing results (boolean)
+  overwrite:
+
+  # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) (string)
+  large_file_threshold: "100M"
+
+mail:
+  start:
+    # Subject of the mail (jinja2 template) (string)
+    subject: "{{ analysis }} started"
+
+    # Body of the mail (jinja2 template) (string)
+    body: |
+      {{ analysis }} has started for {{ samples.unique_ids|length }} sample(s).
+      
+      The following samples are being analyzed:
+      {% for id in samples.unique_ids %}
+      {{ id }}
+      {%- endfor %}
+      
+
+    # From address to use (string)
+    from_addr:
+
+    # List of recipients (array)
+    to_addr:
+    # - value
+    # - ...
+
+    # List of CC recipients (array)
+    cc_addr:
+    # - value
+    # - ...
+
+  end:
+    # Subject of the mail (jinja2 template) (string)
+    subject: "{{ analysis }} finished"
+
+    # Body of the mail (jinja2 template) (string)
+    body: |
+      {{ analysis }} has finished processing {{ samples.unique_ids|length }} sample(s).
+      {% if samples.failed|length > 0 %}
+      ❗️ Analysis failed for the following samples:
+      {% for id in samples.failed.unique_ids %}
+      {{ id }}
+      {%- endfor %}
+      {% endif %}
+      {%- if samples.complete|length > 0 %}
+      ✅ Analysis completed successfully for the following samples:
+      {% for id in samples.complete.unique_ids %}
+      {{ id }}
+      {%- endfor %}
+      {% endif %}
+      
+
+    # From address to use (string)
+    from_addr:
+
+    # List of recipients (array)
+    to_addr:
+    # - value
+    # - ...
+
+    # List of CC recipients (array)
+    cc_addr:
+    # - value
+    # - ...
+
+  smtp:
+    # SMTP host (string)
+    host:
+
+    # SMTP port (integer)
+    port: 25
+
+    # Use TLS (boolean)
+    tls:
+
+    # SMTP username (string)
+    user:
+
+    # SMTP password (string)
+    password:
+
+# Strandedness of RNA-seq library (string)
+strandedness: "unstranded"
+
+# Sample read length (integer REQUIRED)
+read_length:
+
+# Merge samples with same ID (boolean)
+merge:
+
+# Copy skipped runner output (boolean)
+copy_skipped:
+
+rnaseq:
+  # Skip nf-core/rnaseq (boolean)
+  skip:
+
+  # Overwrite any existing output (boolean)
+  force:
+
+  # Path to nf-core/rnaseq main.nf (path)
+  nf_main:
+
+  # Genome reference (string)
+  genome:
+
+  # Path to genome fasta file (path)
+  fasta:
+
+  # Path to genome gtf file (path)
+  gtf:
+
+  # Path to genome gene bed file (path)
+  gene_bed:
+
+  # Path to STAR genome index (path)
+  star_index:
+
+  # Path to RSEM genome index (path)
+  rsem_index:
+
+  # RNA-seq aligner (string)
+  aligner:
+
+rnafusion:
+  # Skip nf-core/rnafusion (boolean)
+  skip:
+
+  # Overwrite any existing output (boolean)
+  force:
+
+  # Path to nf-core/rnafusion main.nf (path)
+  nf_main:
+
+  # Path to rnafusion references (path)
+  genomes_base:
+
+  # Path to arriba references (path)
+  arriba_ref:
+
+  # Path to arriba blacklist file (path)
+  arriba_blacklist:
+
+  # Path to arriba protein domains file (path)
+  arriba_protein_domain:
+
+  # Minimum number of callers for fusion to be reported (integer)
+  fusionreport_tool_cutoff: 1
+
+qlucore:
+  # Skip qlucore mapping (boolean)
+  skip:
+
+  # Overwrite any existing output (boolean)
+  force:
+
+  # Path to nf-core/rnafusion main.nf (path)
+  nf_main:
+
+  # Path to STAR-Fusion reference (path)
+  starfusion_ref:
+
+  # Number of threads to use for subsampling (integer)
+  subsample_threads: 12
+
+  # Fraction of reads to subsample (number)
+  subsample_frac: 0.2
+
+# Log level (string)
+log_level: "INFO"
+
+# Log directory (path REQUIRED)
+logdir:
+
+# Output directory (path REQUIRED)
+outdir:
+
+# Output prefix (defaults to a timestamp) (string)
+outprefix:
+
+# Path YAML file with sample names and paths to fastq files (eg. sample: {files: [fastq1, fastq2]}) (path)
+samples_file:
+
+sge:
+  # SGE queue (string)
+  queue: "all.q"
+
+  # SGE parallel environment (string)
+  pe: "mpi"
+
+  # Default number of slots (integer)
+  slots: 1
+
+slims:
+  # Ask your IT people for credentials (Remember to say please)
+  url: 'http://slims.example.com/slimsrest'
+  username: apiusername
+  password: apipassword
+  
+  # Find sample records with content type 22 (Fastq) and qdrna in the samplesheet decription field
+  # Exclude samples explicitly marked as "Do not include"
+  find_criteria: |
+    cntn_fk_contentType equals 22
+    and cntn_cstm_doNotInclude not_equals true
+    and cntn_cstm_rawSheetDescription contains qdrna
+  
+  # Check for derived records (->) with contentType 23 (Bioinformatics) and complete secondary analysis state
+  check_criteria: |
+    -> cntn_fk_contentType equals 23
+    and cntn_cstm_SecondaryAnalysisState equals complete
+  
+  # Get file path from slims (unless specified in samples file)
+  # Add backup remote keys for HCP hook
+  # Add run information to samples
+  map:
+    - files=json:cntn_cstm_demuxerSampleResult.fastq_paths
+      run=cntn_cstm_runTag
+      backup=json:cntn_cstm_demuxerBackupSampleResult.remote_keys
+  
+  # Create derived records with content type = 23 (Bioinformatics)
+  # Include state from cellophane sample (access key using curly braces)
+  # Other parameters are required by SLIMS or records will not be created
+  derive:
+    - cntn_fk_contentType=23
+      cntn_fk_location=83
+      cntn_cstm_SecondaryAnalysisState={state}
+      cntn_status=10
