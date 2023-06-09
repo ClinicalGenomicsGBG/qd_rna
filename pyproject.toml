@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "qd-rna"
-version = "0.0.2"
+version = "0.1.0"
 description = "Quick and Dirty RNASeq analysis pipeline"
 authors = ["Erik Demitz-Helin <erik.demitz-helin@gu.se>"]
 readme = "README.md"
@@ -9,7 +9,13 @@ readme = "README.md"
 python = "^3.10"
 ngpiris = "^4.2.0"
 slims-python-api = "^6.8.0"
-cellophane = {git = "https://github.com/ClinicalGenomicsGBG/cellophane.git", tag = "v0.0.2"}
+<<<<<<< HEAD
+cellophane = {git = "https://github.com/ClinicalGenomicsGBG/cellophane.git", tag = "v0.2.0"}
+=======
+cellophane = {git = "https://github.com/ClinicalGenomicsGBG/cellophane.git", tag = "v0.1.0"}
+>>>>>>> 486423c (chore: Update deps)
+gitpython = "^3.1.31"
+questionary = "^1.10.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "^22.12.0"
