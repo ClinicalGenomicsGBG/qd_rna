@@ -21,4 +21,4 @@
 [submodule "unpack"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/unpack
-	branch = refs/heads/unpack_v0.1.0
+	branch = refs/heads/unpack_v0.1.1
