@@ -1,10 +1,7 @@
 required:
   - nextflow
-  - rnaseq
-  - rnafusion
-  - qlucore
+  - sge
   - read_length
-  - strandedness
 
 properties:
   strandedness:
@@ -32,9 +29,25 @@ properties:
 
   rnaseq:
     type: object
+    allOf:
+    - required:
+      - nf_main
+      - aligner
+    - anyOf:
+      - required:
+        - star_index
+      - required:
+        - rsem_index
+    - anyOf:
+      - required:
+        - genome
+      - required:
+        - fasta
+        - gtf
+        - gene_bed
     properties:
       skip:
-        type: boolean
+        type: skip
         default: false
         description: Skip nf-core/rnaseq
       
@@ -77,33 +90,18 @@ properties:
         enum:
           - star_salmon
           - star_rsem
-    if:
-      properties:
-        skip:
-          const: false
-    then:  
-      allOf:
-      - required:
-        - nf_main
-        - aligner
-      - anyOf:
-        - required:
-          - star_index
-        - required:
-          - rsem_index
-      - anyOf:
-        - required:
-          - genome
-        - required:
-          - fasta
-          - gtf
-          - gene_bed
+
 
   rnafusion:
     type: object
+    required:
+      - nf_main
+      - genomes_base
+      - arriba_blacklist
+      - arriba_protein_domain
     properties:
       skip:
-        type: boolean
+        type: skip
         description: Skip nf-core/rnafusion
         default: false
 
@@ -133,23 +131,17 @@ properties:
         type: integer
         description: Minimum number of callers for fusion to be reported
         default: 1
-    
-    if:
-      properties:
-        skip:
-          const: false
-    then:
-      required:
-        - nf_main
-        - genomes_base
-        - arriba_blacklist
-        - arriba_protein_domain
+
+
 
   qlucore:
     type: object
+    required:
+      - nf_main
+      - starfusion_ref
     properties:
       skip:
-        type: boolean
+        type: skip
         default: false
         description: Skip qlucore mapping
       
@@ -173,11 +165,3 @@ properties:
         description: Fraction of reads to subsample
         default: 0.2
 
-    if:
-      properties:
-        skip:
-          const: false
-    then:  
-      required:
-        - nf_main
-        - starfusion_ref
