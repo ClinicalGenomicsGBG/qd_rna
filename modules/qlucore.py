@@ -3,6 +3,7 @@
 from multiprocessing import Process
 from logging import LoggerAdapter
 from pathlib import Path
+from functools import partial
 
 from cellophane import cfg, modules, data, sge
 
@@ -53,6 +54,24 @@ process {
   }
 }
 """
+
+
+def _subsample_callback(
+    logger: LoggerAdapter,
+    outdir: Path,
+    sample: data.Sample,
+):
+    logger.info(f"Subsampling finished for {sample.id}")
+    with open(outdir / f"{sample.id}.qlucore.txt", "w") as f:
+        f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
+
+
+def _subsample_error_callback(
+    exception: Exception,
+    logger: LoggerAdapter,
+    sample: data.Sample,
+):
+    logger.error(f"Subsampling failed for {sample.id} - {exception}")
 
 
 @modules.runner()
@@ -111,12 +130,8 @@ def qlucore(
         for sample in samples:
             _SUBSAMPLE_PROCS[sample.id] = sge.submit(
                 str(root / "scripts" / "qlucore_subsample.sh"),
-                queue=config.nextflow.sge_queue,
                 name=f"qlucore_subsample_{sample.id}",
-                pe=config.nextflow.sge_pe,
                 slots=config.qlucore.subsample_threads,
-                stdout=outdir / "logs" / f"{sample.id}.qlucore_subsample.out",
-                stderr=outdir / "logs" / f"{sample.id}.qlucore_subsample.err",
                 cwd=outdir,
                 check=False,
                 env={
@@ -128,16 +143,9 @@ def qlucore(
                         / f"{sample.id}.Aligned.sortedByCoord.out.bam"
                     ),
                 },
+                callback=partial(_subsample_callback, logger, outdir, sample),
+                error_callback=partial(_subsample_error_callback, logger, sample),
             )
-
-        for sample in samples:
-            subsample_proc = _SUBSAMPLE_PROCS[sample.id]
-            subsample_proc.join()
-            if subsample_proc.exitcode != 0:
-                logger.error(f"Subsampling failed for {sample.id}")
-
-            with open(outdir / f"{sample.id}.qlucore.txt", "w") as f:
-                f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
 
     if not config.qlucore.skip or config.copy_skipped:
         for sample in samples:
