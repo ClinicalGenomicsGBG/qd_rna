@@ -9,6 +9,30 @@ executor:
   name: subprocess  # Name of the executor to use (string)
   memory: 2 GiB # Ammount of memory to allocate to jobs started (if supported by the executor) (size)
   cpus: 1 # Number of CPUs to allocate to jobs started (if supported by the executor) (integer)
+mail:
+  send: false  # Send mail (boolean)
+  cc_addr: ~ # Default list of CC recipients (array)
+  to_addr: ~ # Default list of recipients (array)
+  from_addr: ~ # Default from address (string)
+  start:
+    subject: '{{ analysis }} started'  # Subject of the mail (jinja2 template) (string)
+    body: "{{ analysis }} has started for {{ samples.unique_ids|length }} sample(s).\n
+      \nThe following samples are being analyzed:\n{% for id in samples.unique_ids
+      %}\n{{ id }}\n{%- endfor %}\n" # Body of the mail (jinja2 template) (string)
+  end:
+    subject: '{{ analysis }} finished'  # Subject of the mail (jinja2 template) (string)
+    body: "{{ analysis }} has finished processing {{ samples.unique_ids|length }}
+      sample(s).\n{% if samples.failed|length > 0 %}\n❗️ Analysis failed for the following
+      samples:\n{% for id in samples.failed.unique_ids %}\n{{ id }}\n{%- endfor %}\n
+      {% endif %}\n{%- if samples.complete|length > 0 %}\n✅ Analysis completed successfully
+      for the following samples:\n{% for id in samples.complete.unique_ids %}\n{{
+      id }}\n{%- endfor %}\n{% endif %}\n" # Body of the mail (jinja2 template) (string)
+  smtp:
+    host: ~  # SMTP host (string)
+    password: ~ # SMTP password (string)
+    user: ~ # SMTP username (string)
+    tls: false # Use TLS (boolean)
+    port: 25 # SMTP port (integer)
 rsync:
   overwrite: false  # Overwrite existing results (boolean)
   large_file_threshold: 100M # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) (string)

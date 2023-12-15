@@ -10,3 +10,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/unpack
 	branch = refs/heads/unpack_dev
+[submodule "mail"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/mail
+	branch = refs/heads/mail_dev
