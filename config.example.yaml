@@ -21,3 +21,8 @@ nextflow:
   ansi_log: false # Enable ANSI log (boolean)
   profile: ~ # Nextflow profile (string)
   config: ~ # Nextflow config file (path)
+unpack:
+  init: ~  # Code to run before unpacking (Bash) (string)
+  timeout: 60 # Timeout (in seconds) to wait for unpacked file to become available (integer)
+  threads: 40 # Threads for decompression (integer)
+  exit: ~ # Code to run after unpacking (Bash) (string)
