@@ -1,0 +1,11 @@
+workdir: ~  # Working directory where intermediate files are stored (path)
+samples_file: ~ # Path YAML file with samples - eg [{id: ID, files: [F1, F2]}, ...] (path)
+tag: ~ # Tag identifying the pipeline run (defaults to a timestamp - YYMMDDHHMMSS) (string)
+resultdir: ~ # Results base directory where output files are copied (path)
+logdir: ~ # Log directory (path)
+config_file: ~ # Path to config file (path)
+log_level: INFO # Log level (string)
+executor:
+  name: subprocess  # Name of the executor to use (string)
+  memory: 2 GiB # Ammount of memory to allocate to jobs started (if supported by the executor) (size)
+  cpus: 1 # Number of CPUs to allocate to jobs started (if supported by the executor) (integer)
