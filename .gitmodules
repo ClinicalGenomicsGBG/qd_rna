@@ -1,0 +1,4 @@
+[submodule "nextflow"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/nextflow
+	branch = refs/heads/nextflow_dev
