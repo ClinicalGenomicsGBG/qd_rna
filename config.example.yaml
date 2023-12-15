@@ -45,6 +45,9 @@ nextflow:
   ansi_log: false # Enable ANSI log (boolean)
   profile: ~ # Nextflow profile (string)
   config: ~ # Nextflow config file (path)
+grid_engine:
+  queue: all.q  # Grid Engine queue (string)
+  pe: mpi # Grid Engine parallel environment (string)
 unpack:
   init: ~  # Code to run before unpacking (Bash) (string)
   timeout: 60 # Timeout (in seconds) to wait for unpacked file to become available (integer)

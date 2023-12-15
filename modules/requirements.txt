@@ -1,2 +1,3 @@
 ### THIS FILE IS MANAGED BY CELLOPHANE - DO NOT EDIT ###
 -r mail/requirements.txt
+-r grid_engine/requirements.txt
