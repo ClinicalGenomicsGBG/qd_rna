@@ -18,3 +18,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/grid_engine
 	branch = refs/heads/grid_engine_dev
+[submodule "hcp"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/hcp
+	branch = refs/heads/hcp_dev

@@ -45,6 +45,10 @@ nextflow:
   ansi_log: false # Enable ANSI log (boolean)
   profile: ~ # Nextflow profile (string)
   config: ~ # Nextflow config file (path)
+hcp:
+  credentials: ~  # IRIS credentials file (path)
+  parallel: 4 # Number of parallel HCP conenctions (integer)
+  fastq_temp: ~ # Temporary directory for fastq files (path)
 grid_engine:
   queue: all.q  # Grid Engine queue (string)
   pe: mpi # Grid Engine parallel environment (string)
