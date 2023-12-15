@@ -9,6 +9,9 @@ executor:
   name: subprocess  # Name of the executor to use (string)
   memory: 2 GiB # Ammount of memory to allocate to jobs started (if supported by the executor) (size)
   cpus: 1 # Number of CPUs to allocate to jobs started (if supported by the executor) (integer)
+rsync:
+  overwrite: false  # Overwrite existing results (boolean)
+  large_file_threshold: 100M # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) (string)
 nextflow:
   threads: 2  # Threads for nextflow manager (integer)
   env: # Environment variables that will be passed to the nextflow process (mapping)

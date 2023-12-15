@@ -2,3 +2,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/nextflow
 	branch = refs/heads/nextflow_dev
+[submodule "rsync"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/rsync
+	branch = refs/heads/rsync_dev
