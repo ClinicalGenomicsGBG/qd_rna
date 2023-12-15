@@ -2,3 +2,4 @@
 -r mail/requirements.txt
 -r grid_engine/requirements.txt
 -r hcp/requirements.txt
+-r slims/requirements.txt
