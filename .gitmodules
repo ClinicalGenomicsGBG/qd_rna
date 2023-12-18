@@ -14,10 +14,6 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/mail
 	branch = refs/heads/mail_dev
-[submodule "grid_engine"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/grid_engine
-	branch = refs/heads/grid_engine_dev
 [submodule "hcp"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/hcp
@@ -26,3 +22,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/slims
 	branch = refs/heads/slims_dev
+[submodule "grid_engine"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/grid_engine
+	branch = refs/heads/grid_engine_dev
