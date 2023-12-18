@@ -1,0 +1,174 @@
+required:
+  - rnaseq
+  - rnafusion
+  - qlucore
+
+properties:
+  strandedness:
+    type: string
+    description: Strandedness of RNA-seq library
+    enum:
+      - unstranded
+      - forward
+      - reverse
+    default: unstranded
+  
+  read_length:
+    type: integer
+    description: Sample read length
+    default: 150
+  
+  merge:
+    type: boolean
+    description: Merge samples with same ID
+    default: false
+  
+  copy_skipped:
+    type: boolean
+    description: Copy skipped runner output
+    default: false
+
+  rnaseq:
+    type: object
+    oneOf:
+    - properties: {skip: {const: true}}
+    - allOf:
+      - required: [nf_main, aligner]
+      - oneOf:
+        - required: [star_index]
+        - required: [rsem_index]
+      - oneOf:
+        - required: [genome]
+        - required: [fasta, gtf, gene_bed]
+
+    properties:
+      skip:
+        type: boolean
+        default: false
+        description: Skip nf-core/rnaseq
+
+      force: &force
+        type: boolean
+        default: false
+        description: Overwrite any existing output
+
+      nf_main:
+        type: path
+        description: Path to nf-core/rnaseq main.nf
+
+      genome:
+        type: string
+        description: Genome reference
+
+      fasta:
+        type: path
+        description: Path to genome fasta file
+
+      gtf:
+        type: path
+        description: Path to genome gtf file
+
+      gene_bed:
+        type: path
+        description: Path to genome gene bed file
+
+      star_index:
+        type: path
+        description: Path to STAR genome index
+
+      rsem_index:
+        type: path
+        description: Path to RSEM genome index
+
+      aligner:
+        type: string
+        description: RNA-seq aligner
+        enum:
+          - star_salmon
+          - star_rsem
+
+  rnafusion:
+    type: object
+    if:
+      properties:
+        skip:
+          const: false
+    then:
+      required:
+        - nf_main
+        - genomes_base
+        - arriba_blacklist
+        - arriba_protein_domain
+    properties:
+      skip:
+        type: boolean
+        description: Skip nf-core/rnafusion
+        default: false
+
+      force: *force
+
+      nf_main:
+        type: path
+        description: Path to nf-core/rnafusion main.nf
+
+      genomes_base:
+        type: path
+        description: Path to rnafusion references
+
+      arriba_ref:
+        type: path
+        description: Path to arriba references
+
+      arriba_blacklist:
+        type: path
+        description: Path to arriba blacklist file
+
+      arriba_protein_domain:
+        type: path
+        description: Path to arriba protein domains file
+
+      fusionreport_tool_cutoff:
+        type: integer
+        description: Minimum number of callers for fusion to be reported
+        default: 1
+
+  qlucore:
+    type: object
+    if:
+      properties:
+        skip:
+          const: false
+    then:
+      required:
+        - nf_main
+        - starfusion_ref
+    properties:
+      skip:
+        type: boolean
+        default: false
+        description: Skip qlucore mapping
+
+      force: *force
+
+      subsample_init:
+        type: string
+        description: Code to run before qlucore subsampling
+        default: ""
+
+      nf_main:
+        type: path
+        description: Path to nf-core/rnafusion main.nf
+
+      starfusion_ref:
+        type: path
+        description: Path to STAR-Fusion reference
+
+      subsample_threads:
+        type: integer
+        description: Number of threads to use for subsampling
+        default: 12
+
+      subsample_frac:
+        type: number
+        description: Fraction of reads to subsample
+        default: 0.2
