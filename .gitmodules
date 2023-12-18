@@ -6,10 +6,6 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/unpack
 	branch = refs/heads/unpack_dev
-[submodule "hcp"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/hcp
-	branch = refs/heads/hcp_dev
 [submodule "slims"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/slims
@@ -26,3 +22,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/mail
 	branch = refs/heads/mail_dev
+[submodule "hcp"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/hcp
+	branch = refs/heads/hcp_dev
