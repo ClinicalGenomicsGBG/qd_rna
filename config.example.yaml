@@ -72,9 +72,9 @@ nextflow:
   threads: 2  # Threads for nextflow manager (integer)
   env: # Environment variables that will be passed to the nextflow process (mapping)
   - ''
-  java_module: java # Java module (string)
-  nf_module: nextflow # Nextflow module (string)
+  init: '' # Code to run before running Nextflow (Bash) (string)
   ansi_log: false # Enable ANSI log (boolean)
+  workdir: ~ # Nextflow workdir (path)
   profile: ~ # Nextflow profile (string)
   config: ~ # Nextflow config file (path)
 hcp:

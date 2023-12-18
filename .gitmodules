@@ -1,7 +1,3 @@
-[submodule "nextflow"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/nextflow
-	branch = refs/heads/nextflow_dev
 [submodule "rsync"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/rsync
@@ -26,3 +22,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/grid_engine
 	branch = refs/heads/grid_engine_dev
+[submodule "nextflow"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/nextflow
+	branch = refs/heads/nextflow_dev
