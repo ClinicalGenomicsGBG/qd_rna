@@ -2,50 +2,50 @@
 
 from pathlib import Path
 
-from cellophane import cfg, modules, data, executors
+from cellophane import output, runner, Executor, Config, Sample, Samples
 from modules.nextflow import nextflow
 
-@data.output(
+@output(
     "arriba_visualisation/{sample.id}.pdf",
     dst_dir="{sample.id}/arriba",
 )
-@data.output(
+@output(
     "arriba/{sample.id}.*.tsv",
     dst_dir="{sample.id}/arriba",
 )
-@data.output(
+@output(
     "fusioncatcher/{sample.id}.*.txt",
     dst_dir="{sample.id}/fusioncatcher",
 )
-@data.output(
+@output(
     "fusioninspector/{sample.id}.*",
     dst_dir="{sample.id}/fusioninspector",
 )
-@data.output(
+@output(
     "fusionreport/{sample.id}",
     dst_dir="{sample.id}/fusionreport",
 )
-@data.output(
+@output(
     "pizzly/{sample.id}.*",
     dst_dir="{sample.id}/pizzly",
 )
-@data.output(
+@output(
     "squid/{sample.id}.*.txt",
     dst_dir="{sample.id}/squid",
 )
-@data.output(
+@output(
     "star_for_starfusion/{sample.id}.*.ba*",
     dst_dir="{sample.id}",
 )
-@modules.runner()
+@runner()
 def rnafusion(
-    samples: data.Samples,
-    config: cfg.Config,
+    samples: Samples,
+    config: Config,
     label: str,
     workdir: Path,
-    executor: executors.Executor,
+    executor: Executor,
     **_,
-) -> data.Samples:
+) -> Samples:
     """Run nf-core/rnafusion."""
     if config.rnafusion.skip:
         if not config.copy_skipped:

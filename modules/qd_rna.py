@@ -1,17 +1,16 @@
 from pathlib import Path
-from cellophane import cfg, data, modules
 from logging import LoggerAdapter
 from copy import deepcopy
+from cellophane import pre_hook, Samples, Sample, Output, Config
 
-
-@modules.pre_hook(label="Sample ID", after=["unpack"], before=["start_mail"])
+@pre_hook(label="Sample ID", after=["unpack"], before=["start_mail"])
 def set_sample_id(
-    samples: data.Samples[data.Sample],
+    samples: Samples[Sample],
     logger: LoggerAdapter,
-    config: cfg.Config,
+    config: Config,
     workdir: Path,
     **_,
-) -> data.Samples:
+) -> Samples:
     logger.debug("Adding Run ID to sample IDs")
     _samples = deepcopy(samples)
     known_dups: set[str] = set()
@@ -26,7 +25,7 @@ def set_sample_id(
             sample.id = f"{sample.id}_{sorted(runs)[-1]}" if runs else sample.id
             merge_file = workdir / f"{sample.id}.merged_runs.txt"
             merge_file.write_text("\n".join(runs))
-            sample.output += [data.Output(src=merge_file, dst=Path(sample.id).merged_runs.txt)]
+            sample.output += [Output(src=merge_file, dst=Path(sample.id).merged_runs.txt)]
         elif n > 1 and not config.merge and "run" in sample.meta:
             sample.id = f"{sample.id}_{sample.meta.run}"
         elif n > 1 and not config.merge and "run" not in sample.meta:

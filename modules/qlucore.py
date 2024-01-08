@@ -5,7 +5,7 @@ from logging import LoggerAdapter
 from pathlib import Path
 from functools import partial
 
-from cellophane import cfg, modules, data, executors
+from cellophane import output, runner, Executor, Config, Sample, Samples
 
 from modules.nextflow import nextflow
 
@@ -59,7 +59,7 @@ process {
 def _subsample_callback(
     logger: LoggerAdapter,
     outdir: Path,
-    sample: data.Sample,
+    sample: Sample,
 ):
     logger.info(f"Subsampling finished for {sample.id}")
     with open(outdir / f"{sample.id}.qlucore.txt", "w") as f:
@@ -69,32 +69,32 @@ def _subsample_callback(
 def _subsample_error_callback(
     exception: Exception,
     logger: LoggerAdapter,
-    sample: data.Sample,
+    sample: Sample,
 ):
     logger.error(f"Subsampling failed for {sample.id} - {exception}")
 
 
-@data.output(
+@output(
     "{sample.id}.qlucore.txt",
     dst_dir="{sample.id}/qlucore",
 )
-@data.output(
+@output(
     "star_for_starfusion/{sample.id}.*.ba*",
     dst_dir="{sample.id}/qlucore",
 )
-@data.output(
+@output(
     "starfusion/{sample.id}.*.tsv",
     dst_dir="{sample.id}/qlucore",
 )
-@modules.runner()
+@runner()
 def qlucore(
-    samples: data.Samples,
-    config: cfg.Config,
+    samples: Samples,
+    config: Config,
     label: str,
     logger: LoggerAdapter,
     root: Path,
     workdir: Path,
-    executor: executors.Executor
+    executor: Executor
 ) -> None:
     """Run nf-core/rnaseq (Mapping for qlucore)."""
 

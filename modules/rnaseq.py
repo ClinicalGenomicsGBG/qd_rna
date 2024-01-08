@@ -2,35 +2,35 @@
 
 from logging import LoggerAdapter
 from pathlib import Path
-from cellophane import cfg, modules, data, executors
+from cellophane import output, runner, Executor, Config, Samples
 from modules.nextflow import nextflow
 
-@data.output(
+@output(
     "star_salmon/salmon.*",
     dst_dir="{sample.id}/salmon",
 )
-@data.output(
+@output(
     "star_salmon/{sample.id}",
     dst_dir="{sample.id}/salmon/{sample.id}",
 )
-@data.output(
+@output(
     "star_salmon/{config.rnaseq.aligner}/stringtie",
     dst_dir="{sample.id}/stringtie",
 )
-@data.output(
+@output(
     "multiqc/{config.rnaseq.aligner}",
     dst_dir="{sample.id}/multiqc",
 )
-@modules.runner(individual_samples=True, link_by="id")
+@runner(individual_samples=True, link_by="id")
 def rnaseq(
-    samples: data.Samples,
-    config: cfg.Config,
+    samples: Samples,
+    config: Config,
     label: str,
     logger: LoggerAdapter,
     workdir: Path,
-    executor: executors.Executor,
+    executor: Executor,
     **_,
-) -> data.Samples:
+) -> Samples:
     """Run nf-core/rnaseq."""
 
     if config.rnaseq.skip:
