@@ -1,7 +1,3 @@
-[submodule "grid_engine"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/grid_engine
-	branch = refs/heads/grid_engine_dev
 [submodule "mail"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/mail
@@ -26,3 +22,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/unpack
 	branch = refs/heads/unpack_dev
+[submodule "grid_engine"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/grid_engine
+	branch = refs/heads/grid_engine_dev
