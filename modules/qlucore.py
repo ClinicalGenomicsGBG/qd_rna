@@ -94,7 +94,8 @@ def qlucore(
     logger: LoggerAdapter,
     root: Path,
     workdir: Path,
-    executor: Executor
+    executor: Executor,
+    **_,
 ) -> None:
     """Run nf-core/rnaseq (Mapping for qlucore)."""
 
