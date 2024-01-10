@@ -129,7 +129,7 @@ def qlucore(
     (workdir / "dummy.gtf").touch()
     (workdir / "dummy.refflat").touch()
 
-    result, _ = nextflow(
+    nextflow(
         config.qlucore.nf_main,
         "--starfusion",
         "--skip_qc",
@@ -151,7 +151,6 @@ def qlucore(
         workdir=workdir,
         executor=executor,
     )
-    result.get()
 
     for sample in samples:
         executor.submit(

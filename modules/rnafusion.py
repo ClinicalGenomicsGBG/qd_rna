@@ -57,7 +57,7 @@ def rnafusion(
         strandedness=config.strandedness,
     )
 
-    result, _ = nextflow(
+    nextflow(
         config.rnafusion.nf_main,
         f"--outdir {workdir}",
         f"--input {sample_sheet}",
@@ -75,7 +75,5 @@ def rnafusion(
         workdir=workdir,
         executor=executor,
     )
-
-    result.get()
 
     return samples

@@ -46,7 +46,7 @@ def rnaseq(
         strandedness=config.strandedness,
     )
 
-    result, _ = nextflow(
+    nextflow(
         config.rnaseq.nf_main,
         f"--outdir {workdir}",
         f"--input {sample_sheet}",
@@ -69,7 +69,5 @@ def rnaseq(
         workdir=workdir,
         executor=executor,
     )
-
-    result.get()
 
     return samples
