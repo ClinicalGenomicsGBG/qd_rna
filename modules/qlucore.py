@@ -1,6 +1,6 @@
 """Module for running nf-core/rnaseq."""
 
-from multiprocessing import Process
+from mpire.async_result import AsyncResult
 from logging import LoggerAdapter
 from pathlib import Path
 from functools import partial
@@ -57,21 +57,32 @@ process {
 
 
 def _subsample_callback(
+    result: AsyncResult,
+    /,
     logger: LoggerAdapter,
-    outdir: Path,
+    workdir: Path,
     sample: Sample,
 ):
+    del result  # unused
     logger.info(f"Subsampling finished for {sample.id}")
-    with open(outdir / f"{sample.id}.qlucore.txt", "w") as f:
+    with open(workdir / f"{sample.id}.qlucore.txt", "w") as f:
         f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
 
 
 def _subsample_error_callback(
-    exception: Exception,
+    result: AsyncResult,
+    /,
     logger: LoggerAdapter,
     sample: Sample,
 ):
-    logger.error(f"Subsampling failed for {sample.id} - {exception}")
+    try:
+        result.get()
+    except Exception as exception:
+        reason = f"Subsampling failed for {sample.id} - {exception}"
+    else:
+        reason = f"Subsampling failed for {sample.id}"
+    logger.error(reason)
+    sample.fail(reason)
 
 
 @output(
@@ -118,7 +129,7 @@ def qlucore(
     (workdir / "dummy.gtf").touch()
     (workdir / "dummy.refflat").touch()
 
-    nextflow(
+    result, _ = nextflow(
         config.qlucore.nf_main,
         "--starfusion",
         "--skip_qc",
@@ -140,6 +151,7 @@ def qlucore(
         workdir=workdir,
         executor=executor,
     )
+    result.get()
 
     for sample in samples:
         executor.submit(
@@ -157,8 +169,17 @@ def qlucore(
                     / f"{sample.id}.Aligned.sortedByCoord.out.bam"
                 ),
             },
-            callback=partial(_subsample_callback, logger, workdir, sample),
-            error_callback=partial(_subsample_error_callback, logger, sample),
+            callback=partial(
+                _subsample_callback,
+                logger=logger,
+                workdir=workdir,
+                sample=sample,
+            ),
+            error_callback=partial(
+                _subsample_error_callback,
+                logger=logger,
+                sample=sample,
+            ),
         )
 
     executor.wait()
