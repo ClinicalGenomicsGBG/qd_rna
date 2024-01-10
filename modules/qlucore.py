@@ -15,7 +15,7 @@ qlucore_data = """\
 <PatientData>
   <PatientName>PATIENT NAME</PatientName>
   <PatientId>{id}</PatientId>
-  <SampleOrigin>{run}</SampleOrigin>
+  <SampleOrigin>{meta.run}</SampleOrigin>
   <SampleTissue>Blood sample</SampleTissue>
   <Technology>RNA Seq.</Technology>
 </PatientData>
@@ -66,7 +66,7 @@ def _subsample_callback(
     del result  # unused
     logger.info(f"Subsampling finished for {sample.id}")
     with open(workdir / f"{sample.id}.qlucore.txt", "w") as f:
-        f.write(qlucore_data.format(id=sample.id, run=sample.run or ""))
+        f.write(qlucore_data.format(id=sample.id, meta=sample.meta or ""))
 
 
 def _subsample_error_callback(
