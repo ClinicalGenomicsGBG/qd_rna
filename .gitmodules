@@ -2,10 +2,6 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/slims
 	branch = refs/heads/slims_dev
-[submodule "rsync"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/rsync
-	branch = refs/heads/rsync_dev
 [submodule "mail"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/mail
@@ -26,3 +22,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/unpack
 	branch = refs/heads/unpack_dev
+[submodule "rsync"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/rsync
+	branch = refs/heads/rsync_dev
