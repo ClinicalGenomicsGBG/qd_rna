@@ -67,6 +67,7 @@ mail:
     port: 25 # SMTP port (integer)
 rsync:
   overwrite: false  # Overwrite existing results (boolean)
+  timeout: 30 # Timeout (in seconds) for files to be available after rsync is complete (integer)
   large_file_threshold: 100M # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) (string)
 nextflow:
   threads: 2  # Threads for nextflow manager (integer)
