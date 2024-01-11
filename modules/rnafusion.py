@@ -5,6 +5,37 @@ from pathlib import Path
 from cellophane import output, runner, Executor, Config, Sample, Samples
 from modules.nextflow import nextflow
 
+def _patch_fusionreport(report_path: Path, sample_id: str):
+        """
+        Patch fusionreport html to keep fusion data separate from the report itself.
+
+        This is done to make it easier to access the report from the directory listing.
+        """
+        index_name = report_path / f"{sample_id}.fusionreport.html"
+        (report_path / "data").mkdir()
+        for fusion in report_path.glob("*_*.html"):
+            patched_fusion = (
+                fusion
+                .read_text()
+                .replace(
+                    '<a class="nav-link active" href="index.html">',
+                    f'<a class="nav-link active" href="../{index_name}.html">',
+                )
+            )
+            fusion.write_text(patched_fusion)
+            fusion.rename(report_path / "data" / fusion.name)
+        
+        patched_index = (
+            (report_path / "index.html")
+            .read_text()
+            .replace(
+                "${fusion.replace('--','_')}.html",
+                "data/${fusion.replace('--','_')}.html",
+            )
+        )
+        (report_path / "index.html").write_text(patched_index)
+        (report_path / "index.html").rename(index_name)
+
 @output(
     "arriba_visualisation/{sample.id}.pdf",
     dst_dir="{sample.id}/arriba",
@@ -83,5 +114,8 @@ def rnafusion(
         workdir=workdir,
         executor=executor,
     )
+    
+    for sample in samples:
+        _patch_fusionreport(workdir / f"fusionreport/{sample.id}", sample.id)
 
     return samples
