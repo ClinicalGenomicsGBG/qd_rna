@@ -20,7 +20,7 @@ def _patch_fusionreport(report_path: Path, sample_id: str):
                 .read_text()
                 .replace(
                     '<a class="nav-link active" href="index.html">',
-                    f'<a class="nav-link active" href="../{index_name}.html">',
+                    f'<a class="nav-link active" href="../{index_name.name}">',
                 )
             )
             fusion.write_text(patched_fusion)
