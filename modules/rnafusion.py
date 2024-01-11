@@ -10,20 +10,20 @@ from modules.nextflow import nextflow
     dst_dir="{sample.id}/arriba",
 )
 @output(
-    "arriba/{sample.id}.*.tsv",
+    "arriba/{sample.id}.*",
     dst_dir="{sample.id}/arriba",
 )
 @output(
-    "fusioncatcher/{sample.id}.*.txt",
+    "fusioncatcher/{sample.id}.*",
     dst_dir="{sample.id}/fusioncatcher",
 )
 @output(
-    "fusioninspector/{sample.id}.*",
-    dst_dir="{sample.id}/fusioninspector",
+    "fusionreport/{sample.id}",
+    dst_name="{sample.id}/fusionreport",
 )
 @output(
-    "fusionreport/{sample.id}",
-    dst_dir="{sample.id}/fusionreport",
+    "qualimap/{sample.id}",
+    dst_name="{sample.id}/qualimap",
 )
 @output(
     "pizzly/{sample.id}.*",
@@ -36,6 +36,14 @@ from modules.nextflow import nextflow
 @output(
     "star_for_starfusion/{sample.id}.*.ba*",
     dst_dir="{sample.id}",
+)
+@output(
+    "kallisto/{sample.id}.*",
+    dst_dir="{sample.id}/kallisto",
+)
+@output(
+    "pipeline_info",
+    dst_name="{sample.id}/pipeline_info/rnafusion",
 )
 @runner()
 def rnafusion(
