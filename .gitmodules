@@ -1,7 +1,3 @@
-[submodule "nextflow"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/nextflow
-	branch = refs/heads/nextflow_dev
 [submodule "unpack"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/unpack
@@ -26,3 +22,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/slims
 	branch = refs/heads/slims_dev
+[submodule "nextflow"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/nextflow
+	branch = refs/heads/nextflow_dev
