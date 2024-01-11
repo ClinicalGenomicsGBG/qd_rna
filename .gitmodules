@@ -1,7 +1,3 @@
-[submodule "hcp"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/hcp
-	branch = refs/heads/hcp_dev
 [submodule "slims"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/slims
@@ -26,3 +22,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/rsync
 	branch = refs/heads/rsync_dev
+[submodule "hcp"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/hcp
+	branch = refs/heads/hcp_dev
