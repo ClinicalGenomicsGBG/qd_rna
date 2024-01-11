@@ -1,6 +1,7 @@
 """Module for running nf-core/rnafusion."""
 
 from pathlib import Path
+from logging import LoggerAdapter
 
 from cellophane import output, runner, Executor, Config, Sample, Samples
 from modules.nextflow import nextflow
@@ -83,6 +84,7 @@ def rnafusion(
     label: str,
     workdir: Path,
     executor: Executor,
+    logger: LoggerAdapter,
     **_,
 ) -> Samples:
     """Run nf-core/rnafusion."""
@@ -91,6 +93,8 @@ def rnafusion(
             samples.output = set()
         return samples
     
+    logger.info("Running nf-core/rnafusion")
+
     sample_sheet = samples.nfcore_samplesheet(
         location=workdir,
         strandedness=config.strandedness,
@@ -115,7 +119,9 @@ def rnafusion(
         executor=executor,
     )
     
+    logger.info("Patching fusionreport html")
     for sample in samples:
+        logger.debug(f"Patching fusionreport for {sample.id}")
         _patch_fusionreport(workdir / f"fusionreport/{sample.id}", sample.id)
 
     return samples

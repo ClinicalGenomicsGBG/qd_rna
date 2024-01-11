@@ -34,6 +34,8 @@ def rnaseq(
             samples.output = set()
         return samples
     
+    logger.info("Running nf-core/rnaseq")
+
     if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
         logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
 
