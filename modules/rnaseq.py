@@ -6,20 +6,16 @@ from cellophane import output, runner, Executor, Config, Samples
 from modules.nextflow import nextflow
 
 @output(
-    "star_salmon/salmon.*",
-    dst_dir="{sample.id}/salmon",
-)
-@output(
-    "star_salmon/{sample.id}",
-    dst_dir="{sample.id}/salmon/{sample.id}",
-)
-@output(
-    "star_salmon/{config.rnaseq.aligner}/stringtie",
-    dst_dir="{sample.id}/stringtie",
+    "{config.rnaseq.aligner}",
+    dst_name="{sample.id}/{config.rnaseq.aligner}",
 )
 @output(
     "multiqc/{config.rnaseq.aligner}",
-    dst_dir="{sample.id}/multiqc",
+    dst_name="{sample.id}/multiqc",
+)
+@output(
+    "pipeline_info",
+    dst_name="{sample.id}/pipeline_info/rnaseq",
 )
 @runner(individual_samples=True, link_by="id")
 def rnaseq(
