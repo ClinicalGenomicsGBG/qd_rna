@@ -1,7 +1,31 @@
-from pathlib import Path
-from logging import LoggerAdapter
 from copy import deepcopy
-from cellophane import pre_hook, Samples, Sample, Output, Config
+from logging import LoggerAdapter
+from pathlib import Path
+
+from cellophane import Config, Output, Sample, Samples, pre_hook
+
+from .slims import SlimsSample, SlimsSamples
+
+
+@pre_hook(label="Sample ID", after=["slims_fetch"], before=["hcp_fetch"])
+def get_linked_samples(
+    samples: SlimsSamples[SlimsSample],
+    logger: LoggerAdapter,
+    config: Config,
+    **_,
+) -> Samples:
+    logger.debug("Fetching samples from earlier runs")
+    criteria = "{base_criteria} and ({link_criteria})".format(
+        base_criteria=config.slims.find_criteria,
+        link_criteria = "or".join(
+            f"(cntn_id equals {sample.id} and cntn_cstm_runTag not_equals {sample.meta.run})"
+            for sample in samples
+        )
+    )
+    linked_samples = samples.__class__.from_criteria(criteria=criteria, config=config)
+    logger.info(f"Found {len(linked_samples)} linked records")
+    return linked_samples | samples
+
 
 @pre_hook(label="Sample ID", after=["unpack"], before=["start_mail"])
 def set_sample_id(
@@ -11,7 +35,7 @@ def set_sample_id(
     workdir: Path,
     **_,
 ) -> Samples:
-    logger.debug("Adding Run ID to sample IDs")
+    logger.debug("Adding runtag to sample IDs")
     _samples = deepcopy(samples)
     known_dups: set[str] = set()
     for sample in samples:
@@ -25,7 +49,7 @@ def set_sample_id(
             sample.id = f"{sample.id}_{sorted(runs)[-1]}" if runs else sample.id
             merge_file = workdir / f"{sample.id}.merged_runs.txt"
             merge_file.write_text("\n".join(runs))
-            sample.output += [Output(src=merge_file, dst=Path(sample.id).merged_runs.txt)]
+            sample.output += [Output(src=merge_file, dst=Path(sample.id).merged_runs.txt)]∏
         elif n > 1 and not config.merge and "run" in sample.meta:
             sample.id = f"{sample.id}_{sample.meta.run}"
         elif n > 1 and not config.merge and "run" not in sample.meta:
