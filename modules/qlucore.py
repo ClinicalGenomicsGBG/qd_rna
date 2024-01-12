@@ -14,7 +14,7 @@ qlucore_data = """\
 <PatientData>
   <PatientName>PATIENT NAME</PatientName>
   <PatientId>{id}</PatientId>
-  <SampleOrigin>{meta.run}</SampleOrigin>
+  <SampleOrigin>{id}</SampleOrigin>
   <SampleTissue>Blood sample</SampleTissue>
   <Technology>RNA Seq.</Technology>
 </PatientData>
@@ -60,28 +60,30 @@ def _subsample_callback(
     /,
     logger: LoggerAdapter,
     workdir: Path,
-    sample: Sample,
+    sample_id: str,
 ):
     del result  # unused
-    logger.info(f"Subsampling finished for {sample.id}")
-    with open(workdir / f"{sample.id}.qlucore.txt", "w") as f:
-        f.write(qlucore_data.format(id=sample.id, meta=sample.meta or ""))
+    logger.info(f"Subsampling finished for {sample_id}")
+    with open(workdir / f"{sample_id}.qlucore.txt", "w", encoding="utf-8") as f:
+        f.write(qlucore_data.format(id=sample_id))
 
 
 def _subsample_error_callback(
     result: AsyncResult,
     /,
     logger: LoggerAdapter,
-    sample: Sample,
+    sample_id: str,
+    group: Samples,
 ):
     try:
         result.get()
-    except Exception as exception:
-        reason = f"Subsampling failed for {sample.id} - {exception}"
+    except Exception as exception:  # pylint: disable=broad-except
+        reason = f"Subsampling failed for {sample_id} - {exception}"
     else:
-        reason = f"Subsampling failed for {sample.id}"
+        reason = f"Subsampling failed for {sample_id}"
     logger.error(reason)
-    sample.fail(reason)
+    for sample in group:
+        sample.fail(reason)
 
 
 @output(
@@ -154,10 +156,10 @@ def qlucore(
     )
 
     logger.info(f"Subsampling output BAM(s) ({config.qlucore.subsample_frac:.0%})")
-    for sample in samples:
+    for group in samples.split(link_by="id"):
         executor.submit(
             str(root / "scripts" / "qlucore_subsample.sh"),
-            name=f"qlucore_subsample_{sample.id}",
+            name=f"qlucore_subsample_{group[0].id}",
             workdir=workdir,
             cpus=config.qlucore.subsample_threads,
             env={
@@ -167,19 +169,20 @@ def qlucore(
                 "_QLUCORE_SUBSAMPLE_INPUT_BAM": (
                     workdir
                     / "star_for_starfusion"
-                    / f"{sample.id}.Aligned.sortedByCoord.out.bam"
+                    / f"{group[0].id}.Aligned.sortedByCoord.out.bam"
                 ),
             },
             callback=partial(
                 _subsample_callback,
                 logger=logger,
                 workdir=workdir,
-                sample=sample,
+                sample_id=group[0].id,
             ),
             error_callback=partial(
                 _subsample_error_callback,
                 logger=logger,
-                sample=sample,
+                sample_id=group[0].id,
+                group=group,
             ),
         )
 

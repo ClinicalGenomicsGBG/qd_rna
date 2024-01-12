@@ -122,8 +122,8 @@ def rnafusion(
     )
     
     logger.info("Patching fusionreport html")
-    for sample in samples:
-        logger.debug(f"Patching fusionreport for {sample.id}")
-        _patch_fusionreport(workdir / f"fusionreport/{sample.id}", sample.id)
+    for group in samples.split_by("id"):
+        logger.debug(f"Patching fusionreport for {group[0].id}")
+        _patch_fusionreport(workdir / f"fusionreport/{group[0].id}", group[0].id)
 
     return samples
