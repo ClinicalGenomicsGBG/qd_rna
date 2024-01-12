@@ -1,10 +1,12 @@
 """Module for running nf-core/rnafusion."""
 
-from pathlib import Path
 from logging import LoggerAdapter
+from pathlib import Path
 
-from cellophane import output, runner, Executor, Config, Sample, Samples
+from cellophane import Config, Executor, Sample, Samples, output, runner
+
 from modules.nextflow import nextflow
+
 
 def _patch_fusionreport(report_path: Path, sample_id: str):
         """
