@@ -7,7 +7,7 @@ from cellophane import Config, Output, Sample, Samples, pre_hook
 from modules.slims import SlimsSamples
 
 
-@pre_hook(label="Sample ID", after=["slims_fetch"], before=["hcp_fetch"])
+@pre_hook(label="Find Linked", after=["slims_fetch"], before=["hcp_fetch"])
 def get_linked_samples(
     samples: SlimsSamples,
     logger: LoggerAdapter,
