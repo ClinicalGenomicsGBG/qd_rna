@@ -1,14 +1,13 @@
 """Module for running nf-core/rnaseq."""
 
-from mpire.async_result import AsyncResult
+from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
-from functools import partial
 
-from cellophane import output, runner, Executor, Config, Sample, Samples
+from cellophane import Config, Executor, Sample, Samples, output, runner
+from mpire.async_result import AsyncResult
 
 from modules.nextflow import nextflow
-
 
 qlucore_data = """\
 <Header Producer='Qlucore' Format='PatientData' FormatVersion='0.1' QFFVersion='1.0'/>
@@ -129,6 +128,8 @@ def qlucore(
     (workdir / "dummy.gtf").touch()
     (workdir / "dummy.refflat").touch()
 
+    logger.info("Running nf-core/rnafusion for qlucore")
+
     nextflow(
         config.qlucore.nf_main,
         "--starfusion",
@@ -152,6 +153,7 @@ def qlucore(
         executor=executor,
     )
 
+    logger.info(f"Subsampling output BAM(s) ({config.qlucore.subsample_frac:.0%})")
     for sample in samples:
         executor.submit(
             str(root / "scripts" / "qlucore_subsample.sh"),
