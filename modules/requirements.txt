@@ -1,5 +1,5 @@
 ### THIS FILE IS MANAGED BY CELLOPHANE - DO NOT EDIT ###
 -r grid_engine/requirements.txt
--r hcp/requirements.txt
 -r mail/requirements.txt
 -r slims/requirements.txt
+-r hcp/requirements.txt
