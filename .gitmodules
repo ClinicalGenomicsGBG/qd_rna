@@ -2,10 +2,6 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/grid_engine
 	branch = refs/heads/grid_engine_dev
-[submodule "rsync"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/rsync
-	branch = refs/heads/rsync_dev
 [submodule "hcp"]
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/hcp
@@ -26,3 +22,7 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/unpack
 	branch = refs/heads/unpack_dev
+[submodule "rsync"]
+	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
+	path = modules/rsync
+	branch = refs/heads/rsync_dev
