@@ -4,12 +4,12 @@ from pathlib import Path
 
 from cellophane import Config, Output, Sample, Samples, pre_hook
 
-from .slims import SlimsSample, SlimsSamples
+from modules.slims import SlimsSamples
 
 
 @pre_hook(label="Sample ID", after=["slims_fetch"], before=["hcp_fetch"])
 def get_linked_samples(
-    samples: SlimsSamples[SlimsSample],
+    samples: SlimsSamples,
     logger: LoggerAdapter,
     config: Config,
     **_,
@@ -17,10 +17,11 @@ def get_linked_samples(
     logger.debug("Fetching samples from earlier runs")
     criteria = "{base_criteria} and ({link_criteria})".format(
         base_criteria=config.slims.find_criteria,
-        link_criteria = "or".join(
-            f"(cntn_id equals {sample.id} and cntn_cstm_runTag not_equals {sample.meta.run})"
+        link_criteria="or".join(
+            f"(cntn_id equals {sample.id} "
+            f"and cntn_cstm_runTag not_equals {sample.meta.run})"
             for sample in samples
-        )
+        ),
     )
     linked_samples = samples.__class__.from_criteria(criteria=criteria, config=config)
     logger.info(f"Found {len(linked_samples)} linked records")
@@ -47,9 +48,10 @@ def set_sample_id(
                 logger.info(f"{n} samples with id {sample.id} will be merged")
             known_dups |= {sample.id}
             sample.id = f"{sample.id}_{sorted(runs)[-1]}" if runs else sample.id
+            workdir.mkdir(exist_ok=True)
             merge_file = workdir / f"{sample.id}.merged_runs.txt"
             merge_file.write_text("\n".join(runs))
-            sample.output += [Output(src=merge_file, dst=Path(sample.id) / "merged_runs.txt")]
+            samples.output.add(Output(src=merge_file, dst=Path(sample.id) / merge_file.name))
         elif n > 1 and not config.merge and "run" in sample.meta:
             sample.id = f"{sample.id}_{sample.meta.run}"
         elif n > 1 and not config.merge and "run" not in sample.meta:
@@ -58,6 +60,8 @@ def set_sample_id(
             known_dups |= {sample.id}
 
         else:
-            sample.id = f"{sample.id}_{sample.meta.run}" if "run" in sample.meta else sample.id
+            sample.id = (
+                f"{sample.id}_{sample.meta.run}" if "run" in sample.meta else sample.id
+            )
 
     return samples
