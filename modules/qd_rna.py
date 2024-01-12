@@ -49,7 +49,7 @@ def set_sample_id(
             sample.id = f"{sample.id}_{sorted(runs)[-1]}" if runs else sample.id
             merge_file = workdir / f"{sample.id}.merged_runs.txt"
             merge_file.write_text("\n".join(runs))
-            sample.output += [Output(src=merge_file, dst=Path(sample.id).merged_runs.txt)]∏
+            sample.output += [Output(src=merge_file, dst=Path(sample.id) / "merged_runs.txt")]
         elif n > 1 and not config.merge and "run" in sample.meta:
             sample.id = f"{sample.id}_{sample.meta.run}"
         elif n > 1 and not config.merge and "run" not in sample.meta:
