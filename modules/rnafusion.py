@@ -2,42 +2,40 @@
 
 from logging import LoggerAdapter
 from pathlib import Path
+from shutil import copytree
 
-from cellophane import Config, Executor, Sample, Samples, output, runner
+from cellophane import Config, Executor, Samples, output, runner
 
 from modules.nextflow import nextflow
 
 
 def _patch_fusionreport(report_path: Path, sample_id: str):
-        """
-        Patch fusionreport html to keep fusion data separate from the report itself.
+    """
+    Patch fusionreport html to keep fusion data separate from the report itself.
 
-        This is done to make it easier to access the report from the directory listing.
-        """
-        index_name = report_path / f"{sample_id}.fusionreport.html"
-        (report_path / "data").mkdir()
-        for fusion in report_path.glob("*_*.html"):
-            patched_fusion = (
-                fusion
-                .read_text()
-                .replace(
-                    '<a class="nav-link active" href="index.html">',
-                    f'<a class="nav-link active" href="../{index_name.name}">',
-                )
-            )
-            fusion.write_text(patched_fusion)
-            fusion.rename(report_path / "data" / fusion.name)
-        
-        patched_index = (
-            (report_path / "index.html")
-            .read_text()
-            .replace(
-                "${fusion.replace('--','_')}.html",
-                "data/${fusion.replace('--','_')}.html",
-            )
+    This is done to make it easier to access the report from the directory listing.
+    """
+    index_name = report_path / f"{sample_id}.fusionreport.html"
+    (report_path / "data").mkdir()
+    for fusion in report_path.glob("*_*.html"):
+        patched_fusion = fusion.read_text().replace(
+            '<a class="nav-link active" href="index.html">',
+            f'<a class="nav-link active" href="../{index_name.name}">',
         )
-        (report_path / "index.html").write_text(patched_index)
-        (report_path / "index.html").rename(index_name)
+        fusion.write_text(patched_fusion)
+        fusion.rename(report_path / "data" / fusion.name)
+
+    patched_index = (
+        (report_path / "index.html")
+        .read_text()
+        .replace(
+            "${fusion.replace('--','_')}.html",
+            "data/${fusion.replace('--','_')}.html",
+        )
+    )
+    (report_path / "index.html").write_text(patched_index)
+    (report_path / "index.html").rename(index_name)
+
 
 @output(
     "arriba_visualisation/{sample.id}.pdf",
@@ -94,7 +92,7 @@ def rnafusion(
         if not config.copy_skipped:
             samples.output = set()
         return samples
-    
+
     logger.info("Running nf-core/rnafusion")
 
     sample_sheet = samples.nfcore_samplesheet(
@@ -120,10 +118,14 @@ def rnafusion(
         workdir=workdir,
         executor=executor,
     )
-    
+
     logger.info("Patching fusionreport html")
-    for group in samples.split_by("id"):
+    copytree(
+        workdir / "fusionreport",
+        workdir / "fusionreport_patched",
+    )
+    for group in samples.split(link_by="id"):
         logger.debug(f"Patching fusionreport for {group[0].id}")
-        _patch_fusionreport(workdir / f"fusionreport/{group[0].id}", group[0].id)
+        _patch_fusionreport(workdir / f"fusionreport_patched/{group[0].id}", group[0].id)
 
     return samples
