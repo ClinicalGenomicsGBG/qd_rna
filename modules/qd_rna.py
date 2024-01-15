@@ -17,7 +17,7 @@ def get_linked_samples(
     logger.debug("Fetching samples from earlier runs")
     criteria = "{base_criteria} and ({link_criteria})".format(
         base_criteria=config.slims.find_criteria,
-        link_criteria="or".join(
+        link_criteria=" or ".join(
             f"(cntn_id equals {sample.id} "
             f"and cntn_cstm_runTag not_equals {sample.meta.run})"
             for sample in samples
