@@ -119,6 +119,7 @@ def rnafusion(
         executor=executor,
     )
 
+    logger.debug(f"nf-core/rnafusion finished for {len(samples)} samples")
     logger.info("Patching fusionreport html")
     copytree(
         workdir / "fusionreport",
