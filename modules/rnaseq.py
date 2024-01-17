@@ -59,15 +59,15 @@ def rnaseq(
     if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
         logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
 
-    for samples_ in samples.split(link_by="id"):
+    for id_, samples_ in samples.split(link_by="id"):
         sample_sheet = samples_.nfcore_samplesheet(
-            location=workdir,
+            location=workdir / id_,
             strandedness=config.strandedness,
         )
 
         nextflow(
             config.rnaseq.nf_main,
-            f"--outdir {workdir}",
+            f"--outdir {workdir / id_}",
             f"--input {sample_sheet}",
             f"--aligner {config.rnaseq.aligner}",
             "--pseudo_aligner salmon",
@@ -85,7 +85,7 @@ def rnaseq(
             ),
             config=config,
             name=label,
-            workdir=workdir,
+            workdir=workdir / id_,
             executor=executor,
             check=False,
             callback=partial(

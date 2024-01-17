@@ -124,8 +124,13 @@ def rnafusion(
         workdir / "fusionreport",
         workdir / "fusionreport_patched",
     )
-    for group in samples.split(link_by="id"):
-        logger.debug(f"Patching fusionreport for {group[0].id}")
-        _patch_fusionreport(workdir / f"fusionreport_patched/{group[0].id}", group[0].id)
+    for id_, group in samples.split(link_by="id"):
+        logger.debug(f"Patching fusionreport for {id_}")
+        try:
+            _patch_fusionreport(workdir / f"fusionreport_patched/{id_}", id_)
+        except Exception as exception:  # pylint: disable=broad-except
+            logger.error(f"Failed to patch fusionreport for {id_}: {exception}")
+            for sample in group:
+                sample.fail(f"Failed to patch fusionreport: {exception}")
 
     return samples

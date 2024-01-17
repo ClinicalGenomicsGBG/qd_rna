@@ -63,7 +63,7 @@ def _subsample_callback(
     sample_id: str,
 ):
     del result  # unused
-    logger.info(f"Subsampling finished for {sample_id}")
+    logger.debug(f"Subsampling finished for {sample_id}")
     with open(workdir / f"{sample_id}.qlucore.txt", "w", encoding="utf-8") as f:
         f.write(qlucore_data.format(id=sample_id))
 
@@ -156,32 +156,30 @@ def qlucore(
     )
 
     logger.info(f"Subsampling output BAM(s) ({config.qlucore.subsample_frac:.0%})")
-    for group in samples.split(link_by="id"):
+    for id_, group in samples.split(link_by="id"):
         executor.submit(
             str(root / "scripts" / "qlucore_subsample.sh"),
-            name=f"qlucore_subsample_{group[0].id}",
-            workdir=workdir,
+            name=f"qlucore_subsample_{id_}",
+            workdir=workdir / id_,
             cpus=config.qlucore.subsample_threads,
             env={
                 "_QLUCORE_SUBSAMPLE_INIT": config.qlucore.subsample_init,
                 "_QLUCORE_SUBSAMPLE_FRAC": config.qlucore.subsample_frac,
                 "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample_threads,
                 "_QLUCORE_SUBSAMPLE_INPUT_BAM": (
-                    workdir
-                    / "star_for_starfusion"
-                    / f"{group[0].id}.Aligned.sortedByCoord.out.bam"
+                    workdir / id_ / "star_for_starfusion" / f"{id_}.Aligned.sortedByCoord.out.bam"
                 ),
             },
             callback=partial(
                 _subsample_callback,
                 logger=logger,
-                workdir=workdir,
-                sample_id=group[0].id,
+                workdir=workdir / id_,
+                sample_id=id_,
             ),
             error_callback=partial(
                 _subsample_error_callback,
                 logger=logger,
-                sample_id=group[0].id,
+                sample_id=id_,
                 group=group,
             ),
         )
