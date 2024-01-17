@@ -4,26 +4,32 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import Config, Executor, Sample, Samples, output, runner
-from mpire.async_result import AsyncResult
+from cellophane import Config, Executor, Samples, output, runner
 
 from modules.nextflow import nextflow
 
 
 def _callback(
-    result: AsyncResult,
-    samples: Samples,
+    result: None,
+    /,
+    sample_id: str,
     logger: LoggerAdapter,
 ):
-    try:
-        result.get()
-    except Exception as exception:
-        reason = f"nf-core/rnaseq failed for sample {samples[0].id}: {exception}"
-        logger.error(reason)
-        for s in samples:
-            s.fail(reason)
-    else:
-        logger.debug(f"nf-core/rnaseq finished for sample {samples[0].id}")
+    del result  # unused
+    logger.debug(f"nf-core/rnaseq finished for sample {sample_id}")
+
+
+def _error_callback(
+    exception: Exception,
+    /,
+    logger: LoggerAdapter,
+    sample_id: str,
+    group: Samples,
+):
+    reason = f"nf-core/rnaseq failed for {sample_id}: {exception}"
+    logger.error(reason)
+    for sample in group:
+        sample.fail(reason)
 
 @output(
     "{config.rnaseq.aligner}",
@@ -59,8 +65,8 @@ def rnaseq(
     if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
         logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
 
-    for id_, samples_ in samples.split(link_by="id"):
-        sample_sheet = samples_.nfcore_samplesheet(
+    for id_, group in samples.split(link_by="id"):
+        sample_sheet = group.nfcore_samplesheet(
             location=workdir / id_,
             strandedness=config.strandedness,
         )
@@ -90,12 +96,13 @@ def rnaseq(
             check=False,
             callback=partial(
                 _callback,
-                samples=samples,
+                sample_id=id_,
                 logger=logger,
             ),
             error_callback=partial(
-                _callback,
-                samples=samples,
+                _error_callback,
+                group=group,
+                sample_id=id_,
                 logger=logger,
             )
         )

@@ -56,7 +56,7 @@ process {
 
 
 def _subsample_callback(
-    result: AsyncResult,
+    result: None,
     /,
     logger: LoggerAdapter,
     workdir: Path,
@@ -69,18 +69,13 @@ def _subsample_callback(
 
 
 def _subsample_error_callback(
-    result: AsyncResult,
+    exception: Exception,
     /,
     logger: LoggerAdapter,
     sample_id: str,
     group: Samples,
 ):
-    try:
-        result.get()
-    except Exception as exception:  # pylint: disable=broad-except
-        reason = f"Subsampling failed for {sample_id} - {exception}"
-    else:
-        reason = f"Subsampling failed for {sample_id}"
+    reason = f"Subsampling failed for {sample_id} - {exception}"
     logger.error(reason)
     for sample in group:
         sample.fail(reason)
@@ -167,13 +162,15 @@ def qlucore(
                 "_QLUCORE_SUBSAMPLE_FRAC": config.qlucore.subsample_frac,
                 "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample_threads,
                 "_QLUCORE_SUBSAMPLE_INPUT_BAM": (
-                    workdir / id_ / "star_for_starfusion" / f"{id_}.Aligned.sortedByCoord.out.bam"
+                    workdir
+                    / "star_for_starfusion"
+                    / f"{id_}.Aligned.sortedByCoord.out.bam"
                 ),
             },
             callback=partial(
                 _subsample_callback,
                 logger=logger,
-                workdir=workdir / id_,
+                workdir=workdir,
                 sample_id=id_,
             ),
             error_callback=partial(
