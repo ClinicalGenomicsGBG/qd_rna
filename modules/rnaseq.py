@@ -32,15 +32,15 @@ def _error_callback(
         sample.fail(reason)
 
 @output(
-    "{config.rnaseq.aligner}",
+    "{sample.id}/{config.rnaseq.aligner}",
     dst_name="{sample.id}/{config.rnaseq.aligner}",
 )
 @output(
-    "multiqc/{config.rnaseq.aligner}",
+    "{sample.id}/multiqc/{config.rnaseq.aligner}",
     dst_name="{sample.id}/multiqc",
 )
 @output(
-    "pipeline_info",
+    "{sample.id}/pipeline_info",
     dst_name="{sample.id}/pipeline_info/rnaseq",
 )
 @runner()
