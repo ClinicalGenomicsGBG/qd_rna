@@ -47,7 +47,6 @@ def _error_callback(
 def rnaseq(
     samples: Samples,
     config: Config,
-    label: str,
     logger: LoggerAdapter,
     workdir: Path,
     executor: Executor,
@@ -65,7 +64,7 @@ def rnaseq(
     if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
         logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
 
-    for id_, group in samples.split(link_by="id"):
+    for id_, group in samples.split(by="id"):
         sample_sheet = group.nfcore_samplesheet(
             location=workdir / id_,
             strandedness=config.strandedness,
@@ -90,7 +89,7 @@ def rnaseq(
                 else f"--star_index {config.rnaseq.star_index}"
             ),
             config=config,
-            name=label,
+            name="rnaseq",
             workdir=workdir / id_,
             executor=executor,
             check=False,

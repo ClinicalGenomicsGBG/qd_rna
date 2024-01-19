@@ -81,7 +81,6 @@ def _patch_fusionreport(report_path: Path, sample_id: str):
 def rnafusion(
     samples: Samples,
     config: Config,
-    label: str,
     workdir: Path,
     executor: Executor,
     logger: LoggerAdapter,
@@ -114,7 +113,7 @@ def rnafusion(
         "--all",
         "--fusioninspector_filter",
         config=config,
-        name=label,
+        name="rnafusion",
         workdir=workdir,
         executor=executor,
     )
@@ -125,7 +124,7 @@ def rnafusion(
         workdir / "fusionreport",
         workdir / "fusionreport_patched",
     )
-    for id_, group in samples.split(link_by="id"):
+    for id_, group in samples.split(by="id"):
         logger.debug(f"Patching fusionreport for {id_}")
         try:
             _patch_fusionreport(workdir / f"fusionreport_patched/{id_}", id_)

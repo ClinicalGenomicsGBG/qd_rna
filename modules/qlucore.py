@@ -97,7 +97,6 @@ def _subsample_error_callback(
 def qlucore(
     samples: Samples,
     config: Config,
-    label: str,
     logger: LoggerAdapter,
     root: Path,
     workdir: Path,
@@ -145,13 +144,13 @@ def qlucore(
         f"--read_length {config.read_length}",
         nxf_config=workdir / "nextflow.config",
         config=config,
-        name=label,
+        name="qlucore",
         workdir=workdir,
         executor=executor,
     )
 
     logger.info(f"Subsampling output BAM(s) ({config.qlucore.subsample_frac:.0%})")
-    for id_, group in samples.split(link_by="id"):
+    for id_, group in samples.split(by="id"):
         executor.submit(
             str(root / "scripts" / "qlucore_subsample.sh"),
             name=f"qlucore_subsample_{id_}",
