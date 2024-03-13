@@ -80,22 +80,6 @@ qlucore:
 #   subsample_init: ""
 #   # Overwrite any existing output [boolean]
 #   force: false
-# nextflow:
-#   # Threads for nextflow manager [integer]
-#   threads: 2
-#   # Environment variables that will be passed to the nextflow process [mapping]
-#   env:
-#   - ''
-#   # Code to run before running Nextflow (Bash) [string]
-#   init: ""
-#   # Enable ANSI log [boolean]
-#   ansi_log: false
-#   # Nextflow workdir [path]
-#   workdir: ~
-#   # Nextflow profile [string]
-#   profile: ~
-#   # Nextflow config file [path]
-#   config: ~
 # hcp:
 #   # IRIS credentials file [path]
 #   credentials: ~
