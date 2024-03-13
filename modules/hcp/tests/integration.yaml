@@ -1,0 +1,74 @@
+- &hcp_test
+  id: fetch_hcp
+  structure:
+    samples.yaml: |
+      - id: BACKUP
+        files:
+        - input/BACKUP
+        hcp_remote_keys:
+        - BACKUP
+  external:
+    '..': modules/hcp
+  mocks:
+    _cellophane_module_hcp.HCPManager: ~
+    _cellophane_module_hcp.sys: ~
+  args:
+    --samples_file: samples.yaml
+    --workdir: work
+    --hcp_credentials: "DUMMY"
+    --hcp_fastq_temp: "cache"
+  logs:
+    - Fetched BACKUP from hcp
+
+- <<: *hcp_test
+  id: fetch_cached
+  structure:
+    samples.yaml: |
+      - id: CACHED
+        files:
+        - input/CACHED
+        hcp_remote_keys:
+        - cache/CACHED
+    cache:
+      CACHED: CACHED
+  logs:
+    - Found CACHED locally
+
+- <<: *hcp_test
+  id: no_backup
+  structure:
+    samples.yaml: |
+      - id: NO_BACKUP
+        files:
+        - input/NO_BACKUP
+  logs:
+    - No backup for NO_BACKUP
+
+- <<: *hcp_test
+  id: skip_present
+  structure:
+    samples.yaml: |
+      - id: PRESENT
+        files:
+        - input/PRESENT
+        hcp_remote_keys:
+        - PRESENT
+    input:
+      PRESENT: PRESENT
+  logs:
+    - Found all files for PRESENT locally
+
+- <<: *hcp_test
+  id: not_configured
+  args:
+    --workdir: work
+  logs:
+  - HCP not configured
+
+- <<: *hcp_test
+  id: fetch_exception
+  mocks:
+    _cellophane_module_hcp.HCPManager:
+      exception: fetch_exception
+  logs:
+  - Failed to fetch backup for BACKUP (fetch_exception)

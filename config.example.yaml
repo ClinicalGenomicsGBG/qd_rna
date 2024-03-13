@@ -151,6 +151,13 @@ qlucore:
 #   profile: ~
 #   # Nextflow config file [path]
 #   config: ~
+# hcp:
+#   # IRIS credentials file [path]
+#   credentials: ~
+#   # Number of parallel HCP conenctions [integer]
+#   parallel: 4
+#   # Temporary directory for fastq files [path]
+#   fastq_temp: ~
 # grid_engine:
 #   # Grid Engine queue [string]
 #   queue: "all.q"

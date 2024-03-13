@@ -3,3 +3,4 @@
 -r rsync/requirements.txt
 -r mail/requirements.txt
 -r nextflow/requirements.txt
+-r hcp/requirements.txt
