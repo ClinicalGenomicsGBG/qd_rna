@@ -188,3 +188,12 @@ qlucore:
 #   queue: "all.q"
 #   # Grid Engine parallel environment [string]
 #   pe: "mpi"
+# unpack:
+#   # Code to run before unpacking (Bash) [string]
+#   init: ~
+#   # Timeout (in seconds) to wait for unpacked file to become available [integer]
+#   timeout: 60
+#   # Threads for decompression [integer]
+#   threads: 40
+#   # Code to run after unpacking (Bash) [string]
+#   exit: ~

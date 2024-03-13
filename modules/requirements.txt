@@ -5,3 +5,4 @@
 -r nextflow/requirements.txt
 -r hcp/requirements.txt
 -r slims/requirements.txt
+-r unpack/requirements.txt
