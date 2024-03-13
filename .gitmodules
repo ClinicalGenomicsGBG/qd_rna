@@ -1,4 +1,0 @@
-[submodule "grid_engine"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/grid_engine
-	branch = refs/heads/grid_engine_dev
