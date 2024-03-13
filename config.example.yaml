@@ -80,6 +80,55 @@ qlucore:
 #   subsample_init: ""
 #   # Overwrite any existing output [boolean]
 #   force: false
+# mail:
+#   # Send mail [boolean]
+#   send: false
+#   # Default list of CC recipients [array]
+#   cc_addr: ~
+#   # Default list of recipients [array]
+#   to_addr: ~
+#   # Default from address [string]
+#   from_addr: ~
+#   start:
+#     # Subject of the mail (jinja2 template) [string]
+#     subject: "{{ analysis }} started"
+#     # Body of the mail (jinja2 template) [string]
+#     body: |
+#       {{ analysis }} has started for {{ samples.unique_ids|length }} sample(s).
+# 
+#       The following samples are being analyzed:
+#       {% for id in samples.unique_ids %}
+#       {{ id }}
+#       {%- endfor %}
+#   end:
+#     # Subject of the mail (jinja2 template) [string]
+#     subject: "{{ analysis }} finished"
+#     # Body of the mail (jinja2 template) [string]
+#     body: |
+#       {{ analysis }} has finished processing {{ samples.unique_ids|length }} sample(s).
+#       {% if samples.failed|length > 0 %}
+#       ❗️ Analysis failed for the following samples:
+#       {% for id in samples.failed.unique_ids %}
+#       {{ id }}
+#       {%- endfor %}
+#       {% endif %}
+#       {%- if samples.complete|length > 0 %}
+#       ✅ Analysis completed successfully for the following samples:
+#       {% for id in samples.complete.unique_ids %}
+#       {{ id }}
+#       {%- endfor %}
+#       {% endif %}
+#   smtp:
+#     # SMTP host [string]
+#     host: ~
+#     # SMTP password [string]
+#     password: ~
+#     # SMTP username [string]
+#     user: ~
+#     # Use TLS [boolean]
+#     tls: false
+#     # SMTP port [integer]
+#     port: 25
 # rsync:
 #   # Overwrite existing results [boolean]
 #   overwrite: false

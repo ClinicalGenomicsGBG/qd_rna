@@ -1,0 +1,87 @@
+- &mail_test
+  id: mail
+  structure:
+    modules:
+      fail_samples.py: |
+        from cellophane import modules
+
+        @modules.runner()
+        def _runner(samples, workdir, **kwargs):
+            missing_attachment = workdir / f"attachment_missing"
+            samples_attachment = workdir / f"attachment_samples"
+            samples_attachment.touch()
+            dir_attachment = workdir / f"attachment_dir"
+            dir_attachment.mkdir()
+            symlink_attachment = workdir / f"attachment_samples_symlink"
+            symlink_attachment.symlink_to(samples_attachment.resolve())
+
+            samples.mail_attachments = {
+              samples_attachment,
+              missing_attachment,
+              symlink_attachment,
+              dir_attachment,
+            }
+
+            for sample in samples:
+                sample_attachment = workdir / f"attachment_{sample.id}"
+                sample_attachment.touch()
+
+                sample.mail_attachments = {sample_attachment}
+                if sample.id == "fail":
+                    sample.fail("DUMMY")
+
+            return samples
+
+    samples.yaml: |
+      - id: pass
+        files:
+        - "input/pass"
+      - id: fail
+        files:
+        - "input/fail"
+
+    input:
+      pass: pass
+      fail: fail
+
+    attachments:
+      static_start: start
+      static_end: end
+
+  external:
+    "..": modules/mail
+
+  mocks:
+    _cellophane_module_mail.SMTP: ~
+
+  args:
+    --samples_file: samples.yaml
+    --workdir: work
+    --tag: DUMMY
+    --mail_from_addr: "DUMMY@localhost"
+    --mail_to_addr: !!python/tuple ["DUMMY_to@localhost"]
+    --mail_cc_addr: !!python/tuple ["DUMMY_cc@localhost"]
+    --mail_smtp_host: "localhost"
+    --mail_smtp_user: "DUMMY"
+    --mail_smtp_password: "DUMMY"
+    --mail_smtp_tls: ~
+    --mail_send: ~
+
+  logs:
+    - |
+      Sending start mail
+      Subject: DUMMY started
+      From: DUMMY@localhost
+      To: DUMMY_to@localhost
+      Cc: DUMMY_cc@localhost
+    - "Sending end mail"
+    - "Attachment work/DUMMY/_runner/attachment_dir is a directory"
+    - "Attachment work/DUMMY/_runner/attachment_missing is not a file"
+    - |
+      Subject: DUMMY finished
+      From: DUMMY@localhost
+      To: DUMMY_to@localhost
+      Cc: DUMMY_cc@localhost
+    - "Attachment: work/DUMMY/_runner/attachment_pass"
+    - "Attachment: work/DUMMY/_runner/attachment_fail"
+    - "Attachment: work/DUMMY/_runner/attachment_samples"
