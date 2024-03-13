@@ -1,105 +1,191 @@
-log_level: INFO  # Log level (string)
-copy_skipped: false # Copy skipped runner output (boolean)
-merge: false # Merge samples with same ID (boolean)
-read_length: 150 # Sample read length (integer)
-strandedness: unstranded # Strandedness of RNA-seq library (string)
-samples_file: ~ # Path YAML file with samples - eg [{id: ID, files: [F1, F2]}, ...] (path)
-tag: ~ # Tag identifying the pipeline run (defaults to a timestamp - YYMMDDHHMMSS) (string)
-resultdir: ~ # Results base directory where output files are copied (path)
-workdir: ~ # Working directory where intermediate files are stored (path)
-logdir: ~ # Log directory (path)
-config_file: ~ # Path to config file (path)
-executor:
-  name: subprocess  # Name of the executor to use (string)
-  memory: 2 GiB # Ammount of memory to allocate to jobs started (if supported by the executor) (size)
-  cpus: 1 # Number of CPUs to allocate to jobs started (if supported by the executor) (integer)
-rnaseq:
-  skip: false  # Skip nf-core/rnaseq (boolean)
-  aligner: ~ # RNA-seq aligner (string)
-  rsem_index: ~ # Path to RSEM genome index (path)
-  star_index: ~ # Path to STAR genome index (path)
-  gene_bed: ~ # Path to genome gene bed file (path)
-  gtf: ~ # Path to genome gtf file (path)
-  fasta: ~ # Path to genome fasta file (path)
-  genome: ~ # Genome reference (string)
-  nf_main: ~ # Path to nf-core/rnaseq main.nf (path)
-  force: false # Overwrite any existing output (boolean)
+# # Log level [string]
+# log_level: "INFO"
+# # Copy skipped runner output [boolean]
+# copy_skipped: false
+# # Merge samples with same ID [boolean]
+# merge: false
+# # Sample read length [integer]
+# read_length: 150
+# # Strandedness of RNA-seq library [string]
+# strandedness: "unstranded"
+# # Path YAML file with samples - eg [{id: ID, files: [F1, F2]}, ...] [path]
+# samples_file: ~
+# # Tag identifying the pipeline run (defaults to a timestamp - YYMMDDHHMMSS) [string]
+# tag: ~
+# Results base directory where output files are copied [path] (REQUIRED)
+resultdir: ~
+# Working directory where intermediate files are stored [path] (REQUIRED)
+workdir: ~
+# Log directory [path] (REQUIRED)
+logdir: ~
+# # Path to config file [path]
+# config_file: ~
+# executor:
+#   # Name of the executor to use [string]
+#   name: "subprocess"
+#   # Ammount of memory to allocate to jobs started (if supported by the executor) [size]
+#   memory: 2000000000
+#   # Number of CPUs to allocate to jobs started (if supported by the executor) [integer]
+#   cpus: 1
+# rnaseq:
+#   # Skip nf-core/rnaseq [boolean]
+#   skip: false
+#   # RNA-seq aligner [string]
+#   aligner: ~
+#   # Path to RSEM genome index [path]
+#   rsem_index: ~
+#   # Path to STAR genome index [path]
+#   star_index: ~
+#   # Path to genome gene bed file [path]
+#   gene_bed: ~
+#   # Path to genome gtf file [path]
+#   gtf: ~
+#   # Path to genome fasta file [path]
+#   fasta: ~
+#   # Genome reference [string]
+#   genome: ~
+#   # Path to nf-core/rnaseq main.nf [path]
+#   nf_main: ~
+#   # Overwrite any existing output [boolean]
+#   force: false
 rnafusion:
-  skip: false  # Skip nf-core/rnafusion (boolean)
-  fusionreport_tool_cutoff: 1 # Minimum number of callers for fusion to be reported (integer)
-  arriba_protein_domain: ~ # Path to arriba protein domains file (path)
-  arriba_blacklist: ~ # Path to arriba blacklist file (path)
-  arriba_ref: ~ # Path to arriba references (path)
-  genomes_base: ~ # Path to rnafusion references (path)
-  nf_main: ~ # Path to nf-core/rnafusion main.nf (path)
-  force: false # Overwrite any existing output (boolean)
+#   # Skip nf-core/rnafusion [boolean]
+#   skip: false
+#   # Minimum number of callers for fusion to be reported [integer]
+#   fusionreport_tool_cutoff: 1
+  # Path to arriba protein domains file [path] (REQUIRED)
+  arriba_protein_domain: ~
+  # Path to arriba blacklist file [path] (REQUIRED)
+  arriba_blacklist: ~
+#   # Path to arriba references [path]
+#   arriba_ref: ~
+  # Path to rnafusion references [path] (REQUIRED)
+  genomes_base: ~
+  # Path to nf-core/rnafusion main.nf [path] (REQUIRED)
+  nf_main: ~
+#   # Overwrite any existing output [boolean]
+#   force: false
 qlucore:
-  skip: false  # Skip qlucore mapping (boolean)
-  subsample_frac: 0.2 # Fraction of reads to subsample (number)
-  subsample_threads: 12 # Number of threads to use for subsampling (integer)
-  starfusion_ref: ~ # Path to STAR-Fusion reference (path)
-  nf_main: ~ # Path to nf-core/rnafusion main.nf (path)
-  subsample_init: '' # Code to run before qlucore subsampling (string)
-  force: false # Overwrite any existing output (boolean)
-mail:
-  send: false  # Send mail (boolean)
-  cc_addr: ~ # Default list of CC recipients (array)
-  to_addr: ~ # Default list of recipients (array)
-  from_addr: ~ # Default from address (string)
-  start:
-    subject: '{{ analysis }} started'  # Subject of the mail (jinja2 template) (string)
-    body: "{{ analysis }} has started for {{ samples.unique_ids|length }} sample(s).\n
-      \nThe following samples are being analyzed:\n{% for id in samples.unique_ids
-      %}\n{{ id }}\n{%- endfor %}\n" # Body of the mail (jinja2 template) (string)
-  end:
-    subject: '{{ analysis }} finished'  # Subject of the mail (jinja2 template) (string)
-    body: "{{ analysis }} has finished processing {{ samples.unique_ids|length }}
-      sample(s).\n{% if samples.failed|length > 0 %}\n❗️ Analysis failed for the following
-      samples:\n{% for id in samples.failed.unique_ids %}\n{{ id }}\n{%- endfor %}\n
-      {% endif %}\n{%- if samples.complete|length > 0 %}\n✅ Analysis completed successfully
-      for the following samples:\n{% for id in samples.complete.unique_ids %}\n{{
-      id }}\n{%- endfor %}\n{% endif %}\n" # Body of the mail (jinja2 template) (string)
-  smtp:
-    host: ~  # SMTP host (string)
-    password: ~ # SMTP password (string)
-    user: ~ # SMTP username (string)
-    tls: false # Use TLS (boolean)
-    port: 25 # SMTP port (integer)
-rsync:
-  overwrite: false  # Overwrite existing results (boolean)
-  timeout: 30 # Timeout (in seconds) for files to be available after rsync is complete (integer)
-  large_file_threshold: 100M # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) (string)
-nextflow:
-  threads: 2  # Threads for nextflow manager (integer)
-  env: # Environment variables that will be passed to the nextflow process (mapping)
-  - ''
-  init: '' # Code to run before running Nextflow (Bash) (string)
-  ansi_log: false # Enable ANSI log (boolean)
-  workdir: ~ # Nextflow workdir (path)
-  profile: ~ # Nextflow profile (string)
-  config: ~ # Nextflow config file (path)
-hcp:
-  credentials: ~  # IRIS credentials file (path)
-  parallel: 4 # Number of parallel HCP conenctions (integer)
-  fastq_temp: ~ # Temporary directory for fastq files (path)
-slims:
-  url: ~  # SLIMS URL (string)
-  novel_max_age: 1 year # Maximum age of novel samples (eg. "7 days", "1 month", "1 year") (string)
-  dry_run: false # Do not create SLIMS bioinformatics objects (boolean)
-  unrestrict_parents: false # Allow parent records to have different IDs than the child records (boolean)
-  allow_duplicates: false # Allow duplicate samples (eg. if a pre-hook can handle this) (boolean)
-  id: ~ # Manually select SLIMS Sample ID(s) (array)
-  check_criteria: ~ # SLIMS criteria for checking completed records (eg. "cntn_cstm_SecondaryAnalysis equals 1337") (string)
-  find_criteria: ~ # SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337") (string)
-  derive: ~ # Mapping for creating derived records in SLIMS (Use curly braces to access keys in the samples object) (array)
-  map: ~ # Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields) (mapping)
-  password: ~ # SLIMS password (string)
-  username: ~ # SLIMS username (string)
-grid_engine:
-  queue: all.q  # Grid Engine queue (string)
-  pe: mpi # Grid Engine parallel environment (string)
-unpack:
-  init: ~  # Code to run before unpacking (Bash) (string)
-  timeout: 60 # Timeout (in seconds) to wait for unpacked file to become available (integer)
-  threads: 40 # Threads for decompression (integer)
-  exit: ~ # Code to run after unpacking (Bash) (string)
+#   # Skip qlucore mapping [boolean]
+#   skip: false
+#   # Fraction of reads to subsample [number]
+#   subsample_frac: 0.2
+#   # Number of threads to use for subsampling [integer]
+#   subsample_threads: 12
+  # Path to STAR-Fusion reference [path] (REQUIRED)
+  starfusion_ref: ~
+  # Path to nf-core/rnafusion main.nf [path] (REQUIRED)
+  nf_main: ~
+#   # Code to run before qlucore subsampling [string]
+#   subsample_init: ""
+#   # Overwrite any existing output [boolean]
+#   force: false
+# mail:
+#   # Send mail [boolean]
+#   send: false
+#   # Default list of CC recipients [array]
+#   cc_addr: ~
+#   # Default list of recipients [array]
+#   to_addr: ~
+#   # Default from address [string]
+#   from_addr: ~
+#   start:
+#     # Subject of the mail (jinja2 template) [string]
+#     subject: "{{ analysis }} started"
+#     # Body of the mail (jinja2 template) [string]
+#     body: |
+#       {{ analysis }} has started for {{ samples.unique_ids|length }} sample(s).
+# 
+#       The following samples are being analyzed:
+#       {% for id in samples.unique_ids %}
+#       {{ id }}
+#       {%- endfor %}
+#   end:
+#     # Subject of the mail (jinja2 template) [string]
+#     subject: "{{ analysis }} finished"
+#     # Body of the mail (jinja2 template) [string]
+#     body: |
+#       {{ analysis }} has finished processing {{ samples.unique_ids|length }} sample(s).
+#       {% if samples.failed|length > 0 %}
+#       ❗️ Analysis failed for the following samples:
+#       {% for id in samples.failed.unique_ids %}
+#       {{ id }}
+#       {%- endfor %}
+#       {% endif %}
+#       {%- if samples.complete|length > 0 %}
+#       ✅ Analysis completed successfully for the following samples:
+#       {% for id in samples.complete.unique_ids %}
+#       {{ id }}
+#       {%- endfor %}
+#       {% endif %}
+#   smtp:
+#     # SMTP host [string]
+#     host: ~
+#     # SMTP password [string]
+#     password: ~
+#     # SMTP username [string]
+#     user: ~
+#     # Use TLS [boolean]
+#     tls: false
+#     # SMTP port [integer]
+#     port: 25
+# rsync:
+#   # Overwrite existing results [boolean]
+#   overwrite: false
+#   # Timeout (in seconds) for files to be available after rsync is complete [integer]
+#   timeout: 30
+#   # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) [string]
+#   large_file_threshold: "100M"
+# nextflow:
+#   # Threads for nextflow manager [integer]
+#   threads: 2
+#   # Environment variables that will be passed to the nextflow process [mapping]
+#   env:
+#   - ''
+#   # Code to run before running Nextflow (Bash) [string]
+#   init: ""
+#   # Enable ANSI log [boolean]
+#   ansi_log: false
+#   # Nextflow workdir [path]
+#   workdir: ~
+#   # Nextflow profile [string]
+#   profile: ~
+#   # Nextflow config file [path]
+#   config: ~
+# hcp:
+#   # IRIS credentials file [path]
+#   credentials: ~
+#   # Number of parallel HCP conenctions [integer]
+#   parallel: 4
+#   # Temporary directory for fastq files [path]
+#   fastq_temp: ~
+# slims:
+#   # SLIMS URL [string]
+#   url: ~
+#   # Maximum age of novel samples (eg. "7 days", "1 month", "1 year") [string]
+#   novel_max_age: "1 year"
+#   # Do not create SLIMS bioinformatics objects [boolean]
+#   dry_run: false
+#   # Allow parent records to have different IDs than the child records [boolean]
+#   unrestrict_parents: false
+#   # Allow duplicate samples (eg. if a pre-hook can handle this) [boolean]
+#   allow_duplicates: false
+#   # Manually select SLIMS Sample ID(s) [array]
+#   id: ~
+#   # SLIMS criteria for checking completed records (eg. "cntn_cstm_SecondaryAnalysis equals 1337") [string]
+#   check_criteria: ~
+#   # SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337") [string]
+#   find_criteria: ~
+#   # Mapping for creating derived records in SLIMS (Use curly braces to access keys in the samples object) [array]
+#   derive: ~
+#   # Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields) [mapping]
+#   map: ~
+#   # SLIMS password [string]
+#   password: ~
+#   # SLIMS username [string]
+#   username: ~
+# grid_engine:
+#   # Grid Engine queue [string]
+#   queue: "all.q"
+#   # Grid Engine parallel environment [string]
+#   pe: "mpi"
