@@ -1,0 +1,12 @@
+properties:
+  grid_engine:
+    type: object
+    properties:
+      queue:
+        description: Grid Engine queue
+        type: string
+        default: all.q
+      pe:
+        description: Grid Engine parallel environment
+        type: string
+        default: mpi

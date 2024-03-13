@@ -1,5 +1,5 @@
-# Working directory where intermediate files are stored [path] (REQUIRED)
-workdir: ~
+# # Log level [string]
+# log_level: "INFO"
 # # Copy skipped runner output [boolean]
 # copy_skipped: false
 # # Merge samples with same ID [boolean]
@@ -12,14 +12,14 @@ workdir: ~
 # samples_file: ~
 # # Tag identifying the pipeline run (defaults to a timestamp - YYMMDDHHMMSS) [string]
 # tag: ~
-# # Path to config file [path]
-# config_file: ~
-# # Log level [string]
-# log_level: "INFO"
-# Log directory [path] (REQUIRED)
-logdir: ~
 # Results base directory where output files are copied [path] (REQUIRED)
 resultdir: ~
+# Working directory where intermediate files are stored [path] (REQUIRED)
+workdir: ~
+# Log directory [path] (REQUIRED)
+logdir: ~
+# # Path to config file [path]
+# config_file: ~
 # executor:
 #   # Name of the executor to use [string]
 #   name: "subprocess"
@@ -80,3 +80,8 @@ qlucore:
 #   subsample_init: ""
 #   # Overwrite any existing output [boolean]
 #   force: false
+# grid_engine:
+#   # Grid Engine queue [string]
+#   queue: "all.q"
+#   # Grid Engine parallel environment [string]
+#   pe: "mpi"

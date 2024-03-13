@@ -1,1 +1,2 @@
 ### THIS FILE IS MANAGED BY CELLOPHANE - DO NOT EDIT ###
+-r grid_engine/requirements.txt
