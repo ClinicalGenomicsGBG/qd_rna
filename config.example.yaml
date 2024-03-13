@@ -80,13 +80,6 @@ qlucore:
 #   subsample_init: ""
 #   # Overwrite any existing output [boolean]
 #   force: false
-# hcp:
-#   # IRIS credentials file [path]
-#   credentials: ~
-#   # Number of parallel HCP conenctions [integer]
-#   parallel: 4
-#   # Temporary directory for fastq files [path]
-#   fastq_temp: ~
 # slims:
 #   # SLIMS URL [string]
 #   url: ~

@@ -6,7 +6,3 @@
 	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
 	path = modules/slims
 	branch = refs/heads/slims_dev
-[submodule "hcp"]
-	url = https://github.com/ClinicalGenomicsGBG/cellophane_modules
-	path = modules/hcp
-	branch = refs/heads/hcp_dev
