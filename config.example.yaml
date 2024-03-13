@@ -129,13 +129,6 @@ qlucore:
 #     tls: false
 #     # SMTP port [integer]
 #     port: 25
-# rsync:
-#   # Overwrite existing results [boolean]
-#   overwrite: false
-#   # Timeout (in seconds) for files to be available after rsync is complete [integer]
-#   timeout: 30
-#   # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) [string]
-#   large_file_threshold: "100M"
 # nextflow:
 #   # Threads for nextflow manager [integer]
 #   threads: 2
