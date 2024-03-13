@@ -136,6 +136,21 @@ qlucore:
 #   timeout: 30
 #   # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) [string]
 #   large_file_threshold: "100M"
+# nextflow:
+#   # Threads for nextflow manager [integer]
+#   threads: 2
+#   # Environment variables that will be passed to the nextflow process [mapping]
+#   env: {}
+#   # Code to run before running Nextflow (Bash) [string]
+#   init: ""
+#   # Enable ANSI log [boolean]
+#   ansi_log: false
+#   # Nextflow workdir [path]
+#   workdir: ~
+#   # Nextflow profile [string]
+#   profile: ~
+#   # Nextflow config file [path]
+#   config: ~
 # grid_engine:
 #   # Grid Engine queue [string]
 #   queue: "all.q"

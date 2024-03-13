@@ -1,0 +1,30 @@
+type: object
+properties:
+  nextflow:
+    type: object
+    properties:
+      threads:
+        type: integer
+        description: Threads for nextflow manager
+        default: 2
+      config:
+        type: path
+        description: Nextflow config file
+      profile:
+        type: string
+        description: Nextflow profile
+      workdir:
+        type: path
+        description: Nextflow workdir
+      ansi_log:
+        type: boolean
+        default: false
+        description: Enable ANSI log
+      init:
+        type: string
+        description: Code to run before running Nextflow (Bash)
+        default: ""
+      env:
+        type: mapping
+        description: Environment variables that will be passed to the nextflow process
+        default: {}
