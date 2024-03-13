@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "cellophane-rsync"
+version = "0.1.1"
+description = "Rsync module for Cellophane"
+authors = ["dodslaser <2969909+dodslaser@users.noreply.github.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+humanfriendly = "^10.0"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.0.0"
+black = "^23.1.0"
+isort = "^5.12.0"
+flake8 = "^6.0.0"
+pytest-mock = "^3.11.1"
+pytest-clarity = "^1.0.1"
+pytest-cov = "^4.1.0"
+pylint = "^3.0.2"
+humanfriendly = "^10.0"
+ngpiris = "^4.3.0"
+cellophane={git = "https://github.com/ClinicalGenomicsGBG/cellophane.git", branch = "dev"}
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,0 +1,44 @@
+- &rsync_test
+  id: rsync
+  structure:
+    modules:
+      fail_samples.py: |
+        from cellophane import modules, data
+
+        @modules.runner()
+        @data.output("output_{sample.id}")
+        def _runner(samples, workdir, logger, **kwargs):
+            logger.info("Running rsync test")
+            for s in samples:
+                sample_output = workdir / f"output_{s.id}"
+                sample_output.touch()
+            return samples
+
+
+    samples.yaml: |
+      - id: pass
+        files:
+        - "input/pass"
+      - id: fail
+        files:
+        - "input/fail"
+
+    input:
+      pass: pass
+      fail: fail
+
+    attachments:
+      static_start: start
+      static_end: end
+
+  external:
+    "..": modules/rsync
+
+  mocks:
+    _cellophane_module_rsync.sge.submit: ~
+
+  args:
+    --samples_file: samples.yaml
+    --workdir: work
+    --tag: DUMMY
+    --resultdir: "rsync"
