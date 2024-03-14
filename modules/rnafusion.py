@@ -2,7 +2,6 @@
 
 from logging import LoggerAdapter
 from pathlib import Path
-from shutil import copytree
 
 from cellophane import Config, Executor, Samples, output, runner
 
@@ -15,31 +14,21 @@ def _patch_fusionreport(report_path: Path, sample_id: str):
 
     This is done to make it easier to access the report from the directory listing.
     """
-    index_name = report_path / f"{sample_id}.fusionreport.html"
-    (report_path / "data").mkdir()
-    for fusion in report_path.glob("*_*.html"):
-        patched_fusion = fusion.read_text().replace(
-            '<a class="nav-link active" href="index.html">',
-            f'<a class="nav-link active" href="../{index_name.name}">',
-        )
-        fusion.write_text(patched_fusion)
-        fusion.rename(report_path / "data" / fusion.name)
-
+    index_name = f"{sample_id}.fusionreport.html"
     patched_index = (
         (report_path / "index.html")
         .read_text()
         .replace(
             "${fusion.replace('--','_')}.html",
-            "data/${fusion.replace('--','_')}.html",
+            "fusionreport/${fusion.replace('--','_')}.html",
         )
     )
-    (report_path / "index.html").write_text(patched_index)
-    (report_path / "index.html").rename(index_name)
 
+    Path(index_name).write_text(patched_index, encoding="utf-8")
 
 @output(
     "arriba_visualisation/{sample.id}.pdf",
-    dst_dir="{sample.id}/arriba",
+    dst_dir="{sample.id}",
 )
 @output(
     "arriba/{sample.id}.*",
@@ -50,23 +39,23 @@ def _patch_fusionreport(report_path: Path, sample_id: str):
     dst_dir="{sample.id}/fusioncatcher",
 )
 @output(
+    "starfusion/{sample.id}.*",
+    dst_dir="{sample.id}/starfusion",
+)
+@output(
     "fusionreport/{sample.id}",
     dst_name="{sample.id}/fusionreport",
 )
 @output(
-    "qualimap/{sample.id}",
-    dst_name="{sample.id}/qualimap",
+    "{sample_id}.fusionreport.html",
+    dst_dir="{sample.id}",
 )
 @output(
-    "pizzly/{sample.id}.*",
-    dst_dir="{sample.id}/pizzly",
+    "samtools_sort_for_arriba/{sample.id}_sorted.bam",
+    dst_dir="{sample.id}",
 )
 @output(
-    "squid/{sample.id}.*.txt",
-    dst_dir="{sample.id}/squid",
-)
-@output(
-    "star_for_starfusion/{sample.id}.*.ba*",
+    "samtools_index_for_arriba/{sample.id}_sorted.bam.bai",
     dst_dir="{sample.id}",
 )
 @output(
@@ -120,14 +109,10 @@ def rnafusion(
 
     logger.debug(f"nf-core/rnafusion finished for {len(samples)} samples")
     logger.info("Patching fusionreport html")
-    copytree(
-        workdir / "fusionreport",
-        workdir / "fusionreport_patched",
-    )
     for id_, group in samples.split(by="id"):
         logger.debug(f"Patching fusionreport for {id_}")
         try:
-            _patch_fusionreport(workdir / f"fusionreport_patched/{id_}", id_)
+            _patch_fusionreport(workdir / f"fusionreport/{id_}", id_)
         except Exception as exception:  # pylint: disable=broad-except
             logger.error(f"Failed to patch fusionreport for {id_}: {exception}")
             for sample in group:
