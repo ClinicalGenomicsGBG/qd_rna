@@ -175,5 +175,5 @@ pyrightconfig.json
 
 # End of https://www.toptal.com/developers/gitignore/api/python
 
-# QD-RNA config file
-config.yaml
+# QD-RNA config files
+config/**
