@@ -12,17 +12,17 @@ properties:
       - forward
       - reverse
     default: unstranded
-  
+
   read_length:
     type: integer
     description: Sample read length
     default: 150
-  
+
   merge:
     type: boolean
     description: Merge samples with same ID
     default: false
-  
+
   copy_skipped:
     type: boolean
     description: Copy skipped runner output
@@ -127,7 +127,7 @@ properties:
         type: path
         description: Path to arriba protein domains file
 
-      fusionreport_tool_cutoff:
+      tools_cutoff:
         type: integer
         description: Minimum number of callers for fusion to be reported
         default: 1
