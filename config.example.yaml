@@ -52,7 +52,7 @@ rnafusion:
 #   # Skip nf-core/rnafusion [boolean]
 #   skip: false
 #   # Minimum number of callers for fusion to be reported [integer]
-#   fusionreport_tool_cutoff: 1
+#   tools_cutoff: 1
   # Path to arriba protein domains file [path] (REQUIRED)
   arriba_protein_domain: ~
   # Path to arriba blacklist file [path] (REQUIRED)
