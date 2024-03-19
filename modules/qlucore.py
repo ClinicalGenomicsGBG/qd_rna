@@ -123,6 +123,16 @@ def qlucore(
     (workdir / "dummy.gtf").touch()
     (workdir / "dummy.refflat").touch()
 
+    if any(
+        not path.exists()
+        for path in [
+            config.qlucore.starfusion_ref,
+            config.qlucore.starfusion_ref / "ref_genome.fa.star.idx",
+        ]
+    ):
+        logger.error("STARFusion reference not found")
+        raise SystemExit(1)
+
     logger.info("Running nf-core/rnafusion for qlucore")
 
     nextflow(

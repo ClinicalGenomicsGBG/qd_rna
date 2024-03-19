@@ -60,10 +60,32 @@ def rnaseq(
             samples.output = set()
         return samples
 
-    logger.info("Running nf-core/rnaseq")
-
     if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
         logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
+
+    if (
+        "genome" not in config.rnaseq
+        and (
+            config.rnaseq.aligner == "star_salmon"
+            and any(
+                not path.exists()
+                for path in [
+                    config.rnaseq.fasta,
+                    config.rnaseq.gtf,
+                    config.rnaseq.gene_bed,
+                ]
+            )
+        )
+        or (
+            config.rnaseq.aligner == "star_rsem"
+            and not config.rnaseq.rsem_index.exists()
+        )
+    ):
+        logger.error("Missing required reference files for nf-core/rnaseq.")
+        raise SystemExit(1)
+
+
+    logger.info("Running nf-core/rnaseq")
 
     for id_, group in samples.split(by="id"):
         sample_sheet = group.nfcore_samplesheet(

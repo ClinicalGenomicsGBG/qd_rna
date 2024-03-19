@@ -82,6 +82,18 @@ def rnafusion(
             samples.output = set()
         return samples
 
+    if not config.rnafusion.genomes_base.exists():
+        logger.error("Missing required reference files for nf-core/rnafusion.")
+        logger.error(
+            "Instructions for downloading reference files can be found at "
+            "https://nf-co.re/rnafusion/3.0.1/docs/usage#download-and-build-references"
+        )
+        logger.error(
+            f"Use {root}/dependencies/nf-core/rnafusion/main.nf when downloading "
+            "the reference files"
+        )
+        raise SystemExit(1)
+
     logger.info("Running nf-core/rnafusion")
 
     sample_sheet = samples.nfcore_samplesheet(
