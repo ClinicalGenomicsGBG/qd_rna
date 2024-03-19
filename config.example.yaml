@@ -6,6 +6,8 @@
 # merge: false
 # # Sample read length [integer]
 # read_length: 150
+# # Maximum number of junctions to insert for STAR [integer]
+# limitSjdbInsertNsj: 1000000
 # # Strandedness of RNA-seq library [string]
 # strandedness: "unstranded"
 # # Path YAML file with samples - eg [{id: ID, files: [F1, F2]}, ...] [path]
@@ -34,48 +36,48 @@ logdir: ~
 #   aligner: ~
 #   # Path to RSEM genome index [path]
 #   rsem_index: ~
+#   # Path to Salmon genome index [path]
+#   salmon_index: ~
 #   # Path to STAR genome index [path]
 #   star_index: ~
 #   # Path to genome gene bed file [path]
 #   gene_bed: ~
 #   # Path to genome gtf file [path]
 #   gtf: ~
+#   # Path to transcriptome fasta file [path]
+#   transcript_fasta: ~
 #   # Path to genome fasta file [path]
 #   fasta: ~
 #   # Genome reference [string]
 #   genome: ~
-#   # Path to nf-core/rnaseq main.nf [path]
-#   nf_main: ~
+#   # URL to use for nf-core/rnaseq [string]
+#   nf_url: "https://github.com/nf-core/rnaseq"
+#   # Tag to use for nf-core/rnaseq [string]
+#   nf_tag: "3.14.0"
 #   # Overwrite any existing output [boolean]
 #   force: false
-rnafusion:
+# rnafusion:
 #   # Skip nf-core/rnafusion [boolean]
 #   skip: false
 #   # Minimum number of callers for fusion to be reported [integer]
 #   tools_cutoff: 1
-  # Path to arriba protein domains file [path] (REQUIRED)
-  arriba_protein_domain: ~
-  # Path to arriba blacklist file [path] (REQUIRED)
-  arriba_blacklist: ~
-#   # Path to arriba references [path]
-#   arriba_ref: ~
-  # Path to rnafusion references [path] (REQUIRED)
-  genomes_base: ~
-  # Path to nf-core/rnafusion main.nf [path] (REQUIRED)
-  nf_main: ~
+#   # Path to rnafusion references [path]
+#   genomes_base: ~
+#   # URL to use for nf-core/rnafusion [string]
+#   nf_url: "https://github.com/nf-core/rnafusion"
+#   # Tag to use for nf-core/rnafusion [string]
+#   nf_tag: "3.0.1"
 #   # Overwrite any existing output [boolean]
 #   force: false
-qlucore:
+# qlucore:
 #   # Skip qlucore mapping [boolean]
 #   skip: false
 #   # Fraction of reads to subsample [number]
 #   subsample_frac: 0.2
 #   # Number of threads to use for subsampling [integer]
 #   subsample_threads: 12
-  # Path to STAR-Fusion reference [path] (REQUIRED)
-  starfusion_ref: ~
-  # Path to nf-core/rnafusion main.nf [path] (REQUIRED)
-  nf_main: ~
+#   # Path to STAR-Fusion reference [path]
+#   starfusion_ref: ~
 #   # Code to run before qlucore subsampling [string]
 #   subsample_init: ""
 #   # Overwrite any existing output [boolean]
