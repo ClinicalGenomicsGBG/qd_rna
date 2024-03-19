@@ -143,16 +143,12 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
     dst_dir="{sample.id}",
 )
 @output(
-    "samtools_sort_for_arriba/{sample.id}_sorted.bam",
+    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam",
     dst_dir="{sample.id}",
 )
 @output(
-    "samtools_index_for_arriba/{sample.id}_sorted.bam.bai",
+    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam.bai",
     dst_dir="{sample.id}",
-)
-@output(
-    "kallisto/{sample.id}.*",
-    dst_dir="{sample.id}/kallisto",
 )
 @output(
     "pipeline_info",
