@@ -81,91 +81,14 @@ def _subsample_error_callback(
         sample.fail(reason)
 
 
-@output(
-    "{sample.id}.qlucore.txt",
-    dst_dir="{sample.id}/qlucore",
-)
-@output(
-    "star_for_starfusion/{sample.id}.*.ba*",
-    dst_dir="{sample.id}/qlucore",
-)
-@output(
-    "starfusion/{sample.id}.*.tsv",
-    dst_dir="{sample.id}/qlucore",
-)
-@runner()
-def qlucore(
+def _subsample(
     samples: Samples,
     config: Config,
     logger: LoggerAdapter,
     root: Path,
     workdir: Path,
     executor: Executor,
-    **_,
-) -> None:
-    """Run nf-core/rnaseq (Mapping for qlucore)."""
-
-    if config.qlucore.skip:
-        if not config.copy_skipped:
-            samples.output = set()
-        return samples
-
-    sample_sheet = samples.nfcore_samplesheet(
-        location=workdir,
-        strandedness=config.strandedness,
-    )
-
-    nf_config(
-        template=qlucore_nf_config,
-        location=workdir / "nextflow.config",
-        include=config.nextflow.get("config"),
-        config=config,
-    )
-
-    (workdir / "dummy.fa").touch()
-    (workdir / "dummy.fai").touch()
-    (workdir / "dummy.gtf").touch()
-    (workdir / "dummy.refflat").touch()
-    (workdir / "dummy.interval_list").touch()
-
-
-    if any(
-        not path.exists()
-        for path in [
-            config.qlucore.starfusion_ref,
-            config.qlucore.starfusion_ref / "ref_genome.fa.star.idx",
-        ]
-    ):
-        logger.error("STARFusion reference not found")
-        raise SystemExit(1)
-
-    logger.info("Running nf-core/rnafusion for qlucore")
-
-    nextflow(
-        root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
-        "--starfusion",
-        "--skip_qc",
-        "--skip_vis",
-        "--star_ignore_sjdbgtf",
-        f"--fasta {workdir / 'dummy.fa'}",
-        f"--fai {workdir / 'dummy.fai'}",
-        f"--transcript {workdir / 'dummy.fa'}",
-        f"--gtf {workdir / 'dummy.gtf'}",
-        f"--chrgtf {workdir / 'dummy.gtf'}",
-        f"--refflat {workdir / 'dummy.refflat'}",
-        f"--rrna_intervals {workdir / 'dummy.interval_list'}",
-        f"--outdir {workdir}",
-        f"--input {sample_sheet}",
-        f"--starfusion_ref {config.qlucore.starfusion_ref}",
-        f"--starindex_ref {config.qlucore.starfusion_ref}/ref_genome.fa.star.idx",
-        f"--read_length {config.read_length}",
-        nxf_config=workdir / "nextflow.config",
-        config=config,
-        name="qlucore",
-        workdir=workdir,
-        executor=executor,
-    )
-
+):
     logger.info(f"Subsampling output BAM(s) ({config.qlucore.subsample_frac:.0%})")
     for id_, group in samples.split(by="id"):
         executor.submit(
@@ -198,5 +121,127 @@ def qlucore(
         )
 
     executor.wait()
+
+
+def _validate_inputs(
+    config: Config,
+    workdir: Path,
+    logger: LoggerAdapter,
+) -> None:
+    (workdir / "dummy.fa").touch()
+    (workdir / "dummy.fai").touch()
+    (workdir / "dummy.gtf").touch()
+    (workdir / "dummy.refflat").touch()
+    (workdir / "dummy.interval_list").touch()
+
+    if any(
+        not path.exists()
+        for path in [
+            config.qlucore.starfusion_ref,
+            config.qlucore.starfusion_ref / "ref_genome.fa.star.idx",
+        ]
+    ):
+        logger.error("STARFusion reference not found")
+        raise SystemExit(1)
+
+
+def _pipeline_args(
+    config: Config,
+    workdir: Path,
+    nf_samples: Path,
+):
+    return [
+        "--starfusion",
+        "--skip_qc",
+        "--skip_vis",
+        "--star_ignore_sjdbgtf",
+        f"--fasta {workdir / 'dummy.fa'}",
+        f"--fai {workdir / 'dummy.fai'}",
+        f"--transcript {workdir / 'dummy.fa'}",
+        f"--gtf {workdir / 'dummy.gtf'}",
+        f"--chrgtf {workdir / 'dummy.gtf'}",
+        f"--refflat {workdir / 'dummy.refflat'}",
+        f"--rrna_intervals {workdir / 'dummy.interval_list'}",
+        f"--outdir {workdir}",
+        f"--input {nf_samples}",
+        f"--starfusion_ref {config.qlucore.starfusion_ref}",
+        f"--starindex_ref {config.qlucore.starfusion_ref}/ref_genome.fa.star.idx",
+        f"--read_length {config.read_length}",
+    ]
+
+
+@output(
+    "{sample.id}.qlucore.txt",
+    dst_dir="{sample.id}/qlucore",
+)
+@output(
+    "star_for_starfusion/{sample.id}.*.ba*",
+    dst_dir="{sample.id}/qlucore",
+)
+@output(
+    "starfusion/{sample.id}.*.tsv",
+    dst_dir="{sample.id}/qlucore",
+)
+@runner()
+def qlucore(
+    samples: Samples,
+    config: Config,
+    logger: LoggerAdapter,
+    root: Path,
+    workdir: Path,
+    executor: Executor,
+    **_,
+) -> None:
+    """Run nf-core/rnaseq (Mapping for qlucore)."""
+
+    if config.qlucore.skip:
+        if not config.copy_skipped:
+            samples.output = set()
+        return samples
+
+    _validate_inputs(
+        config=config,
+        workdir=workdir,
+        logger=logger,
+    )
+
+    sample_sheet = samples.nfcore_samplesheet(
+        location=workdir,
+        strandedness=config.strandedness,
+    )
+
+    nf_config(
+        template=qlucore_nf_config,
+        location=workdir / "nextflow.config",
+        include=config.nextflow.get("config"),
+        config=config,
+    )
+
+    logger.info("Running nf-core/rnafusion")
+
+    nextflow(
+        root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
+        *_pipeline_args(
+            config=config,
+            workdir=workdir,
+            nf_samples=sample_sheet,
+        ),
+        nxf_config=workdir / "nextflow.config",
+        config=config,
+        name="qlucore",
+        workdir=workdir,
+        executor=executor,
+    )
+
+    logger.debug(f"nf-core/rnafusion finished for {len(samples)} samples")
+
+    _subsample(
+        samples=samples,
+        config=config,
+        logger=logger,
+        root=root,
+        workdir=workdir,
+        executor=executor,
+    )
 
     return samples

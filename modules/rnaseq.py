@@ -32,35 +32,7 @@ def _error_callback(
         sample.fail(reason)
 
 
-@output(
-    "{sample.id}/{config.rnaseq.aligner}",
-    dst_name="{sample.id}/{config.rnaseq.aligner}",
-)
-@output(
-    "{sample.id}/multiqc/{config.rnaseq.aligner}",
-    dst_name="{sample.id}/multiqc",
-)
-@output(
-    "{sample.id}/pipeline_info",
-    dst_name="{sample.id}/pipeline_info/rnaseq",
-)
-@runner()
-def rnaseq(
-    samples: Samples,
-    config: Config,
-    logger: LoggerAdapter,
-    workdir: Path,
-    executor: Executor,
-    root: Path,
-    **_,
-) -> Samples:
-    """Run nf-core/rnaseq."""
-
-    if config.rnaseq.skip:
-        if not config.copy_skipped:
-            samples.output = set()
-        return samples
-
+def _validate_inputs(config: Config, logger: LoggerAdapter) -> None:
     if any({"genome", x} <= {*config.rnaseq} for x in ["fasta", "gtf", "gene_bed"]):
         logger.warning("Both genome and fasta/gtf/gene_bed provided. Using genome.")
 
@@ -86,6 +58,70 @@ def rnaseq(
         raise SystemExit(1)
 
 
+def _pipeline_args(
+    config: Config,
+    nf_samples: Path,
+    workdir: Path,
+) -> list[str]:
+    return [
+        f"--outdir {workdir}",
+        f"--input {nf_samples}",
+        f"--aligner {config.rnaseq.aligner}",
+        "--pseudo_aligner salmon",
+        (
+            f"--salmon_index {config.rnaseq.salmon_index}"
+            if "salmon_index" in config.rnaseq
+            else ""
+        ),
+        (
+            f"--extra_star_args='--limitSjdbInsertNsj {config.limitSjdbInsertNsj}'"
+            if config.rnaseq.aligner == "star_salmon"
+            else ""
+        ),
+        (
+            f"--fasta {config.rnaseq.fasta} "
+            f"--gtf {config.rnaseq.gtf} "
+            f"--gene_bed {config.rnaseq.gene_bed}"
+            if "genome" not in config.rnaseq
+            else f"--genome {config.rnaseq.genome}"
+        ),
+        (
+            f"--rsem_index {config.rnaseq.rsem_index}"
+            if config.rnaseq.aligner == "star_rsem"
+            else f"--star_index {config.rnaseq.star_index}"
+        ),
+    ]
+
+
+@output(
+    "{sample.id}/{config.rnaseq.aligner}",
+    dst_name="{sample.id}/{config.rnaseq.aligner}",
+)
+@output(
+    "{sample.id}/multiqc/{config.rnaseq.aligner}",
+    dst_name="{sample.id}/multiqc",
+)
+@output(
+    "{sample.id}/pipeline_info",
+    dst_name="{sample.id}/pipeline_info/rnaseq",
+)
+@runner()
+def rnaseq(
+    samples: Samples,
+    config: Config,
+    logger: LoggerAdapter,
+    workdir: Path,
+    executor: Executor,
+    root: Path,
+    **_,
+) -> Samples:
+    """Run nf-core/rnaseq."""
+    if config.rnaseq.skip:
+        if not config.copy_skipped:
+            samples.output = set()
+        return samples
+
+    _validate_inputs(config, logger)
     logger.info("Running nf-core/rnaseq")
 
     for id_, group in samples.split(by="id"):
@@ -96,26 +132,10 @@ def rnaseq(
 
         nextflow(
             root / "dependencies" / "nf-core" / "rnaseq" / "main.nf",
-            f"--outdir {workdir / id_}",
-            f"--input {sample_sheet}",
-            f"--aligner {config.rnaseq.aligner}",
-            "--pseudo_aligner salmon",
-            (
-                f"--extra_star_args='--limitSjdbInsertNsj {config.limitSjdbInsertNsj}'"
-                if config.rnaseq.aligner == "star_salmon"
-                else ""
-            ),
-            (
-                f"--fasta {config.rnaseq.fasta} "
-                f"--gtf {config.rnaseq.gtf} "
-                f"--gene_bed {config.rnaseq.gene_bed}"
-                if "genome" not in config.rnaseq
-                else f"--genome {config.rnaseq.genome}"
-            ),
-            (
-                f"--rsem_index {config.rnaseq.rsem_index}"
-                if config.rnaseq.aligner == "star_rsem"
-                else f"--star_index {config.rnaseq.star_index}"
+            *_pipeline_args(
+                config=config,
+                workdir=workdir / id_,
+                nf_samples=sample_sheet,
             ),
             config=config,
             name="rnaseq",

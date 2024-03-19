@@ -87,6 +87,10 @@ properties:
         type: path
         description: Path to STAR genome index
 
+      salmon_index:
+        type: path
+        description: Path to Salmon genome index
+
       rsem_index:
         type: path
         description: Path to RSEM genome index

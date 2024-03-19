@@ -62,23 +62,60 @@ process {{
 }}
 """
 
-def _patch_fusionreport(report_path: Path, sample_id: str):
+
+def _patch_fusionreport(samples: Samples, workdir: Path, logger: LoggerAdapter):
     """
     Patch fusionreport html to keep fusion data separate from the report itself.
 
     This is done to make it easier to access the report from the directory listing.
     """
-    index_name = f"{sample_id}.fusionreport.html"
-    patched_index = (
-        (report_path / "index.html")
-        .read_text()
-        .replace(
-            "${fusion.replace('--','_')}.html",
-            "fusionreport/${fusion.replace('--','_')}.html",
-        )
-    )
+    logger.info("Patching fusionreport html")
+    for id_, group in samples.split(by="id"):
+        logger.debug(f"Patching fusionreport for {id_}")
+        try:
+            report_path = workdir / f"fusionreport/{id_}"
+            index = Path(f"{id_}.fusionreport.html")
+            patched_index = (
+                (report_path / f"{id_}_fusionreport_index.html")
+                .read_text(encoding="utf-8")
+                .replace(
+                    "${fusion.replace('--','_')}.html",
+                    "fusionreport/${fusion.replace('--','_')}.html",
+                )
+            )
 
-    Path(index_name).write_text(patched_index, encoding="utf-8")
+            index.write_text(patched_index, encoding="utf-8")
+        except Exception as exception:  # pylint: disable=broad-except
+            logger.error(f"Failed to patch fusionreport for {id_}: {exception}")
+            for sample in group:
+                sample.fail(f"Failed to patch fusionreport: {exception}")
+
+
+def _validate_inputs(config: Config, root: Path, logger: LoggerAdapter):
+    if not config.rnafusion.genomes_base.exists():
+        logger.error("Missing required reference files for nf-core/rnafusion.")
+        logger.error(
+            "Instructions for downloading reference files can be found at "
+            "https://nf-co.re/rnafusion/3.0.1/docs/usage#download-and-build-references"
+        )
+        logger.error(
+            f"Use {root}/dependencies/nf-core/rnafusion/main.nf when downloading "
+            "the reference files"
+        )
+        raise SystemExit(1)
+
+
+def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
+    return [
+        f"--outdir {workdir}",
+        f"--input {nf_samples}",
+        f"--genomes_base {config.rnafusion.genomes_base}",
+        f"--read_length {config.read_length}",
+        f"--tools_cutoff {config.rnafusion.tools_cutoff}",
+        f"--fusioncatcher_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
+        f"--fusioninspector_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
+        "--all",
+    ]
 
 
 @output(
@@ -137,17 +174,11 @@ def rnafusion(
             samples.output = set()
         return samples
 
-    if not config.rnafusion.genomes_base.exists():
-        logger.error("Missing required reference files for nf-core/rnafusion.")
-        logger.error(
-            "Instructions for downloading reference files can be found at "
-            "https://nf-co.re/rnafusion/3.0.1/docs/usage#download-and-build-references"
-        )
-        logger.error(
-            f"Use {root}/dependencies/nf-core/rnafusion/main.nf when downloading "
-            "the reference files"
-        )
-        raise SystemExit(1)
+    _validate_inputs(
+        config=config,
+        root=root,
+        logger=logger,
+    )
 
     nf_config(
         template=rnafusion_nf_config,
@@ -165,14 +196,7 @@ def rnafusion(
 
     nextflow(
         root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
-        f"--outdir {workdir}",
-        f"--input {sample_sheet}",
-        f"--genomes_base {config.rnafusion.genomes_base}",
-        f"--read_length {config.read_length}",
-        f"--tools_cutoff {config.rnafusion.tools_cutoff}",
-        f"--fusioncatcher_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
-        f"--fusioninspector_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
-        "--all",
+        *_pipeline_args(config, workdir, sample_sheet),
         nxf_config=workdir / "nextflow.config",
         config=config,
         name="rnafusion",
@@ -181,14 +205,11 @@ def rnafusion(
     )
 
     logger.debug(f"nf-core/rnafusion finished for {len(samples)} samples")
-    logger.info("Patching fusionreport html")
-    for id_, group in samples.split(by="id"):
-        logger.debug(f"Patching fusionreport for {id_}")
-        try:
-            _patch_fusionreport(workdir / f"fusionreport/{id_}", id_)
-        except Exception as exception:  # pylint: disable=broad-except
-            logger.error(f"Failed to patch fusionreport for {id_}: {exception}")
-            for sample in group:
-                sample.fail(f"Failed to patch fusionreport: {exception}")
+
+    _patch_fusionreport(
+        samples=samples,
+        workdir=workdir,
+        logger=logger,
+    )
 
     return samples
