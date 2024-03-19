@@ -139,7 +139,7 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
     dst_name="{sample.id}/fusionreport",
 )
 @output(
-    "{sample_id}.fusionreport.html",
+    "{sample.id}.fusionreport.html",
     dst_dir="{sample.id}",
 )
 @output(
