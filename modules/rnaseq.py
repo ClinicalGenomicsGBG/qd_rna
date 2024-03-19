@@ -74,6 +74,11 @@ def _pipeline_args(
             else ""
         ),
         (
+            f"--transcript_fasta {config.rnaseq.transcript_fasta}"
+            if "transcript_fasta" in config.rnaseq
+            else ""
+        ),
+        (
             f"--extra_star_args='--limitSjdbInsertNsj {config.limitSjdbInsertNsj}'"
             if config.rnaseq.aligner == "star_salmon"
             else ""

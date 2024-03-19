@@ -75,6 +75,10 @@ properties:
         type: path
         description: Path to genome fasta file
 
+      transcript_fasta:
+        type: path
+        description: Path to transcriptome fasta file
+
       gtf:
         type: path
         description: Path to genome gtf file
