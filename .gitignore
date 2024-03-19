@@ -177,3 +177,7 @@ pyrightconfig.json
 
 # QD-RNA config files
 config/**
+
+
+# QD-RNA dependencies
+dependencies/**

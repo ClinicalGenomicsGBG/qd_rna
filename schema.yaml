@@ -57,9 +57,15 @@ properties:
         default: false
         description: Overwrite any existing output
 
-      nf_main:
-        type: path
-        description: Path to nf-core/rnaseq main.nf
+      nf_tag:
+        type: string
+        description: Tag to use for nf-core/rnaseq
+        default: "3.14.0"
+
+      nf_url:
+        type: string
+        description: URL to use for nf-core/rnaseq
+        default: "https://github.com/nf-core/rnaseq"
 
       genome:
         type: string
@@ -108,10 +114,15 @@ properties:
         description: Overwrite any existing output
         default: false
 
+      nf_tag:
+        type: string
+        description: Tag to use for nf-core/rnafusion
+        default: "3.0.1"
 
-      nf_main:
-        type: path
-        description: Path to nf-core/rnafusion main.nf
+      nf_url:
+        type: string
+        description: URL to use for nf-core/rnafusion
+        default: "https://github.com/nf-core/rnafusion"
 
       genomes_base:
         type: path

@@ -3,8 +3,54 @@ from logging import LoggerAdapter
 from pathlib import Path
 
 from cellophane import Config, Output, Sample, Samples, pre_hook
+from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 
 from modules.slims import SlimsSamples
+
+
+def _fetch_nf_core(
+    name: str,
+    tag: str,
+    url: str,
+    path: Path,
+    logger: LoggerAdapter,
+) -> None:
+    try:
+        repo = Repo(path)
+        if (current := repo.git.tag(points_at="HEAD")) != tag:
+            logger.info(f"Updating {name} from {current or repo.head.commit} to {tag}")
+            repo.create_head(tag, repo.tags[tag])
+    except (NoSuchPathError, InvalidGitRepositoryError):
+        logger.info(f"Fetching {name}@{tag}")
+        path.mkdir(parents=True, exist_ok=True)
+        Repo.clone_from(url, path, branch=tag)
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.error(f"Failed to fetch {name}@{tag}", exc_info=exc)
+        raise SystemExit(1) from exc
+
+
+@pre_hook(label="Fetch nf-core pipelines", before=["all"])
+def fetch_nfcore_pipelines(
+    root: Path,
+    logger: LoggerAdapter,
+    config: Config,
+    **_,
+) -> None:
+    """Fetch nf-core pipelines."""
+    _fetch_nf_core(
+        name="nf-core/rnaseq",
+        path=root / "dependencies" / "nf-core" / "rnaseq",
+        tag=config.rnaseq.nf_tag,
+        url=config.rnaseq.nf_url,
+        logger=logger,
+    )
+    _fetch_nf_core(
+        name="nf-core/rnafusion",
+        path=root / "dependencies" / "nf-core" / "rnafusion",
+        tag=config.rnafusion.nf_tag,
+        url=config.rnafusion.nf_url,
+        logger=logger,
+    )
 
 
 def nf_config(template, location, include: Path | None = None, **kwargs):

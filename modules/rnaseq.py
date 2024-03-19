@@ -51,6 +51,7 @@ def rnaseq(
     logger: LoggerAdapter,
     workdir: Path,
     executor: Executor,
+    root: Path,
     **_,
 ) -> Samples:
     """Run nf-core/rnaseq."""
@@ -94,7 +95,7 @@ def rnaseq(
         )
 
         nextflow(
-            config.rnaseq.nf_main,
+            root / "dependencies" / "nf-core" / "rnaseq" / "main.nf",
             f"--outdir {workdir / id_}",
             f"--input {sample_sheet}",
             f"--aligner {config.rnaseq.aligner}",

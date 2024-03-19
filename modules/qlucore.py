@@ -139,7 +139,7 @@ def qlucore(
     logger.info("Running nf-core/rnafusion for qlucore")
 
     nextflow(
-        config.qlucore.nf_main,
+        root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
         "--starfusion",
         "--skip_qc",
         "--skip_vis",

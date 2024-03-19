@@ -128,6 +128,7 @@ def rnafusion(
     workdir: Path,
     executor: Executor,
     logger: LoggerAdapter,
+    root: Path,
     **_,
 ) -> Samples:
     """Run nf-core/rnafusion."""
@@ -163,7 +164,7 @@ def rnafusion(
     )
 
     nextflow(
-        config.rnafusion.nf_main,
+        root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
         f"--outdir {workdir}",
         f"--input {sample_sheet}",
         f"--genomes_base {config.rnafusion.genomes_base}",
