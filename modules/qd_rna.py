@@ -51,10 +51,12 @@ def set_sample_id(
             workdir.mkdir(exist_ok=True)
             merge_file = workdir / f"{sample.id}.merged_runs.txt"
             merge_file.write_text("\n".join(runs))
-            samples.output.add(Output(src=merge_file, dst=Path(sample.id) / merge_file.name))
+            samples.output.add(
+                Output(src=merge_file, dst=Path(sample.id) / merge_file.name)
+            )
         elif n > 1 and not config.merge and "run" in sample.meta:
             sample.id = f"{sample.id}_{sample.meta.run}"
-        elif n > 1 and not config.merge and "run" not in sample.meta:
+        elif n > 1 and not config.merge:
             if sample.id not in known_dups:
                 logger.warning(f"Will merge {n} samples with shared id {sample.id}")
             known_dups |= {sample.id}

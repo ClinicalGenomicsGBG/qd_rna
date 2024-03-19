@@ -31,6 +31,7 @@ def _error_callback(
     for sample in group:
         sample.fail(reason)
 
+
 @output(
     "{sample.id}/{config.rnaseq.aligner}",
     dst_name="{sample.id}/{config.rnaseq.aligner}",
@@ -103,7 +104,7 @@ def rnaseq(
                 group=group,
                 sample_id=id_,
                 logger=logger,
-            )
+            ),
         )
 
     executor.wait()

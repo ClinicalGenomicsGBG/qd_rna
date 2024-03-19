@@ -26,6 +26,7 @@ def _patch_fusionreport(report_path: Path, sample_id: str):
 
     Path(index_name).write_text(patched_index, encoding="utf-8")
 
+
 @output(
     "arriba_visualisation/{sample.id}.pdf",
     dst_dir="{sample.id}",

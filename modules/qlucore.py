@@ -4,8 +4,7 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import Config, Executor, Sample, Samples, output, runner
-from mpire.async_result import AsyncResult
+from cellophane import Config, Executor, Samples, output, runner
 
 from modules.nextflow import nextflow
 
