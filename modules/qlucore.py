@@ -123,8 +123,11 @@ def qlucore(
     )
 
     (workdir / "dummy.fa").touch()
+    (workdir / "dummy.fai").touch()
     (workdir / "dummy.gtf").touch()
     (workdir / "dummy.refflat").touch()
+    (workdir / "dummy.interval_list").touch()
+
 
     if any(
         not path.exists()
@@ -145,10 +148,12 @@ def qlucore(
         "--skip_vis",
         "--star_ignore_sjdbgtf",
         f"--fasta {workdir / 'dummy.fa'}",
+        f"--fai {workdir / 'dummy.fai'}",
         f"--transcript {workdir / 'dummy.fa'}",
         f"--gtf {workdir / 'dummy.gtf'}",
         f"--chrgtf {workdir / 'dummy.gtf'}",
         f"--refflat {workdir / 'dummy.refflat'}",
+        f"--rrna_intervals {workdir / 'dummy.interval_list'}",
         f"--outdir {workdir}",
         f"--input {sample_sheet}",
         f"--starfusion_ref {config.qlucore.starfusion_ref}",
