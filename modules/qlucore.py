@@ -7,6 +7,7 @@ from pathlib import Path
 from cellophane import Config, Executor, Samples, output, runner
 
 from modules.nextflow import nextflow
+from modules.qd_rna import nf_config
 
 qlucore_data = """\
 <Header Producer='Qlucore' Format='PatientData' FormatVersion='0.1' QFFVersion='1.0'/>
@@ -19,9 +20,9 @@ qlucore_data = """\
 </PatientData>
 """
 
-qlucore_nf_config = """\
-process {
-  withName: 'STAR_FOR_STARFUSION' {
+qlucore_nf_config = """
+process {{
+  withName: 'STAR_FOR_STARFUSION' {{
     ext.args = [
         '--twopassMode Basic',
         '--outReadsUnmapped None',
@@ -47,10 +48,10 @@ process {
         '--alignSplicedMateMapLmin 30',
         '--chimOutType Junctions',
         '--outFilterMultimapNmax 200',
-        '--limitSjdbInsertNsj 4000000'
+        '--limitSjdbInsertNsj {config.limitSjdbInsertNsj}'
     ].join(' ').trim()
-  }
-}
+  }}
+}}
 """
 
 
@@ -114,10 +115,12 @@ def qlucore(
         strandedness=config.strandedness,
     )
 
-    with open(workdir / "nextflow.config", "w") as f:
-        if "config" in config.nextflow:
-            f.write(f"includeConfig '{config.nextflow.config}'\n\n")
-        f.write(qlucore_nf_config)
+    nf_config(
+        template=qlucore_nf_config,
+        location=workdir / "nextflow.config",
+        include=config.nextflow.get("config"),
+        config=config,
+    )
 
     (workdir / "dummy.fa").touch()
     (workdir / "dummy.gtf").touch()

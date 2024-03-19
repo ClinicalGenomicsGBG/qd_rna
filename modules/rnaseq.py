@@ -100,6 +100,11 @@ def rnaseq(
             f"--aligner {config.rnaseq.aligner}",
             "--pseudo_aligner salmon",
             (
+                f"--extra_star_args='--limitSjdbInsertNsj {config.limitSjdbInsertNsj}'"
+                if config.rnaseq.aligner == "star_salmon"
+                else ""
+            ),
+            (
                 f"--fasta {config.rnaseq.fasta} "
                 f"--gtf {config.rnaseq.gtf} "
                 f"--gene_bed {config.rnaseq.gene_bed}"

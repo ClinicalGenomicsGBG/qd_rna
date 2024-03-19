@@ -7,6 +7,14 @@ from cellophane import Config, Output, Sample, Samples, pre_hook
 from modules.slims import SlimsSamples
 
 
+def nf_config(template, location, include: Path | None = None, **kwargs):
+    """Write nextflow config."""
+    with open(location, "w", encoding="utf-8") as f:
+        if include is not None:
+            f.write(f"includeConfig '{include}'\n\n")
+        f.write(template.format(**kwargs))
+
+
 @pre_hook(label="Find Linked", after=["slims_fetch"], before=["hcp_fetch", "slims_derive"])
 def get_linked_samples(
     samples: SlimsSamples,

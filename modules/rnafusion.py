@@ -6,7 +6,61 @@ from pathlib import Path
 from cellophane import Config, Executor, Samples, output, runner
 
 from modules.nextflow import nextflow
+from modules.qd_rna import nf_config
 
+# Taken from https://github.com/nf-core/rnafusion/blob/3.0.1/conf/modules.config
+# The whole string needs to be included here only to override the limitSjdbInsertNsj
+# parameter.
+rnafusion_nf_config = """\
+process {{
+    withName: 'STAR_FOR_STARFUSION' {{
+        ext.args = '--twopassMode Basic \
+        --outReadsUnmapped None \
+        --readFilesCommand zcat \
+        --outSAMtype BAM SortedByCoordinate \
+        --outSAMstrandField intronMotif \
+        --outSAMunmapped Within \
+        --chimSegmentMin 12 \
+        --chimJunctionOverhangMin 8 \
+        --chimOutJunctionFormat 1 \
+        --alignSJDBoverhangMin 10 \
+        --alignMatesGapMax 100000 \
+        --alignIntronMax 100000 \
+        --alignSJstitchMismatchNmax 5 -1 5 5 \
+        --chimMultimapScoreRange 3 \
+        --chimScoreJunctionNonGTAG -4 \
+        --chimMultimapNmax 20 \
+        --chimNonchimScoreDropMin 10 \
+        --peOverlapNbasesMin 12 \
+        --peOverlapMMp 0.1 \
+        --alignInsertionFlush Right \
+        --alignSplicedMateMapLminOverLmate 0 \
+        --alignSplicedMateMapLmin 30 \
+        --chimOutType Junctions \
+        --quantMode GeneCounts \
+        --limitSjdbInsertNsj {config.limitSjdbInsertNsj}'
+    }}
+    withName: 'STAR_FOR_ARRIBA' {{
+        ext.args = '--readFilesCommand zcat \
+        --outSAMtype BAM Unsorted \
+        --outSAMunmapped Within \
+        --outBAMcompression 0 \
+        --outFilterMultimapNmax 50 \
+        --peOverlapNbasesMin 10 \
+        --alignSplicedMateMapLminOverLmate 0.5 \
+        --alignSJstitchMismatchNmax 5 -1 5 5 \
+        --chimSegmentMin 10 \
+        --chimOutType WithinBAM HardClip \
+        --chimJunctionOverhangMin 10 \
+        --chimScoreDropMax 30 \
+        --chimScoreJunctionNonGTAG 0 \
+        --chimScoreSeparation 1 \
+        --chimSegmentReadGapMax 3 \
+        --chimMultimapNmax 50 \
+        --limitSjdbInsertNsj {config.limitSjdbInsertNsj}'
+    }}
+}}
+"""
 
 def _patch_fusionreport(report_path: Path, sample_id: str):
     """
@@ -94,6 +148,13 @@ def rnafusion(
         )
         raise SystemExit(1)
 
+    nf_config(
+        template=rnafusion_nf_config,
+        location=workdir / "nextflow.config",
+        include=config.nextflow.get("config"),
+        config=config,
+    )
+
     logger.info("Running nf-core/rnafusion")
 
     sample_sheet = samples.nfcore_samplesheet(
@@ -106,13 +167,12 @@ def rnafusion(
         f"--outdir {workdir}",
         f"--input {sample_sheet}",
         f"--genomes_base {config.rnafusion.genomes_base}",
-        f"--arriba_ref {config.rnafusion.arriba_ref}",
-        f"--arriba_ref_blacklist {config.rnafusion.arriba_blacklist}",
-        f"--arriba_ref_protein_domain {config.rnafusion.arriba_protein_domain}",
         f"--read_length {config.read_length}",
         f"--tools_cutoff {config.rnafusion.tools_cutoff}",
-        "--fusioncatcher_limitSjdbInsertNsj 4000000",
+        f"--fusioncatcher_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
+        f"--fusioninspector_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
         "--all",
+        nxf_config=workdir / "nextflow.config",
         config=config,
         name="rnafusion",
         workdir=workdir,

@@ -13,6 +13,11 @@ properties:
       - reverse
     default: unstranded
 
+  limitSjdbInsertNsj:
+    type: integer
+    description: Maximum number of junctions to insert for STAR
+    default: 1000000
+
   read_length:
     type: integer
     description: Sample read length
