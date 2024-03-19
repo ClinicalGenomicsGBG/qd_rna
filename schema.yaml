@@ -38,7 +38,7 @@ properties:
     oneOf:
     - properties: {skip: {const: true}}
     - allOf:
-      - required: [nf_main, aligner]
+      - required: [aligner]
       - oneOf:
         - required: [star_index]
         - required: [rsem_index]
@@ -52,7 +52,7 @@ properties:
         default: false
         description: Skip nf-core/rnaseq
 
-      force: &force
+      force:
         type: boolean
         default: false
         description: Overwrite any existing output
@@ -94,23 +94,20 @@ properties:
 
   rnafusion:
     type: object
-    if:
-      properties:
-        skip:
-          const: false
-    then:
-      required:
-        - nf_main
-        - genomes_base
-        - arriba_blacklist
-        - arriba_protein_domain
+    oneOf:
+    - properties: {skip: {const: true}}
+    - required: [genomes_base, arriba_blacklist, arriba_protein_domain]
     properties:
       skip:
         type: boolean
         description: Skip nf-core/rnafusion
         default: false
 
-      force: *force
+      force:
+        type: boolean
+        description: Overwrite any existing output
+        default: false
+
 
       nf_main:
         type: path
@@ -120,18 +117,6 @@ properties:
         type: path
         description: Path to rnafusion references
 
-      arriba_ref:
-        type: path
-        description: Path to arriba references
-
-      arriba_blacklist:
-        type: path
-        description: Path to arriba blacklist file
-
-      arriba_protein_domain:
-        type: path
-        description: Path to arriba protein domains file
-
       tools_cutoff:
         type: integer
         description: Minimum number of callers for fusion to be reported
@@ -139,30 +124,24 @@ properties:
 
   qlucore:
     type: object
-    if:
-      properties:
-        skip:
-          const: false
-    then:
-      required:
-        - nf_main
-        - starfusion_ref
+    oneOf:
+    - properties: {skip: {const: true}}
+    - required: [starfusion_ref]
     properties:
       skip:
         type: boolean
         default: false
         description: Skip qlucore mapping
 
-      force: *force
+      force:
+        type: boolean
+        default: false
+        description: Overwrite any existing output
 
       subsample_init:
         type: string
         description: Code to run before qlucore subsampling
         default: ""
-
-      nf_main:
-        type: path
-        description: Path to nf-core/rnafusion main.nf
 
       starfusion_ref:
         type: path
