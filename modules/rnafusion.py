@@ -72,19 +72,16 @@ def _patch_fusionreport(samples: Samples, workdir: Path, logger: LoggerAdapter):
     logger.info("Patching fusionreport html")
     for id_, group in samples.split(by="id"):
         logger.debug(f"Patching fusionreport for {id_}")
+        original = workdir / f"fusionreport/{id_}/{id_}_fusionreport_index.html"
+        patched = workdir / f"{id_}.fusionreport.html"
+
         try:
-            report_path = workdir / f"fusionreport/{id_}"
-            index = Path(f"{id_}.fusionreport.html")
-            patched_index = (
-                (report_path / f"{id_}_fusionreport_index.html")
-                .read_text(encoding="utf-8")
-                .replace(
-                    "${fusion.replace('--','_')}.html",
-                    "fusionreport/${fusion.replace('--','_')}.html",
-                )
+            index = original.read_text(encoding="utf-8").replace(
+                "${fusion.replace('--','_')}.html",
+                "fusionreport/${fusion.replace('--','_')}.html",
             )
 
-            index.write_text(patched_index, encoding="utf-8")
+            patched.write_text(index, encoding="utf-8")
         except Exception as exception:  # pylint: disable=broad-except
             logger.error(f"Failed to patch fusionreport for {id_}: {exception}")
             for sample in group:
