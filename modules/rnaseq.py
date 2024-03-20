@@ -4,7 +4,7 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import Config, Executor, Samples, output, runner
+from cellophane import Config, Executor, OutputGlob, Samples, output, runner
 
 from modules.nextflow import nextflow
 
@@ -97,10 +97,90 @@ def _pipeline_args(
         ),
     ]
 
+def _add_optional_outputs(samples: Samples, config: Config) -> None:
+    # FIXME: Remove dst_name=None when cellophane is updated from 1.0.0
+    if config.rnaseq.aligner == "star_salmon":
+        samples.output |= {
+            OutputGlob(
+                src="{sample.id}/star_salmon/salmon.merged.*",
+                dst_dir="{sample.id}/expression/salmon/",
+                dst_name=None,
+            ),
+            OutputGlob(
+                src="{sample.id}/star_salmon/{sample.id}",
+                dst_dir="{sample.id}/expression/salmon/",
+                dst_name=None,
+            )
+        }
+
+    if config.rnaseq.aligner == "star_rsem":
+        samples.output |= {
+            OutputGlob(
+                src="{sample.id}/star_salmon/rsem.merged.*",
+                dst_dir="{sample.id}/expression/rsem/",
+                dst_name=None,
+            ),
+            OutputGlob(
+                src="{sample.id}/star_salmon/{sample.id}.genes.results",
+                dst_dir="{sample.id}/expression/rsem/",
+                dst_name=None,
+            ),
+            OutputGlob(
+                src="{sample.id}/star_salmon/{sample.id}.isoforms.results",
+                dst_dir="{sample.id}/expression/rsem/",
+                dst_name=None,
+            ),
+            OutputGlob(
+                src="{sample.id}/star_salmon/{sample.id}.stat",
+                dst_dir="{sample.id}/expression/rsem/",
+                dst_name=None,
+            )
+        }
+
 
 @output(
-    "{sample.id}/{config.rnaseq.aligner}",
-    dst_name="{sample.id}/{config.rnaseq.aligner}",
+    "{sample.id}/{config.rnaseq.aligner}/{sample.id}.markdup.sorted.bam",
+    dst_dir="{sample.id}/expression",
+)
+@output(
+    "{sample.id}/{config.rnaseq.aligner}/{sample.id}.markdup.sorted.bam.bai",
+    dst_dir="{sample.id}/expression",
+)
+@output(
+    "{sample.id}/salmon",
+    dst_name="{sample.id}/expression/salmon_pseudo",
+)
+@output(
+    "{sample.id}/{config.rnaseq.aligner}/stringtie",
+    dst_dir="{sample.id}/expression/",
+)
+@output(
+    "{sample.id}/{config.rnaseq.aligner}/bigwig",
+    dst_dir="{sample.id}/expression/",
+)
+@output(
+    "{sample.id}/{config.rnaseq.aligner}/samtools_stats",
+    dst_dir="{sample.id}/expression/qc/",
+)
+@output(
+    "{sample.id}/{config.rnaseq.aligner}/picard_metrics",
+    dst_dir="{sample.id}/expression/qc/",
+)
+@output(
+    "{sample.id}/{config.rnaseq.aligner}/rseqc",
+    dst_dir="{sample.id}/expression/qc/",
+)
+@output(
+    "{sample.id}/{config.rnaseq.aligner}/qualimap",
+    dst_dir="{sample.id}/expression/qc/",
+)
+@output(
+    "{sample.id}/{config.rnaseq.aligner}/dupradar",
+    dst_dir="{sample.id}/expression/qc/",
+)
+@output(
+    "{sample.id}/{config.rnaseq.aligner}/deseq2_qc",
+    dst_dir="{sample.id}/expression/qc/",
 )
 @output(
     "{sample.id}/multiqc/{config.rnaseq.aligner}",
@@ -125,6 +205,8 @@ def rnaseq(
         if not config.copy_skipped:
             samples.output = set()
         return samples
+
+    _add_optional_outputs(samples, config)
 
     _validate_inputs(config, logger)
     logger.info("Running nf-core/rnaseq")
