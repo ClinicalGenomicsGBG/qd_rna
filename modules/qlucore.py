@@ -1,5 +1,6 @@
 """Module for running nf-core/rnaseq."""
 
+import re
 from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
@@ -81,6 +82,30 @@ def _subsample_error_callback(
         sample.fail(reason)
 
 
+def _calculate_subsample_frac(
+    id_: str,
+    workdir: Path,
+    config: Config,
+    logger: LoggerAdapter,
+) -> float:
+    try:
+        star_log = workdir / "star_for_starfusion" / f"{id_}.Log.final.out"
+
+        if match_ := re.search(
+            r"Uniquely mapped reads number[^0-9]+([0-9]+)",
+            star_log.read_text(),
+        ):
+            mapped = int(match_.groups()[0])
+    except Exception as exc:  # pylint: disable=broad-except
+        logger.warning(
+            "Unhandled exception in subsample fraction calculation",
+            exc_info=exc,
+        )
+        return config.qlucore.subsample.fallback_frac
+
+    return config.qlucore.subsample.target / mapped
+
+
 def _subsample(
     samples: Samples,
     config: Config,
@@ -89,17 +114,30 @@ def _subsample(
     workdir: Path,
     executor: Executor,
 ):
-    logger.info(f"Subsampling output BAM(s) ({config.qlucore.subsample_frac:.0%})")
+    logger.info("Subsampling output BAM(s)")
     for id_, group in samples.split(by="id"):
+
+        frac = _calculate_subsample_frac(
+            id_=id_,
+            workdir=workdir,
+            config=config,
+            logger=logger,
+        )
+
+        if frac >= 1.0:
+            logger.warning(f"Sample {id_} has too few reads to subsample")
+            continue
+
+        logger.debug(f"Subsampling {id_} with fraction {frac}")
         executor.submit(
             str(root / "scripts" / "qlucore_subsample.sh"),
             name=f"qlucore_subsample_{id_}",
             workdir=workdir / id_,
             cpus=config.qlucore.subsample_threads,
             env={
-                "_QLUCORE_SUBSAMPLE_INIT": config.qlucore.subsample_init,
-                "_QLUCORE_SUBSAMPLE_FRAC": config.qlucore.subsample_frac,
-                "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample_threads,
+                "_QLUCORE_SUBSAMPLE_INIT": config.qlucore.subsample.init,
+                "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample.threads,
+                "_QLUCORE_SUBSAMPLE_FRAC": frac,
                 "_QLUCORE_SUBSAMPLE_INPUT_BAM": (
                     workdir
                     / "star_for_starfusion"

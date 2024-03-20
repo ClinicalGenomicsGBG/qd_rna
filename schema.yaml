@@ -157,21 +157,26 @@ properties:
         default: false
         description: Overwrite any existing output
 
-      subsample_init:
-        type: string
-        description: Code to run before qlucore subsampling
-        default: ""
+      subsample:
+        type: object
+        properties:
+          threads:
+            type: integer
+            description: Number of threads to use for subsampling
+            default: 12
+          target:
+            type: integer
+            description: Target number of reads for subsampling (approximate)
+            default: 20000000
+          fallback_fraction:
+            type: number
+            description: Fraction of reads to subsample if calculation fails
+            default: 0.2
+          init:
+            type: string
+            description: Code to run before qlucore subsampling
+            default: ""
 
       starfusion_ref:
         type: path
         description: Path to STAR-Fusion reference
-
-      subsample_threads:
-        type: integer
-        description: Number of threads to use for subsampling
-        default: 12
-
-      subsample_frac:
-        type: number
-        description: Fraction of reads to subsample
-        default: 0.2
