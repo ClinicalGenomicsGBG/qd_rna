@@ -14,8 +14,8 @@ qlucore_data = """\
 <Header Producer='Qlucore' Format='PatientData' FormatVersion='0.1' QFFVersion='1.0'/>
 <PatientData>
   <PatientName>PATIENT NAME</PatientName>
-  <PatientId>{id}</PatientId>
-  <SampleOrigin>{id}</SampleOrigin>
+  <PatientId>{sample.id}</PatientId>
+  <SampleOrigin>{sample.id}</SampleOrigin>
   <SampleTissue>Blood sample</SampleTissue>
   <Technology>RNA Seq.</Technology>
 </PatientData>
@@ -60,13 +60,10 @@ def _subsample_callback(
     result: None,
     /,
     logger: LoggerAdapter,
-    workdir: Path,
     sample_id: str,
 ):
     del result  # unused
     logger.debug(f"Subsampling finished for {sample_id}")
-    with open(workdir / f"{sample_id}.qlucore.txt", "w", encoding="utf-8") as f:
-        f.write(qlucore_data.format(id=sample_id))
 
 
 def _subsample_error_callback(
@@ -147,7 +144,6 @@ def _subsample(
             callback=partial(
                 _subsample_callback,
                 logger=logger,
-                workdir=workdir,
                 sample_id=id_,
             ),
             error_callback=partial(
@@ -281,5 +277,11 @@ def qlucore(
         workdir=workdir,
         executor=executor,
     )
+
+    for sample in samples:
+        (workdir / sample.id / "qlucore" / f"{sample.id}.qlucore.txt").write_text(
+            qlucore_data.format(sample=sample)
+        )
+
 
     return samples
