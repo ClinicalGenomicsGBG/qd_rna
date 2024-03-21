@@ -130,7 +130,7 @@ def _subsample(
             str(root / "scripts" / "qlucore_subsample.sh"),
             name=f"qlucore_subsample_{id_}",
             workdir=workdir / id_,
-            cpus=config.qlucore.subsample_threads,
+            cpus=config.qlucore.subsample.threads,
             env={
                 "_QLUCORE_SUBSAMPLE_INIT": config.qlucore.subsample.init,
                 "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample.threads,
