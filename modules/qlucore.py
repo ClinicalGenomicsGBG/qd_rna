@@ -264,6 +264,7 @@ def qlucore(
         config=config,
         name="qlucore",
         workdir=workdir,
+        resume=True,
         executor=executor,
     )
 

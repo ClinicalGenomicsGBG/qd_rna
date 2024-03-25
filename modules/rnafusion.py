@@ -194,6 +194,7 @@ def rnafusion(
         config=config,
         name="rnafusion",
         workdir=workdir,
+        resume=True,
         executor=executor,
     )
 

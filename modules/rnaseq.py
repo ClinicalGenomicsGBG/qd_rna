@@ -227,6 +227,7 @@ def rnaseq(
             config=config,
             name="rnaseq",
             workdir=workdir / id_,
+            resume=True,
             executor=executor,
             check=False,
             callback=partial(
