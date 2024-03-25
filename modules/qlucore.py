@@ -14,8 +14,8 @@ qlucore_data = """\
 <Header Producer='Qlucore' Format='PatientData' FormatVersion='0.1' QFFVersion='1.0'/>
 <PatientData>
   <PatientName>PATIENT NAME</PatientName>
-  <PatientId>{sample.id}</PatientId>
-  <SampleOrigin>{sample.id}</SampleOrigin>
+  <PatientId>{id}</PatientId>
+  <SampleOrigin>{id}</SampleOrigin>
   <SampleTissue>Blood sample</SampleTissue>
   <Technology>RNA Seq.</Technology>
 </PatientData>
@@ -98,7 +98,7 @@ def _calculate_subsample_frac(
             "Unhandled exception in subsample fraction calculation",
             exc_info=exc,
         )
-        return config.qlucore.subsample.fallback_frac
+        return config.qlucore.subsample.fallback_fraction
 
     return config.qlucore.subsample.target / mapped
 
@@ -279,9 +279,9 @@ def qlucore(
         executor=executor,
     )
 
-    for group, _ in samples.split(by="id"):
-        (workdir / f"{group}.qlucore.txt").write_text(
-            qlucore_data.format(sample=group)
+    for id_, _ in samples.split(by="id"):
+        (workdir / f"{id_}.qlucore.txt").write_text(
+            qlucore_data.format(id=id_)
         )
 
 
