@@ -1,6 +1,6 @@
 #! /bin/bash
 
-set -e
+set -veo pipefail
 
 eval ${_QLUCORE_SUBSAMPLE_INIT}
 
