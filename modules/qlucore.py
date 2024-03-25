@@ -279,9 +279,9 @@ def qlucore(
         executor=executor,
     )
 
-    for sample in samples:
-        (workdir / sample.id / "qlucore" / f"{sample.id}.qlucore.txt").write_text(
-            qlucore_data.format(sample=sample)
+    for group, _ in samples.split(by="id"):
+        (workdir / f"{group}.qlucore.txt").write_text(
+            qlucore_data.format(sample=group)
         )
 
 
