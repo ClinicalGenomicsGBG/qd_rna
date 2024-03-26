@@ -72,16 +72,19 @@ logdir: ~
 # qlucore:
 #   # Skip qlucore mapping [boolean]
 #   skip: false
-#   # Fraction of reads to subsample [number]
-#   subsample_frac: 0.2
-#   # Number of threads to use for subsampling [integer]
-#   subsample_threads: 12
 #   # Path to STAR-Fusion reference [path]
 #   starfusion_ref: ~
-#   # Code to run before qlucore subsampling [string]
-#   subsample_init: ""
 #   # Overwrite any existing output [boolean]
 #   force: false
+#   subsample:
+#     # Number of threads to use for subsampling [integer]
+#     threads: 12
+#     # Code to run before qlucore subsampling [string]
+#     init: ""
+#     # Fraction of reads to subsample if calculation fails [number]
+#     fallback_fraction: 0.2
+#     # Target number of reads for subsampling (approximate) [integer]
+#     target: 20000000
 # mail:
 #   # Send mail [boolean]
 #   send: false
