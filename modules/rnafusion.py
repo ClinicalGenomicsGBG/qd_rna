@@ -3,7 +3,7 @@
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import Config, Executor, Samples, output, runner
+from cellophane import Checkpoints, Config, Executor, Samples, output, runner
 
 from modules.nextflow import nextflow
 from modules.qd_rna import nf_config
@@ -159,13 +159,20 @@ def rnafusion(
     executor: Executor,
     logger: LoggerAdapter,
     root: Path,
+    checkpoints: Checkpoints,
     **_,
 ) -> Samples:
     """Run nf-core/rnafusion."""
+
     if config.rnafusion.skip:
         if not config.copy_skipped:
             samples.output = set()
         return samples
+
+    if checkpoints.main.check(rnafusion_nf_config):
+        logger.info("Using previous nf-core/rnafusion output")
+        return samples
+
 
     _validate_inputs(
         config=config,
@@ -205,5 +212,7 @@ def rnafusion(
         workdir=workdir,
         logger=logger,
     )
+
+    checkpoints.main.store(rnafusion_nf_config)
 
     return samples

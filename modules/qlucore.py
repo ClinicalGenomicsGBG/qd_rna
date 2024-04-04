@@ -5,7 +5,7 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import Config, Executor, Samples, output, runner
+from cellophane import Checkpoints, Config, Executor, Samples, output, runner
 
 from modules.nextflow import nextflow
 from modules.qd_rna import nf_config
@@ -203,18 +203,27 @@ def _pipeline_args(
         f"--read_length {config.read_length}",
     ]
 
-
-@output(
-    "{sample.id}.qlucore.txt",
-    dst_dir="{sample.id}/qlucore",
-)
-@output(
-    "star_for_starfusion/{sample.id}.*.ba*",
-    dst_dir="{sample.id}/qlucore",
-)
 @output(
     "starfusion/{sample.id}.*.tsv",
     dst_dir="{sample.id}/qlucore",
+)
+@output(
+    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam",
+    dst_dir="{sample.id}/qlucore",
+)
+@output(
+    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam.bai",
+    dst_dir="{sample.id}/qlucore",
+)
+@output(
+    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.downsampled.bam",
+    dst_dir="{sample.id}/qlucore",
+    checkpoint="downsample"
+)
+@output(
+    "{sample.id}.qlucore.txt",
+    dst_dir="{sample.id}/qlucore",
+    checkpoint="qlucore",
 )
 @runner()
 def qlucore(
@@ -224,6 +233,7 @@ def qlucore(
     root: Path,
     workdir: Path,
     executor: Executor,
+    checkpoints: Checkpoints,
     **_,
 ) -> None:
     """Run nf-core/rnaseq (Mapping for qlucore)."""
@@ -233,56 +243,68 @@ def qlucore(
             samples.output = set()
         return samples
 
-    _validate_inputs(
-        config=config,
-        workdir=workdir,
-        logger=logger,
-    )
-
-    sample_sheet = samples.nfcore_samplesheet(
-        location=workdir,
-        strandedness=config.strandedness,
-    )
-
-    nf_config(
-        template=qlucore_nf_config,
-        location=workdir / "nextflow.config",
-        include=config.nextflow.get("config"),
-        config=config,
-    )
-
-    logger.info("Running nf-core/rnafusion")
-
-    nextflow(
-        root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
-        *_pipeline_args(
+    if checkpoints.main.check(qlucore_nf_config):
+        logger.info("Using previous nf-core/rnafusion output")
+    else:
+        _validate_inputs(
             config=config,
             workdir=workdir,
-            nf_samples=sample_sheet,
-        ),
-        nxf_config=workdir / "nextflow.config",
-        config=config,
-        name="qlucore",
-        workdir=workdir,
-        resume=True,
-        executor=executor,
-    )
-
-    logger.debug(f"nf-core/rnafusion finished for {len(samples)} samples")
-
-    _subsample(
-        samples=samples,
-        config=config,
-        logger=logger,
-        root=root,
-        workdir=workdir,
-        executor=executor,
-    )
-
-    for id_, _ in samples.split(by="id"):
-        (workdir / f"{id_}.qlucore.txt").write_text(
-            qlucore_data.format(id=id_)
+            logger=logger,
         )
+
+        sample_sheet = samples.nfcore_samplesheet(
+            location=workdir,
+            strandedness=config.strandedness,
+        )
+
+        nf_config(
+            template=qlucore_nf_config,
+            location=workdir / "nextflow.config",
+            include=config.nextflow.get("config"),
+            config=config,
+        )
+
+        logger.info("Running nf-core/rnafusion")
+
+        nextflow(
+            root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
+            *_pipeline_args(
+                config=config,
+                workdir=workdir,
+                nf_samples=sample_sheet,
+            ),
+            nxf_config=workdir / "nextflow.config",
+            config=config,
+            name="qlucore",
+            workdir=workdir,
+            resume=True,
+            executor=executor,
+        )
+
+        logger.debug(f"nf-core/rnafusion finished for {len(samples)} samples")
+        checkpoints.main.store(qlucore_nf_config)
+
+    if checkpoints.downsample.check(qlucore_nf_config):
+        logger.info("Using previous downsampled BAM(s)")
+    else:
+        _subsample(
+            samples=samples,
+            config=config,
+            logger=logger,
+            root=root,
+            workdir=workdir,
+            executor=executor,
+        )
+        checkpoints.downsample.store(qlucore_nf_config)
+
+    if checkpoints.qlucore.check(qlucore_data):
+        logger.info("Using previous qlucore output")
+    else:
+        for id_, _ in samples.split(by="id"):
+            (workdir / f"{id_}.qlucore.txt").write_text(
+                qlucore_data.format(id=id_)
+            )
+        checkpoints.qlucore.store(qlucore_data)
 
 
     return samples

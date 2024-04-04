@@ -4,7 +4,15 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import Config, Executor, OutputGlob, Samples, output, runner
+from cellophane import (
+    Checkpoints,
+    Config,
+    Executor,
+    OutputGlob,
+    Samples,
+    output,
+    runner,
+)
 
 from modules.nextflow import nextflow
 
@@ -198,6 +206,7 @@ def rnaseq(
     workdir: Path,
     executor: Executor,
     root: Path,
+    checkpoints: Checkpoints,
     **_,
 ) -> Samples:
     """Run nf-core/rnaseq."""
@@ -207,6 +216,10 @@ def rnaseq(
         return samples
 
     _add_optional_outputs(samples, config)
+
+    if checkpoints.main.check():
+        logger.info("Using previous nf-core/rnaseq output")
+        return samples
 
     _validate_inputs(config, logger)
     logger.info("Running nf-core/rnaseq")
@@ -244,5 +257,6 @@ def rnaseq(
         )
 
     executor.wait()
+    checkpoints.main.store()
 
     return samples
