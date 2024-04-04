@@ -5,7 +5,15 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import Checkpoints, Config, Executor, Samples, output, runner
+from cellophane import (
+    Checkpoint,
+    Checkpoints,
+    Config,
+    Executor,
+    Samples,
+    output,
+    runner,
+)
 
 from modules.nextflow import nextflow
 from modules.qd_rna import nf_config
@@ -61,9 +69,11 @@ def _subsample_callback(
     /,
     logger: LoggerAdapter,
     sample_id: str,
+    checkpoint: Checkpoint,
 ):
     del result  # unused
     logger.debug(f"Subsampling finished for {sample_id}")
+    checkpoint.store(qlucore_nf_config)
 
 
 def _subsample_error_callback(
@@ -110,9 +120,21 @@ def _subsample(
     root: Path,
     workdir: Path,
     executor: Executor,
+    checkpoints: Checkpoints,
 ):
     logger.info("Subsampling output BAM(s)")
     for id_, group in samples.split(by="id"):
+        output_path = Path(
+            workdir
+            / "star_for_starfusion"
+            / f"{id_}.Aligned.sortedByCoord.out.downsampled.bam"
+        )
+
+        if output_path.exists() and checkpoints[f"downsample_{id_}"].check(
+            qlucore_nf_config
+        ):
+            logger.info(f"Using previous downsampled BAM for {id_}")
+            continue
 
         frac = _calculate_subsample_frac(
             id_=id_,
@@ -145,6 +167,7 @@ def _subsample(
                 _subsample_callback,
                 logger=logger,
                 sample_id=id_,
+                checkpoint=checkpoints[f"downsample_{id_}"],
             ),
             error_callback=partial(
                 _subsample_error_callback,
@@ -203,6 +226,7 @@ def _pipeline_args(
         f"--read_length {config.read_length}",
     ]
 
+
 @output(
     "starfusion/{sample.id}.*.tsv",
     dst_dir="{sample.id}/qlucore",
@@ -218,7 +242,8 @@ def _pipeline_args(
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.downsampled.bam",
     dst_dir="{sample.id}/qlucore",
-    checkpoint="downsample"
+    checkpoint="downsample_{sample.id}",
+    optional=True,
 )
 @output(
     "{sample.id}.qlucore.txt",
@@ -284,27 +309,21 @@ def qlucore(
         logger.debug(f"nf-core/rnafusion finished for {len(samples)} samples")
         checkpoints.main.store(qlucore_nf_config)
 
-    if checkpoints.downsample.check(qlucore_nf_config):
-        logger.info("Using previous downsampled BAM(s)")
-    else:
-        _subsample(
-            samples=samples,
-            config=config,
-            logger=logger,
-            root=root,
-            workdir=workdir,
-            executor=executor,
-        )
-        checkpoints.downsample.store(qlucore_nf_config)
+    _subsample(
+        samples=samples,
+        config=config,
+        logger=logger,
+        root=root,
+        workdir=workdir,
+        executor=executor,
+        checkpoints=checkpoints,
+    )
 
     if checkpoints.qlucore.check(qlucore_data):
         logger.info("Using previous qlucore output")
     else:
         for id_, _ in samples.split(by="id"):
-            (workdir / f"{id_}.qlucore.txt").write_text(
-                qlucore_data.format(id=id_)
-            )
+            (workdir / f"{id_}.qlucore.txt").write_text(qlucore_data.format(id=id_))
         checkpoints.qlucore.store(qlucore_data)
-
 
     return samples
