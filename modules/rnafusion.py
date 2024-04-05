@@ -118,6 +118,7 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
 @output(
     "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
     dst_dir="{sample.id}",
+    checkpoint="DUMMY",
 )
 @output(
     "arriba/{sample.id}.*",
