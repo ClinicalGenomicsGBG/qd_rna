@@ -86,7 +86,7 @@ def get_linked_samples(
         base_criteria=config.slims.find_criteria,
         link_criteria=" or ".join(
             f"(cntn_id equals {group} "
-            f"and cntn_cstm_runTag not_one_of {' '.join(s.meta.run for s in samples)})"
+            f"and cntn_cstm_runTag not_one_of {' '.join(s.run for s in samples)})"
             for group, samples in samples.split(by="id")
         ),
     )
