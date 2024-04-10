@@ -15,6 +15,11 @@ class QDRRNASample(Sample):
     run: str | None = field(default="UNSPECIFIED")
     last_run: str | None = field(default="UNSPECIFIED")
 
+    @staticmethod
+    @Sample.merge.register("run")
+    @Sample.merge.register("last_run")
+    def _merge(this, that):
+        return this or that
 
 
 def _fetch_nf_core(
