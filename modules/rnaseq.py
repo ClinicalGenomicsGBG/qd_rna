@@ -198,7 +198,7 @@ def rnaseq(
         return samples
 
     _validate_inputs(config, logger)
-    logger.info("Running nf-core/rnaseq ({samples[0].id})")
+    logger.info(f"Running nf-core/rnaseq ({samples[0].id})")
 
     sample_sheet = samples.nfcore_samplesheet(
         location=workdir,
