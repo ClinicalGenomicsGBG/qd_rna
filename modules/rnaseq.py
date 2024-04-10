@@ -89,12 +89,12 @@ def _add_optional_outputs(samples: Samples, config: Config) -> None:
         samples.output |= {
             OutputGlob(
                 src="star_salmon/salmon.merged.*",
-                dst_dir="{sample.id}/expression/salmon/",
+                dst_dir="{sample.id}_{sample.last_run}/expression/salmon/",
                 dst_name=None,
             ),
             OutputGlob(
                 src="star_salmon/{sample.id}",
-                dst_dir="{sample.id}/expression/salmon/",
+                dst_dir="{sample.id}_{sample.last_run}/expression/salmon/",
                 dst_name=None,
             ),
         }
@@ -103,22 +103,22 @@ def _add_optional_outputs(samples: Samples, config: Config) -> None:
         samples.output |= {
             OutputGlob(
                 src="star_salmon/rsem.merged.*",
-                dst_dir="{sample.id}/expression/rsem/",
+                dst_dir="{sample.id}_{sample.last_run}/expression/rsem/",
                 dst_name=None,
             ),
             OutputGlob(
                 src="star_salmon/{sample.id}.genes.results",
-                dst_dir="{sample.id}/expression/rsem/",
+                dst_dir="{sample.id}_{sample.last_run}/expression/rsem/",
                 dst_name=None,
             ),
             OutputGlob(
                 src="star_salmon/{sample.id}.isoforms.results",
-                dst_dir="{sample.id}/expression/rsem/",
+                dst_dir="{sample.id}_{sample.last_run}/expression/rsem/",
                 dst_name=None,
             ),
             OutputGlob(
                 src="star_salmon/{sample.id}.stat",
-                dst_dir="{sample.id}/expression/rsem/",
+                dst_dir="{sample.id}_{sample.last_run}/expression/rsem/",
                 dst_name=None,
             ),
         }
@@ -126,55 +126,55 @@ def _add_optional_outputs(samples: Samples, config: Config) -> None:
 
 @output(
     "{config.rnaseq.aligner}/{sample.id}.markdup.sorted.bam",
-    dst_dir="{sample.id}/expression",
+    dst_dir="{sample.id}_{sample.last_run}/expression",
 )
 @output(
     "{config.rnaseq.aligner}/{sample.id}.markdup.sorted.bam.bai",
-    dst_dir="{sample.id}/expression",
+    dst_dir="{sample.id}_{sample.last_run}/expression",
 )
 @output(
     "salmon",
-    dst_name="{sample.id}/expression/salmon_pseudo",
+    dst_name="{sample.id}_{sample.last_run}/expression/salmon_pseudo",
 )
 @output(
     "{config.rnaseq.aligner}/stringtie",
-    dst_dir="{sample.id}/expression/",
+    dst_dir="{sample.id}_{sample.last_run}/expression/",
 )
 @output(
     "{config.rnaseq.aligner}/bigwig",
-    dst_dir="{sample.id}/expression/",
+    dst_dir="{sample.id}_{sample.last_run}/expression/",
 )
 @output(
     "{config.rnaseq.aligner}/samtools_stats",
-    dst_dir="{sample.id}/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/picard_metrics",
-    dst_dir="{sample.id}/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/rseqc",
-    dst_dir="{sample.id}/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/qualimap",
-    dst_dir="{sample.id}/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/dupradar",
-    dst_dir="{sample.id}/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/deseq2_qc",
-    dst_dir="{sample.id}/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}/expression/qc/",
 )
 @output(
     "multiqc/{config.rnaseq.aligner}",
-    dst_name="{sample.id}/multiqc",
+    dst_name="{sample.id}_{sample.last_run}/multiqc",
 )
 @output(
     "pipeline_info",
-    dst_name="{sample.id}/pipeline_info/rnaseq",
+    dst_name="{sample.id}_{sample.last_run}/pipeline_info/rnaseq",
 )
 @runner(split_by="id")
 def rnaseq(

@@ -117,40 +117,40 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
 
 @output(
     "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
-    dst_dir="{sample.id}",
+    dst_dir="{sample.id}_{sample.last_run}",
     checkpoint="DUMMY",
 )
 @output(
     "arriba/{sample.id}.*",
-    dst_dir="{sample.id}/arriba",
+    dst_dir="{sample.id}_{sample.last_run}/arriba",
 )
 @output(
     "fusioncatcher/{sample.id}.*",
-    dst_dir="{sample.id}/fusioncatcher",
+    dst_dir="{sample.id}_{sample.last_run}/fusioncatcher",
 )
 @output(
     "starfusion/{sample.id}.*",
-    dst_dir="{sample.id}/starfusion",
+    dst_dir="{sample.id}_{sample.last_run}/starfusion",
 )
 @output(
     "fusionreport/{sample.id}",
-    dst_name="{sample.id}/fusionreport",
+    dst_name="{sample.id}_{sample.last_run}/fusionreport",
 )
 @output(
     "{sample.id}.fusionreport.html",
-    dst_dir="{sample.id}",
+    dst_dir="{sample.id}_{sample.last_run}",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam",
-    dst_dir="{sample.id}",
+    dst_dir="{sample.id}_{sample.last_run}",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam.bai",
-    dst_dir="{sample.id}",
+    dst_dir="{sample.id}_{sample.last_run}",
 )
 @output(
     "pipeline_info",
-    dst_name="{sample.id}/pipeline_info/rnafusion",
+    dst_name="{sample.id}_{sample.last_run}/pipeline_info/rnafusion",
 )
 @runner()
 def rnafusion(

@@ -2,10 +2,19 @@ from copy import deepcopy
 from logging import LoggerAdapter
 from pathlib import Path
 
+from attrs import define, field
 from cellophane import Config, Output, Sample, Samples, pre_hook
 from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 
 from modules.slims import SlimsSamples
+
+
+@define(slots=False, init=False)
+class QDRRNASample(Sample):
+    """Sample with run information."""
+    run: str | None = field(default="UNSPECIFIED")
+    last_run: str | None = field(default="UNSPECIFIED")
+
 
 
 def _fetch_nf_core(
@@ -61,7 +70,11 @@ def nf_config(template, location, include: Path | None = None, **kwargs):
         f.write(template.format(**kwargs))
 
 
-@pre_hook(label="Find Linked", after=["slims_fetch"], before=["hcp_fetch", "slims_derive"])
+@pre_hook(
+    label="Find Linked",
+    after=["slims_fetch"],
+    before=["hcp_fetch", "slims_derive", "set_sample_id"],
+)
 def get_linked_samples(
     samples: SlimsSamples,
     logger: LoggerAdapter,
@@ -82,42 +95,26 @@ def get_linked_samples(
     return linked_samples | samples
 
 
-@pre_hook(label="Sample ID", after=["unpack"], before=["start_mail"])
-def set_sample_id(
-    samples: Samples[Sample],
+@pre_hook(label="Update Most Recent Run", before=["start_mail"])
+def update_most_recent_run(
+    samples: Samples,
     logger: LoggerAdapter,
-    config: Config,
-    workdir: Path,
     **_,
 ) -> Samples:
-    logger.debug("Adding runtag to sample IDs")
-    _samples = deepcopy(samples)
-    known_dups: set[str] = set()
-    for sample in samples:
-        dups = [s for s in _samples if s.id == sample.id]
-        runs = set(sorted(d.meta.run for d in dups if "run" in d.meta))
+    """Update most recent run.
 
-        if (n := len(dups)) > 1 and config.merge:
-            if sample.id not in known_dups:
-                logger.info(f"{n} samples with id {sample.id} will be merged")
-            known_dups |= {sample.id}
-            sample.id = f"{sample.id}_{sorted(runs)[-1]}" if runs else sample.id
-            workdir.mkdir(exist_ok=True)
-            merge_file = workdir / f"{sample.id}.merged_runs.txt"
-            merge_file.write_text("\n".join(runs))
-            samples.output.add(
-                Output(src=merge_file, dst=Path(sample.id) / merge_file.name)
-            )
-        elif n > 1 and not config.merge and "run" in sample.meta:
-            sample.id = f"{sample.id}_{sample.meta.run}"
-        elif n > 1 and not config.merge:
-            if sample.id not in known_dups:
-                logger.warning(f"Will merge {n} samples with shared id {sample.id}")
-            known_dups |= {sample.id}
-
-        else:
-            sample.id = (
-                f"{sample.id}_{sample.meta.run}" if "run" in sample.meta else sample.id
-            )
+    This is used by QD-RNA to name the output directory of merged samples to
+    ID + most recent run. This assumes that sorting the run alphanumerically
+    will give the most recent run.
+    """
+    logger.debug("Updating most recent run")
+    for _, group in samples.split(by="id"):
+        # FIXME: Ideally we should sort by the run date.
+        # This information is currently  not available. A possible solution
+        # would be to allow mapping from parent records in the SLIMS module,
+        # but this requires a major refactor of the module.
+        latest = max(group, key=lambda s: s.run).run
+        for sample in group:
+            sample.last_run = latest
 
     return samples
