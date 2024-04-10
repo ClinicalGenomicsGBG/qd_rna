@@ -264,8 +264,7 @@ def qlucore(
     """Run nf-core/rnaseq (Mapping for qlucore)."""
 
     if config.qlucore.skip:
-        if not config.copy_skipped:
-            samples.output = set()
+        samples.output = set()
         return samples
 
     if checkpoints.main.check(qlucore_nf_config):

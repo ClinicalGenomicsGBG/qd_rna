@@ -23,16 +23,6 @@ properties:
     description: Sample read length
     default: 150
 
-  merge:
-    type: boolean
-    description: Merge samples with same ID
-    default: false
-
-  copy_skipped:
-    type: boolean
-    description: Copy skipped runner output
-    default: false
-
   rnaseq:
     type: object
     oneOf:
@@ -51,11 +41,6 @@ properties:
         type: boolean
         default: false
         description: Skip nf-core/rnaseq
-
-      force:
-        type: boolean
-        default: false
-        description: Overwrite any existing output
 
       nf_tag:
         type: string
@@ -117,11 +102,6 @@ properties:
         description: Skip nf-core/rnafusion
         default: false
 
-      force:
-        type: boolean
-        description: Overwrite any existing output
-        default: false
-
       nf_tag:
         type: string
         description: Tag to use for nf-core/rnafusion
@@ -151,11 +131,6 @@ properties:
         type: boolean
         default: false
         description: Skip qlucore mapping
-
-      force:
-        type: boolean
-        default: false
-        description: Overwrite any existing output
 
       subsample:
         type: object

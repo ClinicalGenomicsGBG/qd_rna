@@ -166,8 +166,7 @@ def rnafusion(
     """Run nf-core/rnafusion."""
 
     if config.rnafusion.skip:
-        if not config.copy_skipped:
-            samples.output = set()
+        samples.output = set()
         return samples
 
     if checkpoints.main.check(rnafusion_nf_config):

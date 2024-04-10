@@ -189,8 +189,7 @@ def rnaseq(
 ) -> Samples:
     """Run nf-core/rnaseq."""
     if config.rnaseq.skip:
-        if not config.copy_skipped:
-            samples.output = set()
+        samples.output = set()
         return samples
 
     _add_optional_outputs(samples, config)
