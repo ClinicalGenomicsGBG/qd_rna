@@ -105,7 +105,7 @@ def _calculate_subsample_frac(
             mapped = int(match_.groups()[0])
     except Exception as exc:  # pylint: disable=broad-except
         logger.warning(
-            "Unhandled exception in subsample fraction calculation",
+            f"Unhandled exception in subsample fraction calculation ({id_})",
             exc_info=exc,
         )
         return config.qlucore.subsample.fallback_fraction
@@ -133,7 +133,7 @@ def _subsample(
         if output_path.exists() and checkpoints[f"downsample_{id_}"].check(
             qlucore_nf_config
         ):
-            logger.info(f"Using previous downsampled BAM for {id_}")
+            logger.info(f"Using previous downsampled BAM ({id_})")
             continue
 
         frac = _calculate_subsample_frac(
@@ -268,7 +268,7 @@ def qlucore(
         return samples
 
     if checkpoints.main.check(qlucore_nf_config):
-        logger.info("Using previous nf-core/rnafusion output")
+        logger.info(f"Using previous nf-core/rnafusion output ({len(samples)} samples)")
     else:
         _validate_inputs(
             config=config,
@@ -288,7 +288,7 @@ def qlucore(
             config=config,
         )
 
-        logger.info("Running nf-core/rnafusion")
+        logger.info(f"Running nf-core/rnafusion ({len(samples)} samples)")
 
         nextflow(
             root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
@@ -305,7 +305,7 @@ def qlucore(
             executor=executor,
         )
 
-        logger.debug(f"nf-core/rnafusion finished for {len(samples)} samples")
+        logger.debug(f"nf-core/rnafusion finished ({len(samples)} samples)")
         checkpoints.main.store(qlucore_nf_config)
 
     _subsample(
