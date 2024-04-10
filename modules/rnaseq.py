@@ -1,6 +1,5 @@
 """Module for running nf-core/rnaseq."""
 
-from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 
@@ -195,11 +194,11 @@ def rnaseq(
     _add_optional_outputs(samples, config)
 
     if checkpoints.main.check():
-        logger.info(f"Using previous nf-core/rnaseq output for sample {samples[0].id}")
+        logger.info(f"Using previous nf-core/rnaseq output ({samples[0].id})")
         return samples
 
     _validate_inputs(config, logger)
-    logger.info("Running nf-core/rnaseq")
+    logger.info("Running nf-core/rnaseq ({samples[0].id})")
 
     sample_sheet = samples.nfcore_samplesheet(
         location=workdir,

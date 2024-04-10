@@ -1,9 +1,10 @@
-from copy import deepcopy
+"""Common hooks and utilities for QD-RNA."""
+
 from logging import LoggerAdapter
 from pathlib import Path
 
 from attrs import define, field
-from cellophane import Config, Output, Sample, Samples, pre_hook
+from cellophane import Config, Sample, Samples, pre_hook
 from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 
 from modules.slims import SlimsSamples
@@ -86,6 +87,12 @@ def get_linked_samples(
     config: Config,
     **_,
 ) -> Samples:
+    """Find linked samples from earlier runs.
+
+    Samples are linked if they have the same ID but different run tags (i.e. the same
+    sample was sequenced multiple times). The find_criteria is used to filter samples
+    that should be picked up by QD-RNA.
+    """
     logger.debug("Fetching samples from earlier runs")
     criteria = "{base_criteria} and ({link_criteria})".format(
         base_criteria=config.slims.find_criteria,

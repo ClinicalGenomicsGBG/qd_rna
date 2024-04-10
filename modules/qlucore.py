@@ -15,8 +15,8 @@ from cellophane import (
     runner,
 )
 
+from modules.common import nf_config
 from modules.nextflow import nextflow
-from modules.qd_rna import nf_config
 
 qlucore_data = """\
 <Header Producer='Qlucore' Format='PatientData' FormatVersion='0.1' QFFVersion='1.0'/>

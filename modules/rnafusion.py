@@ -5,8 +5,8 @@ from pathlib import Path
 
 from cellophane import Checkpoints, Config, Executor, Samples, output, runner
 
+from modules.common import nf_config
 from modules.nextflow import nextflow
-from modules.qd_rna import nf_config
 
 # Taken from https://github.com/nf-core/rnafusion/blob/3.0.1/conf/modules.config
 # The whole string needs to be included here only to override the limitSjdbInsertNsj
@@ -170,7 +170,7 @@ def rnafusion(
         return samples
 
     if checkpoints.main.check(rnafusion_nf_config):
-        logger.info("Using previous nf-core/rnafusion output")
+        logger.info(f"Using previous nf-core/rnafusion output ({len(samples)} samples)")
         return samples
 
 
@@ -187,7 +187,7 @@ def rnafusion(
         config=config,
     )
 
-    logger.info("Running nf-core/rnafusion")
+    logger.info(f"Running nf-core/rnafusion ({len(samples.unique_ids)} samples)")
 
     sample_sheet = samples.nfcore_samplesheet(
         location=workdir,
@@ -205,7 +205,7 @@ def rnafusion(
         executor=executor,
     )
 
-    logger.debug(f"nf-core/rnafusion finished for {len(samples)} samples")
+    logger.debug(f"nf-core/rnafusion finished ({len(samples)} samples)")
 
     _patch_fusionreport(
         samples=samples,
