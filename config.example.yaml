@@ -1,9 +1,5 @@
-# # Log level [string]
+# # Log level (NOTSET will log all messages, including those from external libraries) [string]
 # log_level: "INFO"
-# # Copy skipped runner output [boolean]
-# copy_skipped: false
-# # Merge samples with same ID [boolean]
-# merge: false
 # # Sample read length [integer]
 # read_length: 150
 # # Maximum number of junctions to insert for STAR [integer]
@@ -54,8 +50,6 @@ logdir: ~
 #   nf_url: "https://github.com/nf-core/rnaseq"
 #   # Tag to use for nf-core/rnaseq [string]
 #   nf_tag: "3.14.0"
-#   # Overwrite any existing output [boolean]
-#   force: false
 # rnafusion:
 #   # Skip nf-core/rnafusion [boolean]
 #   skip: false
@@ -67,15 +61,11 @@ logdir: ~
 #   nf_url: "https://github.com/nf-core/rnafusion"
 #   # Tag to use for nf-core/rnafusion [string]
 #   nf_tag: "3.0.1"
-#   # Overwrite any existing output [boolean]
-#   force: false
 # qlucore:
 #   # Skip qlucore mapping [boolean]
 #   skip: false
 #   # Path to STAR-Fusion reference [path]
 #   starfusion_ref: ~
-#   # Overwrite any existing output [boolean]
-#   force: false
 #   subsample:
 #     # Number of threads to use for subsampling [integer]
 #     threads: 12
@@ -96,33 +86,66 @@ logdir: ~
 #   from_addr: ~
 #   start:
 #     # Subject of the mail (jinja2 template) [string]
-#     subject: "{{ analysis }} started"
+#     subject: "{{ config.analysis }} started"
+#     # List of files to attach [array]
+#     attachments: []
 #     # Body of the mail (jinja2 template) [string]
 #     body: |
-#       {{ analysis }} has started for {{ samples.unique_ids|length }} sample(s).
+#       # {{ config.analysis }}
 # 
-#       The following samples are being analyzed:
-#       {% for id in samples.unique_ids %}
-#       {{ id }}
-#       {%- endfor %}
+#       Analysis has started for {{ samples.unique_ids|length }} sample(s).
+# 
+#       🔎 The following samples are being analyzed:
+#       |      ID     |  Run(s)  |
+#       | ----------- | -------- |
+#       {%- for id_, group in samples.split(by="id") %}
+#       | `{{ id_ }}` |
+#       {%- for sample in group -%}
+#       `{{ sample.run }}`{% if not loop.last %}, {% endif %}
+#       {%- endfor -%} |
+#       {%- endfor -%}
 #   end:
 #     # Subject of the mail (jinja2 template) [string]
-#     subject: "{{ analysis }} finished"
-#     # Body of the mail (jinja2 template) [string]
+#     subject: "{{ config.analysis }} finished"
+#     # List of files to attach if there are failed samples [array]
+#     attachments_failed:
+#     - '{config.logdir}/{config.analysis}.{config.tag}.log'
+#     # List of files to attach if there are complete samples [array]
+#     attachments_complete: []
+#     # List of files to attach [array]
+#     attachments: []
+#     # Body of the mail (jinja2 template, supports markdown) [string]
 #     body: |
-#       {{ analysis }} has finished processing {{ samples.unique_ids|length }} sample(s).
-#       {% if samples.failed|length > 0 %}
+#       # {{ config.analysis }}
+# 
+#       {{ samples.unique_ids|length }} sample(s) have been processed.
+# 
+#       {% if samples.failed -%}
 #       ❗️ Analysis failed for the following samples:
-#       {% for id in samples.failed.unique_ids %}
-#       {{ id }}
+#       |      ID     |  Run(s)  |
+#       | ----------- | -------- |
+#       {%- for id_, group in samples.failed.split(by="id") %}
+#       | `{{ id_ }}` |
+#       {%- for sample in group -%}
+#       `{{ sample.run }}`{% if not loop.last %}, {% else %} | {% endif %}
+#       {%- endfor -%}
 #       {%- endfor %}
-#       {% endif %}
-#       {%- if samples.complete|length > 0 %}
+#       📋 See attached log for more information
+#       {% endif -%}
+# 
+#       {%- if samples.complete -%}
 #       ✅ Analysis completed successfully for the following samples:
-#       {% for id in samples.complete.unique_ids %}
-#       {{ id }}
+# 
+#       |      ID     |  Run(s)  |
+#       | ----------- | -------- |
+#       {%- for id_, group in samples.complete.split(by="id") %}
+#       | `{{ id_ }}` |
+#       {%- for sample in group -%}
+#       `{{ sample.run }}`{% if not loop.last %}, {% else %} | {% endif %}
+#       {%- endfor -%}
 #       {%- endfor %}
-#       {% endif %}
+# 
+#       {%- endif -%}
 #   smtp:
 #     # SMTP host [string]
 #     host: ~

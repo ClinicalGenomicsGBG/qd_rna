@@ -1,12 +1,11 @@
-- &mail_test
-  id: mail
+- id: mail
   structure:
     modules:
-      fail_samples.py: |
+      a.py: |
         from cellophane import modules
 
         @modules.runner()
-        def _runner(samples, workdir, **kwargs):
+        def _runner(samples, workdir, config, logger, **_):
             missing_attachment = workdir / f"attachment_missing"
             samples_attachment = workdir / f"attachment_samples"
             samples_attachment.touch()
@@ -31,7 +30,6 @@
                     sample.fail("DUMMY")
 
             return samples
-
     samples.yaml: |
       - id: pass
         files:
@@ -39,7 +37,6 @@
       - id: fail
         files:
         - "input/fail"
-
     input:
       pass: pass
       fail: fail
@@ -47,13 +44,10 @@
     attachments:
       static_start: start
       static_end: end
-
   external:
-    "..": modules/mail
-
+    ..: modules/mail
   mocks:
-    _cellophane_module_mail.SMTP: ~
-
+    _cellophane_module_mail.src.util.SMTP: ~
   args:
     --samples_file: samples.yaml
     --workdir: work
@@ -66,7 +60,6 @@
     --mail_smtp_password: "DUMMY"
     --mail_smtp_tls: ~
     --mail_send: ~
-
   logs:
     - |
       Sending start mail
@@ -85,3 +78,77 @@
     - "Attachment: work/DUMMY/_runner/attachment_pass"
     - "Attachment: work/DUMMY/_runner/attachment_fail"
     - "Attachment: work/DUMMY/_runner/attachment_samples"
+
+- id: mail_no_samples
+  external:
+    ..: modules/mail
+  mocks:
+    _cellophane_module_mail.src.util.SMTP: ~
+  args:
+    --workdir: work
+    --tag: DUMMY
+  logs:
+    - "No samples to send start mail for"
+
+- id: mail_disabled
+  structure:
+    input:
+      A: A
+    samples.yaml: |
+      - id: A
+        files:
+        - input/A
+  external:
+    ..: modules/mail
+  mocks:
+    _cellophane_module_mail.src.util.SMTP: ~
+  args:
+    --workdir: work
+    --tag: DUMMY
+    --samples_file: samples.yaml
+    --mail_no_send: ~
+  logs:
+    - "Mail is disabled"
+
+- id: mail_merge
+  external:
+    ..: modules/mail
+  mocks:
+    _cellophane_module_mail.src.util.SMTP: ~
+  structure:
+    modules:
+      a.py: |
+        from cellophane import runner, post_hook
+
+        @runner()
+        def a(samples, **_):
+            return samples
+
+        @runner()
+        def b(samples, **_):
+            return samples
+
+        @post_hook()
+        def check(samples, logger, **_):
+            for sample in samples:
+                logger.info(f"{sample.id=} {sample.mail_attachments=}")
+    samples.yaml: |
+      - id: A
+        files:
+        - input/A
+      - id: B
+        files:
+        - input/B
+    input:
+      A: A
+      B: B
+  args:
+    --workdir: work
+    --tag: DUMMY
+    --samples_file: samples.yaml
+    --mail_from_addr: "DUMMY@localhost"
+    --mail_to_addr: !!python/tuple ["DUMMY_to@localhost"]
+    --mail_smtp_host: "localhost"
+    --mail_send: ~
+  logs:
+    - __NOPE__
