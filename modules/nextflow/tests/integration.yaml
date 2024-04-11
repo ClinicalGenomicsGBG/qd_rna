@@ -1,0 +1,77 @@
+- id: nfcore_samplesheet
+  external:
+    ..: modules/nextflow
+  structure:
+    modules:
+      a.py: |
+        from cellophane import pre_hook
+
+        @pre_hook()
+        def a(samples, logger, workdir, **_):
+            nf_samples = samples.nfcore_samplesheet(location=workdir / "samples.csv")
+
+            logger.info(f"{nf_samples=}")
+            logger.info(nf_samples.read_text())
+
+    samples.yaml: |
+      - id: A
+        files:
+        - input/A_1
+        - input/A_2
+
+      - id: B
+        files:
+        - input/B_1
+        - input/B_2
+    input:
+      A_1: A_1
+      A_2: A_2
+      B_1: B_1
+      B_2: B_2
+  args:
+    --workdir: work
+    --tag: DUMMY
+    --samples_file: samples.yaml
+
+  logs:
+    - nf_samples=PosixPath('work/DUMMY/samples.csv/samples.nextflow.csv')
+    - |
+      sample,fastq_1,fastq_2
+      A,input/A_1,input/A_2
+      B,input/B_1,input/B_2
+
+- id: nextflow_call
+  external:
+    ..: modules/nextflow
+  structure:
+    modules:
+       # FIXME: Check submit calls
+      a.py: |
+        from cellophane import pre_hook, Executor
+        from nextflow import nextflow
+        from cellophane.src.testing import MockExecutor
+
+        @pre_hook()
+        def a(samples, logger, workdir, executor, config, **_):
+            nextflow(
+                "DUMMY.nf",
+                samples=samples,
+                workdir=workdir,
+                executor=executor,
+                config=config,
+                tag="DUMMY",
+            )
+            nextflow(
+                "DUMMY.nf",
+                samples=samples,
+                workdir=workdir,
+                executor=executor,
+                config=config,
+                tag="DUMMY",
+                check=False,
+            )
+            executor.wait()
+  args:
+    --workdir: work
+    --tag: DUMMY
+    --executor_name: mock

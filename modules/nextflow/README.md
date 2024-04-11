@@ -45,4 +45,4 @@ Launch the NextFlow pipeline specified by `main`  with `*args` as CLI arguments.
 nfcore_samplesheet(self, *_, location: str | Path, **kwargs) -> Path:
 ```
 
-Write an nf-core compatible sample sheet at `location`. Any `**kwargs` will be added as columns. Values in `**kwargs` may be strings (same will be added to all samples) or a `sample.id -> value` mapping, in which case the value for each sample cn be assigned individually.
+Write an nf-core compatible sample sheet at `location`. Any `**kwargs` will be added as columns. Values in `**kwargs` should be strings (or coercible to strings), where strings will be formatted with access to `sample` (eg. `some_value="{sample.value}"`).
