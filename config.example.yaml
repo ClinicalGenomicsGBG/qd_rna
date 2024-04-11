@@ -166,7 +166,7 @@ logdir: ~
 # slims:
 #   # SLIMS URL [string]
 #   url: ~
-#   # Maximum age of novel samples (eg. "7 days", "1 month", "1 year") [string]
+#   # Maximum age of novel samples (eg. "7 days", "1 year") [string]
 #   novel_max_age: "1 year"
 #   # Do not create SLIMS bioinformatics objects [boolean]
 #   dry_run: false

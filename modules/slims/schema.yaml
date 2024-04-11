@@ -1,7 +1,7 @@
 properties:
   slims:
     type: object
-    
+
     dependentRequired:
       username: [password, url, find_criteria]
       password: [username, url, find_criteria]
@@ -24,7 +24,7 @@ properties:
       map:
         description: "Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields)"
         type: mapping
-      
+
       derive:
         description: "Mapping for creating derived records in SLIMS (Use curly braces to access keys in the samples object)"
         type: array
@@ -38,7 +38,7 @@ properties:
       check_criteria:
           description: SLIMS criteria for checking completed records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
           type: string
-          
+
       id:
         description: Manually select SLIMS Sample ID(s)
         type: array
@@ -59,6 +59,6 @@ properties:
         type: boolean
 
       novel_max_age:
-        description: Maximum age of novel samples (eg. "7 days", "1 month", "1 year")
+        description: Maximum age of novel samples (eg. "7 days", "1 year")
         default: 1 year
         type: string

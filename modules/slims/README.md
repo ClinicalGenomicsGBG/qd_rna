@@ -17,7 +17,7 @@ Option                            | Type      | Required | Default | Description
 `slims.allow_duplicates`          | bool      |          | False   | Allow duplicate samples (eg. if a pre-hook can handle this)
 `slims.unrestrict_parents`        | bool      |          | False   | Allow parent records to have different IDs than the child records
 `slims.dry_run`                   | bool      |          | False   | Do not create SLIMS bioinformatics objects
-`slims.novel_max_age`             | string    |          | 1 year  | Maximum age of novel samples (eg. "7 days", "1 month", "1 year")
+`slims.novel_max_age`             | string    |          | 1 year  | Maximum age of novel samples (eg. "7 days", "1 year")
 
 
 ### Example
