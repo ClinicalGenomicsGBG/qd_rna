@@ -2,18 +2,42 @@
   id: rsync
   structure:
     modules:
-      fail_samples.py: |
-        from cellophane import modules, data
+      a.py: |
+        from cellophane import runner, post_hook, output, data
 
-        @modules.runner()
-        @data.output("output_{sample.id}")
-        def _runner(samples, workdir, logger, **kwargs):
-            logger.info("Running rsync test")
-            for s in samples:
-                sample_output = workdir / f"output_{s.id}"
-                sample_output.touch()
+        @runner()
+        @output("single.txt")
+        @output("sample_{sample.id}.txt")
+        @output("missing.txt")
+        @output("glob/*.txt", dst_name="invalid_rename.txt")
+        @output("single.txt", dst_name="rename.txt")
+        @output("overwrite_a.txt", dst_name="overwrite.txt")
+        @output("overwrite_b.txt", dst_name="overwrite.txt")
+        @output("nested/**/*.txt")
+        @output("nested", dst_dir="directory")
+        @output("large.txt")
+        def runner_a(samples, workdir, config, **_):
+            for sample in samples:
+                (workdir / f"sample_{sample.id}.txt").touch()
+            (workdir / "glob").mkdir()
+            (workdir / "glob" / "a.txt").write_text("GLOB_A")
+            (workdir / "glob" / "b.txt").write_text("GLOB_B")
+            (workdir / "nested" / "a").mkdir(parents=True)
+            (workdir / "nested" / "a" / "x.txt").touch()
+            (workdir / "nested" / "a" / "y.txt").touch()
+            (workdir / "nested" / "b").mkdir(parents=True)
+            (workdir / "nested" / "b" / "z.txt").touch()
+            (workdir / "single.txt").write_text("SINGLE")
+            (workdir / "overwrite_a.txt").write_text("OVERWRITE")
+            (workdir / "overwrite_b.txt").write_text("OVERWRITE")
+            (workdir / "large.txt").write_text("LARGE"*1000)
+
+            samples.output |= {
+              data.Output(src="I_DO_NOT_EXIST", dst="I_AM_NOT_RELATIVE"),
+              data.Output(src="I_DO_NOT_EXIST", dst=config.resultdir / "somepath")
+            }
+
             return samples
-
 
     samples.yaml: |
       - id: pass
@@ -22,23 +46,130 @@
       - id: fail
         files:
         - "input/fail"
-
     input:
       pass: pass
       fail: fail
-
-    attachments:
-      static_start: start
-      static_end: end
-
   external:
-    "..": modules/rsync
-
-  mocks:
-    _cellophane_module_rsync.sge.submit: ~
-
+    ..: modules/rsync
   args:
     --samples_file: samples.yaml
     --workdir: work
     --tag: DUMMY
     --resultdir: "rsync"
+    --rsync_large_file_threshold: "1KiB"
+  logs:
+    - Syncing output to rsync
+    - I_DO_NOT_EXIST does not exist
+    - I_DO_NOT_EXIST does not exist
+    - Syncing 1 large files (>1KiB)
+    - Syncing 11 small files (<1KiB)
+    - Syncing 1 directories
+    - Copied work/DUMMY/runner_a/large.txt -> rsync/large.txt
+    - Copied work/DUMMY/runner_a/nested -> rsync/directory/nested
+    - Copied work/DUMMY/runner_a/nested/b/z.txt -> rsync/z.txt
+    - Copied work/DUMMY/runner_a/sample_fail.txt -> rsync/sample_fail.txt
+    - Copied work/DUMMY/runner_a/overwrite_a.txt -> rsync/overwrite.txt
+    - Copied work/DUMMY/runner_a/nested/a/y.txt -> rsync/y.txt
+    - Copied work/DUMMY/runner_a/overwrite_b.txt -> rsync/overwrite.txt
+    - Copied work/DUMMY/runner_a/single.txt -> rsync/rename.txt
+    - Copied work/DUMMY/runner_a/glob/a.txt -> rsync/a.txt
+    - Copied work/DUMMY/runner_a/glob/b.txt -> rsync/b.txt
+    - Copied work/DUMMY/runner_a/single.txt -> rsync/single.txt
+    - Copied work/DUMMY/runner_a/sample_pass.txt -> rsync/sample_pass.txt
+    - Copied work/DUMMY/runner_a/nested/a/x.txt -> rsync/x.txt
+    - Finished syncing output
+
+- <<: *rsync_test
+  id: rsync_no_output
+  structure:
+    modules:
+      a.py: |
+        from cellophane import runner, post_hook
+
+        @runner()
+        def runner_a(samples, workdir, config, **_):
+            return samples
+    input:
+      A: A
+    samples.yaml: |
+      - id: A
+        files:
+        - input/A
+  logs:
+    - "No output to sync"
+
+
+- <<: *rsync_test
+  id: rsync_overwrite
+  structure:
+    modules:
+      a.py: |
+        from cellophane import runner, post_hook, output
+
+        @runner()
+        @output("overwrite.txt", dst_name="overwrite.txt")
+        def runner_a(samples, workdir, config, **_):
+            (workdir / "overwrite.txt").write_text("OVERWRITE")
+            return samples
+    input:
+      A: A
+    samples.yaml: |
+      - id: A
+        files:
+        - input/A
+    rsync:
+      overwrite.txt: "ORIGINAL"
+  logs:
+    - "rsync/overwrite.txt already exists"
+
+- <<: *rsync_test
+  id: rsync_outside_resultdir
+  structure:
+    modules:
+      a.py: |
+        from cellophane import runner, post_hook, output
+
+        @runner()
+        @output("a.txt", dst_name="/tmp/out/of/bounds/a.txt")
+        def runner_a(samples, workdir, config, **_):
+            (workdir / "a.txt").write_text("A")
+            return samples
+    input:
+      A: A
+    samples.yaml: |
+      - id: A
+        files:
+        - input/A
+  logs:
+    - "/tmp/out/of/bounds/a.txt is outside rsync"
+
+- <<: *rsync_test
+  id: rsync_unavailable
+  structure:
+    modules:
+      a.py: |
+        from cellophane import runner, post_hook, output
+        from cellophane.src.testing import MockExecutor
+
+        @runner()
+        @output("a.txt")
+        def runner_a(samples, workdir, config, **_):
+            (workdir / "a.txt").write_text("A")
+            return samples
+    input:
+      A: A
+    samples.yaml: |
+      - id: A
+        files:
+        - input/A
+  args:
+    --samples_file: samples.yaml
+    --workdir: work
+    --tag: DUMMY
+    --resultdir: "rsync"
+    --executor_name: mock
+  mocks:
+    _cellophane_module_rsync.src.util.sleep: ~
+  logs:
+    - Waiting 30 seconds for rsync/a.txt to become available
+    - rsync/a.txt is missing
