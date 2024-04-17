@@ -8,10 +8,9 @@
         hcp_remote_keys:
         - BACKUP
   external:
-    '..': modules/hcp
+    ..: modules/hcp
   mocks:
-    _cellophane_module_hcp.HCPManager: ~
-    _cellophane_module_hcp.sys: ~
+    _cellophane_module_hcp.src.util.HCPManager: ~
   args:
     --samples_file: samples.yaml
     --workdir: work
@@ -68,7 +67,60 @@
 - <<: *hcp_test
   id: fetch_exception
   mocks:
-    _cellophane_module_hcp.HCPManager:
-      exception: fetch_exception
+    _cellophane_module_hcp.src.util.HCPManager:
+      side_effect: !!python/object/new:Exception ["fetch_exception"]
   logs:
   - Failed to fetch backup for BACKUP (fetch_exception)
+
+- <<: *hcp_test
+  id: hcp_merge
+  structure:
+    modules:
+      runner.py: |
+        from cellophane import runner, post_hook, pre_hook
+        @runner()
+        def a(samples, **_):
+            return samples
+
+        @runner()
+        def b(samples, **_):
+            return samples
+
+        @post_hook()
+        def check(samples, logger, **_):
+            for sample in samples:
+              logger.info(f"{sample.id=} {sample.hcp_remote_keys=}")
+
+    samples.yaml: |
+      - id: A
+        files:
+        - input/A
+        hcp_remote_keys:
+        - A
+      - id: B
+        files:
+        - input/B
+        hcp_remote_keys:
+        - B
+    input:
+      A: A
+      B: B
+  logs:
+    - sample.id='A' sample.hcp_remote_keys={'A'}
+    - sample.id='B' sample.hcp_remote_keys={'B'}
+
+- <<: *hcp_test
+  id: hcp_length_missmatch
+  structure:
+    samples.yaml: |
+      - id: A
+        files:
+        - input/A
+        hcp_remote_keys:
+        - A
+        - B
+    input:
+      A: A
+  logs:
+    - "Unhandled exception: Length mismatch between hcp_remote_keys and files: 2 != 1"
+  exception: SystemExit(1)
