@@ -1,0 +1,71 @@
+- id: grid_engine_submit
+  external:
+    ..: modules/grid_engine
+
+  structure:
+    modules:
+      a.py: |
+        from cellophane import pre_hook
+
+        @pre_hook("grid_engine")
+        def a(executor, **_):
+            executor.submit("DUMMY")
+            executor.wait()
+  mocks:
+    _cellophane_module_grid_engine.src.executor.drmaa2.JobSession:
+      return_value: !!python/object/apply:grid_engine.tests.JobSessionMock {}
+  args:
+    --workdir: work
+    --executor_name: grid_engine
+  logs:
+    - "Grid Engine job started"
+    - "Job completed"
+
+- id: grid_engine_exception
+  external:
+    ..: modules/grid_engine
+
+  structure:
+    modules:
+      a.py: |
+        from cellophane import pre_hook
+
+        @pre_hook("grid_engine")
+        def a(executor, **_):
+            executor.submit("DUMMY")
+            executor.wait()
+  mocks:
+    _cellophane_module_grid_engine.src.executor.drmaa2.JobSession:
+      side_effect: !!python/object/new:drmaa2.Drmaa2Exception []
+  args:
+    --workdir: work
+    --executor_name: grid_engine
+  logs:
+    - "Command failed with exit code: 1"
+
+- id: grid_engine_terminate
+  external:
+    ..: modules/grid_engine
+
+  structure:
+    modules:
+      a.py: |
+        from cellophane import pre_hook
+        import time
+
+        @pre_hook("grid_engine")
+        def a(executor, **_):
+            executor.submit("DUMMY")
+            time.sleep(.1)
+            executor.terminate()
+            executor.wait()
+
+  mocks:
+    _cellophane_module_grid_engine.src.executor.drmaa2.JobSession:
+      return_value: !!python/object/apply:grid_engine.tests.JobSessionMock {kwds: {delay: 5}}
+  args:
+    --workdir: work
+    --executor_name: grid_engine
+  logs:
+    - "Terminating job with uuid"
+    - "Terminating SGE job (id=DUMMY)"
