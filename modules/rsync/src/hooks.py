@@ -65,7 +65,11 @@ def rsync_results(
             manifest_path = workdir / f"rsync.{type_}.manifest"
             with open(manifest_path, "w", encoding="utf-8") as m:
                 m.writelines(
-                    [f"{src.absolute()} {dst.absolute()}\n" for src, dst in manifest]
+                    [
+                        f"{src.absolute()}{'/' if src.is_dir() else ''} "
+                        f"{dst.absolute()}\n"
+                        for src, dst in manifest
+                    ]
                 )
             executor.submit(
                 str(ROOT / "scripts" / "rsync.sh"),

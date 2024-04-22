@@ -14,7 +14,8 @@
         @output("overwrite_a.txt", dst_name="overwrite.txt")
         @output("overwrite_b.txt", dst_name="overwrite.txt")
         @output("nested/**/*.txt")
-        @output("nested", dst_dir="directory")
+        @output("nested", dst_dir="dst_dir")
+        @output("nested", dst_name="dst_name")
         @output("large.txt")
         def runner_a(samples, workdir, config, **_):
             for sample in samples:
@@ -38,6 +39,15 @@
             }
 
             return samples
+
+        @post_hook(after="rsync_results")
+        def check(logger, config, samples,  **_):
+            dst_dir = config.resultdir / "dst_dir"
+            dst_name = config.resultdir / "dst_name"
+            logger.info(f"dst_dir present: {dst_dir} {dst_dir.exists()} (True)")
+            logger.info(f"dst_dir has subdir: {(dst_dir / 'nested').exists()} (True)")
+            logger.info(f"dst_name exists: {dst_name} {dst_name.exists()} (True)")
+            logger.info(f"dst_name has subdir: {(dst_name / 'nested').exists()} (False)")
 
     samples.yaml: |
       - id: pass
@@ -63,9 +73,10 @@
     - I_DO_NOT_EXIST does not exist
     - Syncing 1 large files (>1KiB)
     - Syncing 11 small files (<1KiB)
-    - Syncing 1 directories
+    - Syncing 2 directories
     - Copied work/DUMMY/runner_a/large.txt -> rsync/large.txt
-    - Copied work/DUMMY/runner_a/nested -> rsync/directory/nested
+    - Copied work/DUMMY/runner_a/nested -> rsync/dst_dir/nested
+    - Copied work/DUMMY/runner_a/nested -> rsync/dst_name
     - Copied work/DUMMY/runner_a/nested/b/z.txt -> rsync/z.txt
     - Copied work/DUMMY/runner_a/sample_fail.txt -> rsync/sample_fail.txt
     - Copied work/DUMMY/runner_a/overwrite_a.txt -> rsync/overwrite.txt
@@ -78,6 +89,10 @@
     - Copied work/DUMMY/runner_a/sample_pass.txt -> rsync/sample_pass.txt
     - Copied work/DUMMY/runner_a/nested/a/x.txt -> rsync/x.txt
     - Finished syncing output
+    - "dst_dir present: rsync/dst_dir True (True)"
+    - "dst_dir has subdir: True (True)"
+    - "dst_name exists: rsync/dst_name True (True)"
+    - "dst_name has subdir: False (False)"
 
 - <<: *rsync_test
   id: rsync_no_output
