@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-uge-drmaa2 = {git = "https://github.com/gridengine/drmaa2-python.git", branch="v8.7.4"}
+uge-drmaa2 = {git = "https://github.com/gridengine/drmaa2-python.git", branch="v8.9.0"}
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.0.0"

@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from time import sleep
 from typing import Any
 from uuid import UUID
 
@@ -9,7 +10,10 @@ from cellophane import executors
 
 
 @define(slots=False)
-class GridEngineExecutor(executors.Executor, name="grid_engine"):  # type: ignore[call-arg]
+class GridEngineExecutor(
+    executors.Executor,
+    name="grid_engine",
+):  # type: ignore[call-arg]
     """Executor using grid engine."""
 
     ge_jobs: dict[
@@ -36,6 +40,7 @@ class GridEngineExecutor(executors.Executor, name="grid_engine"):  # type: ignor
         _logdir = self.config.logdir / "grid_engine" / uuid.hex
         _logdir.mkdir(exist_ok=True, parents=True)
 
+        session = None
         try:
             session = drmaa2.JobSession(f"{name}_{uuid.hex}")
             job = session.run_job(
@@ -70,20 +75,24 @@ class GridEngineExecutor(executors.Executor, name="grid_engine"):  # type: ignor
                 encoding="utf-8",
             ) as f:
                 f.write(str(exception))
-            exit(1)
 
-        session.wait_all_terminated([job])
-        job_info = job.get_info()
-        session.close()
-        session.destroy()
-        exit(job_info.exit_status)
+            exit_status = 1
+        else:
+            while (exit_status := job.get_info().exit_status) is None:
+                sleep(1)
+
+        if session is not None:
+            session.close()
+            session.destroy()
+
+        raise SystemExit(exit_status)
 
     def terminate_hook(self, uuid: UUID, logger: logging.LoggerAdapter) -> int:
         if uuid in self.ge_jobs:
             session, job = self.ge_jobs[uuid]
-            logger.warning(f"Terminating SGE job (id={job.id})")
+            logger.debug(f"Terminating SGE job (id={job.id})")
             job.terminate()
             job.wait_terminated()
             session.close()
             session.destroy()
-            return 143
+        return 143
