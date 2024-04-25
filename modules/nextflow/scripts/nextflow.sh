@@ -1,19 +1,18 @@
 #!/bin/bash
 
-set -e -o pipefail
+set -meo pipefail
 
 _clean () {
     code=$?
-    ps -p $_nxf_pid &> /dev/null && {
-        echo "Killing process..."
+    kill -0 $_nxf_pid && {
+        echo "Killing process ${_nxf_pid}..."
         kill -TERM $_nxf_pid
         wait $_nxf_pid
-        exit $?
     } || exit $code
 }
 
-eval ${_NXF_INIT}
+trap _clean HUP INT QUIT ABRT USR1 USR2 ALRM TERM
 
-NXF_HOME="${TMPDIR}/.nextflow" nextflow $@ & _nxf_pid=$!
-trap _clean EXIT
+eval "${_NXF_INIT}"
+_JAVA_SR_SIGNUM=20 NXF_HOME="${TMPDIR}/.nextflow" nextflow $@ & _nxf_pid=$!
 wait $_nxf_pid
