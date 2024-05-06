@@ -14,5 +14,5 @@ _clean () {
 trap _clean HUP INT QUIT ABRT USR1 USR2 ALRM TERM
 
 eval "${_NXF_INIT}"
-_JAVA_SR_SIGNUM=20 NXF_HOME="${TMPDIR}/.nextflow" nextflow $@ & _nxf_pid=$!
+NXF_HOME="${TMPDIR}/.nextflow" nextflow $@ & _nxf_pid=$!
 wait $_nxf_pid
