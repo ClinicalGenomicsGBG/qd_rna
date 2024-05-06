@@ -119,13 +119,14 @@ def update_most_recent_run(
     ID + most recent run. This assumes that sorting the run alphanumerically
     will give the most recent run.
     """
-    logger.debug("Updating most recent run")
-    for _, group in samples.split(by="id"):
+    for id_, group in samples.split(by="id"):
         # FIXME: Ideally we should sort by the run date.
-        # This information is currently  not available. A possible solution
-        # would be to allow mapping from parent records in the SLIMS module,
-        # but this requires a major refactor of the module.
+        # This information is currently not available.
+        # A possible solution would be to allow mapping from
+        # parent records in the SLIMS module, but this requires
+        # a major refactor of the module.
         latest = max(group, key=lambda s: s.run).run
+        logger.debug(f"Setting most recent run for {id_} to {latest}")
         for sample in group:
             sample.last_run = latest
 
