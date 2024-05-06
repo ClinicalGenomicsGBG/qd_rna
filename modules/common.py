@@ -107,7 +107,7 @@ def get_linked_samples(
     return linked_samples | samples
 
 
-@pre_hook(label="Update Most Recent Run", before=["start_mail"])
+@pre_hook(label="Update Most Recent Run", before=["start_mail"], after="all")
 def update_most_recent_run(
     samples: Samples,
     logger: LoggerAdapter,
