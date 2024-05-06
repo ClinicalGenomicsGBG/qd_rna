@@ -75,6 +75,7 @@ def rsync_results(
                 str(ROOT / "scripts" / "rsync.sh"),
                 name="rsync",
                 env={"MANIFEST": str(manifest_path.absolute())},
+                workdir=workdir,
                 callback=partial(
                     sync_callback,
                     logger=logger,
