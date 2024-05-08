@@ -191,14 +191,16 @@ def rnaseq(
         samples.output = set()
         return samples
 
+    log_tag = samples[0].id if (n := len(samples)) == 1 else f"{n} samples"
+
     _add_optional_outputs(samples, config)
 
     if checkpoints.main.check():
-        logger.info(f"Using previous nf-core/rnaseq output ({samples[0].id})")
+        logger.info(f"Using previous nf-core/rnaseq output ({log_tag})")
         return samples
 
     _validate_inputs(config, logger)
-    logger.info(f"Running nf-core/rnaseq ({samples[0].id})")
+    logger.info(f"Running nf-core/rnaseq ({log_tag})")
 
     sample_sheet = samples.nfcore_samplesheet(
         location=workdir,

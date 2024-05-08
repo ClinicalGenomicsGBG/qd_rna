@@ -121,8 +121,9 @@ def _subsample(
     workdir: Path,
     executor: Executor,
     checkpoints: Checkpoints,
+    log_tag: str,
 ):
-    logger.info("Subsampling output BAM(s)")
+    logger.info(f"Subsampling output BAM(s) ({log_tag})")
     for id_, group in samples.split(by="id"):
         output_path = Path(
             workdir
@@ -242,7 +243,7 @@ def _pipeline_args(
     dst_dir="{sample.id}_{sample.last_run}/qlucore",
     checkpoint="qlucore",
 )
-@runner()
+@runner(split_by="id")
 def qlucore(
     samples: Samples,
     config: Config,
@@ -259,8 +260,10 @@ def qlucore(
         samples.output = set()
         return samples
 
+    log_tag = samples[0].id if (n := len(samples)) == 1 else f"{n} samples"
+
     if checkpoints.main.check(qlucore_nf_config):
-        logger.info(f"Using previous nf-core/rnafusion output ({len(samples)} samples)")
+        logger.info(f"Using previous nf-core/rnafusion output ({log_tag})")
     else:
         _validate_inputs(
             config=config,
@@ -280,7 +283,7 @@ def qlucore(
             config=config,
         )
 
-        logger.info(f"Running nf-core/rnafusion ({len(samples)} samples)")
+        logger.info(f"Running nf-core/rnafusion ({log_tag})")
 
         nextflow(
             root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
@@ -297,7 +300,7 @@ def qlucore(
             executor=executor,
         )
 
-        logger.debug(f"nf-core/rnafusion finished ({len(samples)} samples)")
+        logger.debug(f"nf-core/rnafusion finished ({log_tag})")
         checkpoints.main.store(qlucore_nf_config)
 
     _subsample(
@@ -308,6 +311,7 @@ def qlucore(
         workdir=workdir,
         executor=executor,
         checkpoints=checkpoints,
+        log_tag=log_tag
     )
 
     if checkpoints.qlucore.check(qlucore_data):

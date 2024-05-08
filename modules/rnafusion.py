@@ -63,15 +63,19 @@ process {{
 """
 
 
-def _patch_fusionreport(samples: Samples, workdir: Path, logger: LoggerAdapter):
+def _patch_fusionreport(
+    samples: Samples,
+    workdir: Path,
+    logger: LoggerAdapter,
+    log_tag: str,
+):
     """
     Patch fusionreport html to keep fusion data separate from the report itself.
 
     This is done to make it easier to access the report from the directory listing.
     """
-    logger.info("Patching fusionreport html")
+    logger.info(f"Patching fusionreport html ({log_tag})")
     for id_, group in samples.split(by="id"):
-        logger.debug(f"Patching fusionreport for {id_}")
         original = workdir / f"fusionreport/{id_}/{id_}_fusionreport_index.html"
         patched = workdir / f"{id_}.fusionreport.html"
 
@@ -152,7 +156,7 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
     "pipeline_info",
     dst_name="{sample.id}_{sample.last_run}/pipeline_info/rnafusion",
 )
-@runner()
+@runner(split_by="id")
 def rnafusion(
     samples: Samples,
     config: Config,
@@ -164,15 +168,14 @@ def rnafusion(
     **_,
 ) -> Samples:
     """Run nf-core/rnafusion."""
-
+    log_tag = samples[0].id if (n := len(samples)) == 1 else f"{n} samples"
     if config.rnafusion.skip:
         samples.output = set()
         return samples
 
     if checkpoints.main.check(rnafusion_nf_config):
-        logger.info(f"Using previous nf-core/rnafusion output ({len(samples)} samples)")
+        logger.info(f"Using previous nf-core/rnafusion output ({log_tag})")
         return samples
-
 
     _validate_inputs(
         config=config,
@@ -187,7 +190,7 @@ def rnafusion(
         config=config,
     )
 
-    logger.info(f"Running nf-core/rnafusion ({len(samples.unique_ids)} samples)")
+    logger.info(f"Running nf-core/rnafusion ({log_tag})")
 
     sample_sheet = samples.nfcore_samplesheet(
         location=workdir,
@@ -205,12 +208,13 @@ def rnafusion(
         executor=executor,
     )
 
-    logger.debug(f"nf-core/rnafusion finished ({len(samples)} samples)")
+    logger.debug(f"nf-core/rnafusion finished ({log_tag})")
 
     _patch_fusionreport(
         samples=samples,
         workdir=workdir,
         logger=logger,
+        log_tag=log_tag,
     )
 
     checkpoints.main.store(rnafusion_nf_config)
