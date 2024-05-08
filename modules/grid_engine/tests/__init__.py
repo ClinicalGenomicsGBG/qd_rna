@@ -17,13 +17,13 @@ class JobInfoMock:
 @define
 class JobMock:
     state: int = drmaa2.JobState.DONE
+    delay: int = 0
     id: str = "DUMMY"
 
     def get_info(self, *args, **kwargs):
+        del args, kwargs
+        time.sleep(self.delay)
         return JobInfoMock(state=self.state)
-
-    def get_state(self, *args, **kwargs):
-        return self.state, None
 
     def terminate(self, *args, **kwargs):
         del args, kwargs
@@ -45,8 +45,4 @@ class JobSessionMock:
 
     def run_job(self, *args, **kwargs):
         del args, kwargs  # Unused
-        return JobMock(state=self.state)
-
-    def wait_all_terminated(self, *args, **kwargs):
-        time.sleep(self.delay)
-        del args, kwargs  # Unused
+        return JobMock(state=self.state, delay=self.delay)

@@ -78,7 +78,9 @@ class GridEngineExecutor(
 
             exit_status = 1
         else:
-            while (exit_status := job.get_info().exit_status) is None:
+            while (
+                exit_status := job.get_info().exit_status
+            ) is None:  # pragma: no cover
                 sleep(1)
 
         if session is not None:
@@ -90,9 +92,24 @@ class GridEngineExecutor(
     def terminate_hook(self, uuid: UUID, logger: logging.LoggerAdapter) -> int:
         if uuid in self.ge_jobs:
             session, job = self.ge_jobs[uuid]
-            logger.debug(f"Terminating SGE job (id={job.id})")
-            job.terminate()
-            job.wait_terminated()
-            session.close()
-            session.destroy()
+            try:
+                logger.debug(f"Terminating SGE job (id={job.id})")
+                job.terminate()
+                job.wait_terminated()
+                logger.debug(f"SGE job terminated (id={job.id})")
+            except drmaa2.Drmaa2Exception as exc:
+                logger.warning(
+                    "Caught an exception while terminating SGE job "
+                    f"({job.id=}): {exc!r}"
+                )
+            try:
+                session.close()
+                session.destroy()
+            except drmaa2.Drmaa2Exception as exc:
+                logger.warning(
+                    "Caught an exception while closing SGE session "
+                    f"({session.name=}): {exc!r}"
+                )
+
+            del self.ge_jobs[uuid]
         return 143
