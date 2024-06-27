@@ -145,6 +145,10 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
     dst_dir="{sample.id}_{sample.last_run}",
 )
 @output(
+    "fusioninspector/{sample.id}.*",
+    dst_dir="{sample.id}_{sample.last_run}/fusioninspector",
+)
+@output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam",
     dst_dir="{sample.id}_{sample.last_run}",
 )
