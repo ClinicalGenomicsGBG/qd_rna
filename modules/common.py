@@ -25,6 +25,7 @@ def _int_or_none(value: str) -> int | None:
 @define(slots=False, init=False)
 class QDRRNASample(Sample):
     """Sample with run information."""
+
     run: str | None = field(default="UNSPECIFIED")
     reads: int | None = field(
         default=None,
@@ -42,6 +43,25 @@ class QDRRNASample(Sample):
     @Sample.merge.register("last_run")
     def _merge(this, that):
         return this or that
+
+    @staticmethod
+    @Sample.merge.register("reads")
+    def _merge_reads(this, that):
+        if this != that:
+            warn(f"Conflicting read counts: {this} != {that}")
+            return None
+        return this
+
+    @staticmethod
+    @Sample.merge.register("slims_state")
+    def _merge_state(this, that):
+        return (
+            "error"
+            if "error" in (this, that)
+            else "running"
+            if "running" in (this, that)
+            else "complete"
+        )
 
     @slims_state.validator
     def _validate_state(
