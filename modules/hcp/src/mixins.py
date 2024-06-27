@@ -2,7 +2,7 @@
 
 from attrs import Attribute, define, field
 from attrs.setters import convert
-from cellophane.src.data import Sample
+from cellophane import Sample
 
 
 @define(slots=False)

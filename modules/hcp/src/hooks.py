@@ -3,7 +3,7 @@
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import Config, Samples, pre_hook
+from cellophane import Cleaner, Config, Samples, pre_hook
 from mpire import WorkerPool
 
 from .util import callback, error_callback, fetch
@@ -14,6 +14,7 @@ def hcp_fetch(
     samples: Samples,
     config: Config,
     logger: LoggerAdapter,
+    cleaner: Cleaner,
     **_,
 ) -> Samples:
     """Fetch files from HCP."""
@@ -43,6 +44,7 @@ def hcp_fetch(
                 if local_path.exists():
                     sample.files.insert(f_idx, local_path)
                     logger.debug(f"Found {local_path.name} locally")
+                    cleaner.register(local_path.resolve(), ignore_outside_root=True)
                     continue
 
                 pool.apply_async(
@@ -52,8 +54,16 @@ def hcp_fetch(
                         "local_path": local_path,
                         "remote_key": remote_key,
                     },
-                    callback=callback(sample, f_idx, logger),
-                    error_callback=error_callback(sample, logger),
+                    callback=callback(
+                        sample=sample,
+                        f_idx=f_idx,
+                        logger=logger,
+                        cleaner=cleaner,
+                    ),
+                    error_callback=error_callback(
+                        sample=sample,
+                        logger=logger,
+                    ),
                 )
 
         pool.join()

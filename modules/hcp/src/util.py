@@ -1,7 +1,11 @@
 """Module for fetching files from HCP."""
-import sys
-from pathlib import Path
 
+import sys
+from logging import LoggerAdapter
+from pathlib import Path
+from typing import Callable
+
+from cellophane import Cleaner, Sample
 from NGPIris.hcp import HCPManager
 
 
@@ -29,17 +33,28 @@ def fetch(
     return local_path
 
 
-def callback(sample, f_idx, logger):
+def callback(
+    sample: Sample,
+    f_idx: int,
+    logger: LoggerAdapter,
+    cleaner: Cleaner,
+) -> Callable[[Path], None]:
     """Callback for fetching files from HCP."""
-    def inner(local_path: Path):
+
+    def inner(local_path: Path) -> None:
         logger.debug(f"Fetched {local_path.name} from hcp")
         sample.files.insert(f_idx, local_path)
+        cleaner.register(local_path.resolve(), ignore_outside_root=True)
 
     return inner
 
 
-def error_callback(sample, logger):
+def error_callback(
+    sample: Sample,
+    logger: LoggerAdapter,
+):
     """Error callback for fetching files from HCP."""
+
     def inner(exception: Exception):
         logger.error(f"Failed to fetch backup for {sample.id} ({exception})")
         sample.files = []

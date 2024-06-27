@@ -10,7 +10,7 @@
   external:
     ..: modules/hcp
   mocks:
-    _cellophane_module_hcp.src.util.HCPManager: ~
+    modules.hcp.src.util.HCPManager: ~
   args:
     --samples_file: samples.yaml
     --workdir: work
@@ -67,7 +67,7 @@
 - <<: *hcp_test
   id: fetch_exception
   mocks:
-    _cellophane_module_hcp.src.util.HCPManager:
+    modules.hcp.src.util.HCPManager:
       side_effect: !!python/object/new:Exception ["fetch_exception"]
   logs:
   - Failed to fetch backup for BACKUP (fetch_exception)
@@ -122,5 +122,5 @@
     input:
       A: A
   logs:
-    - "Unhandled exception: Length mismatch between hcp_remote_keys and files: 2 != 1"
+    - "Unhandled exception: ValueError('Length mismatch between hcp_remote_keys and files: 2 != 1')"
   exception: SystemExit(1)
