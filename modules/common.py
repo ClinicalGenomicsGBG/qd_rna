@@ -1,19 +1,38 @@
 """Common hooks and utilities for QD-RNA."""
 
+from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
+from time import sleep
+from typing import Literal
+from warnings import warn
 
-from attrs import define, field
-from cellophane import Config, Sample, Samples, pre_hook
+from attrs import Attribute, define, field
+from attrs.setters import convert, validate
+from cellophane import Cleaner, Config, Executor, Sample, Samples, post_hook, pre_hook
 from git import InvalidGitRepositoryError, NoSuchPathError, Repo
+from humanfriendly.text import pluralize
 
 from modules.slims import SlimsSamples
+
+
+def _int_or_none(value: str) -> int | None:
+    if value is not None:
+        try:
+            return int(value)
+        except Exception:  # pylint: disable=broad-except
+            warn(f"Failed to convert {value} to int")
 
 
 @define(slots=False, init=False)
 class QDRRNASample(Sample):
     """Sample with run information."""
     run: str | None = field(default="UNSPECIFIED")
+    reads: int | None = field(
+        default=None,
+        converter=_int_or_none,
+        on_setattr=convert,
+    )
     last_run: str | None = field(default="UNSPECIFIED")
 
     @staticmethod
@@ -130,4 +149,122 @@ def update_most_recent_run(
         for sample in group:
             sample.last_run = latest
 
+    return samples
+
+
+def _subsample_callback(
+    result: None,
+    /,
+    sample: Sample,
+    files: tuple[Path, Path],
+    logger: LoggerAdapter,
+    cleaner: Cleaner,
+) -> None:
+    del result  # Unused
+    if not all(f.exists for f in files):
+        logger.debug("Waiting up to 60 seconds for files to become available")
+        _timeout = 60
+        while not all(f.exists() for f in files) and (_timeout := _timeout - 1) > 0:
+            sleep(1)
+
+        if not all(f.exists() for f in files):
+            logger.error(f"Subsampled files for {sample.id} not found after 60 seconds")
+            sample.fail("Subsampled files not found")
+            return
+
+    logger.debug(f"Subsampling finished for {sample.id}")
+    sample.files = [*files]
+    for f in files:
+        cleaner.register(f.resolve())
+
+
+def _subsample_error_callback(
+    exception: Exception,
+    /,
+    sample: Sample,
+    files: tuple[Path, Path],
+    logger: LoggerAdapter,
+    cleaner: Cleaner,
+) -> None:
+    logger.error(f"Failed to subsample {sample.id}: {exception}")
+    sample.fail(f"Failed to subsample: {exception}")
+    for f in files:
+        cleaner.register(f.resolve())
+
+
+@pre_hook(label="Subsample", after=["all", "start_mail"])
+def subsample(
+    samples: Samples[Sample],
+    config: Config,
+    logger: LoggerAdapter,
+    executor: Executor,
+    root: Path,
+    workdir: Path,
+    cleaner: Cleaner,
+    **_,
+) -> Samples:
+    """Subsample input FASTQs.
+
+    This hook is used to subsample input FASTQs to a fixed number of reads.
+    """
+    if not config.subsample.target:
+        return samples
+
+    for id_, group in samples.split(by="id"):
+        if any(sample.reads is None for sample in group):
+            logger.info(f"Unknown number of reads for {id_} - not subsampling")
+            continue
+        elif (total := sum(sample.reads for sample in group)) < config.subsample.target:
+            logger.info(f"Too few reads for {id_} - not subsampling")
+            continue
+
+        frac = config.subsample.target / total
+        n_files = sum(len(sample.files) for sample in group)
+        logger.info(
+            f"Subsampling {pluralize(n_files, 'file', 'files')} "
+            f"for sample {id_} to ~{config.subsample.target} reads "
+            f"({frac:.2%})"
+        )
+
+        (workdir / "subsample").mkdir(exist_ok=True, parents=True)
+        for sample in group:
+            sample: Sample
+            subsample_files = (
+                workdir / "subsample" / f"{sample.id}_{sample.last_run}_R1.fastq.gz",
+                workdir / "subsample" / f"{sample.id}_{sample.last_run}_R2.fastq.gz",
+            )
+            executor.submit(
+                str(root / "scripts" / "common_subsample.sh"),
+                name=f"subsample_{id_}",
+                workdir=workdir / id_,
+                cpus=config.subsample.threads,
+                env={
+                    "_SUBSAMPLE_INIT": config.qlucore.subsample.init,
+                    "_SUBSAMPLE_THREADS": config.qlucore.subsample.threads,
+                    "_SUBSAMPLE_FRAC": frac,
+                    "_SUBSAMPLE_INPUT_FQ1": sample.files[0],
+                    "_SUBSAMPLE_INPUT_FQ2": sample.files[1],
+                    "_SUBSAMPLE_OUTPUT_FQ1": subsample_files[0],
+                    "_SUBSAMPLE_OUTPUT_FQ2": subsample_files[1],
+                },
+                callback=partial(
+                    _subsample_callback,
+                    logger=logger,
+                    sample=sample,
+                    files=subsample_files,
+                    cleaner=cleaner,
+                ),
+                error_callback=partial(
+                    _subsample_error_callback,
+                    logger=logger,
+                    sample=sample,
+                    files=subsample_files,
+                    cleaner=cleaner,
+                ),
+                conda_spec={
+                    "dependencies": ["fq >= 0.11.0 < 0.12.0"],
+                    "channels": ["bioconda"],
+                },
+            )
+    executor.wait()
     return samples

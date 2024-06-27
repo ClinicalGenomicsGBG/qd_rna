@@ -4,6 +4,22 @@ required:
   - qlucore
 
 properties:
+  subsample:
+    type: object
+    properties:
+      threads:
+        type: integer
+        description: Number of threads to use for subsampling
+        default: 12
+      target:
+        type: integer
+        description: Target number of reads for subsampling (approximate)
+        default: 100_000_000
+      init:
+        type: string
+        description: Code to run before subsampling FASTQ files
+        default: ""
+
   strandedness:
     type: string
     description: Strandedness of RNA-seq library
