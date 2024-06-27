@@ -184,7 +184,7 @@
     --resultdir: "rsync"
     --executor_name: mock
   mocks:
-    _cellophane_module_rsync.src.util.sleep: ~
+    modules.rsync.src.util.sleep: ~
   logs:
     - Waiting 30 seconds for rsync/a.txt to become available
     - rsync/a.txt is missing
