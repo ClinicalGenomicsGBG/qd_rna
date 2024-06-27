@@ -191,7 +191,7 @@ def rnaseq(
         samples.output = set()
         return samples
 
-    log_tag = samples[0].id if (n := len(samples)) == 1 else f"{n} samples"
+    log_tag = samples[0].id if (n := len(samples.unique_ids)) == 1 else f"{n} samples"
 
     _add_optional_outputs(samples, config)
 

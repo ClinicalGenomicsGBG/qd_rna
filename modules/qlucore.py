@@ -260,7 +260,7 @@ def qlucore(
         samples.output = set()
         return samples
 
-    log_tag = samples[0].id if (n := len(samples)) == 1 else f"{n} samples"
+    log_tag = samples[0].id if (n := len(samples.unique_ids)) == 1 else f"{n} samples"
 
     if checkpoints.main.check(qlucore_nf_config):
         logger.info(f"Using previous nf-core/rnafusion output ({log_tag})")
