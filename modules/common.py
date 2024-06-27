@@ -13,8 +13,6 @@ from cellophane import Cleaner, Config, Executor, Sample, Samples, post_hook, pr
 from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 from humanfriendly.text import pluralize
 
-from modules.slims import SlimsSamples
-
 
 def _int_or_none(value: str) -> int | None:
     if value is not None:
@@ -115,7 +113,7 @@ def nf_config(template, location, include: Path | None = None, **kwargs):
     before=["hcp_fetch", "slims_sync_pre", "set_sample_id"],
 )
 def get_linked_samples(
-    samples: SlimsSamples,
+    samples: Samples,
     logger: LoggerAdapter,
     config: Config,
     **_,
