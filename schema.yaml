@@ -32,7 +32,7 @@ properties:
   limitSjdbInsertNsj:
     type: integer
     description: Maximum number of junctions to insert for STAR
-    default: 1000000
+    default: 1_000_000
 
   read_length:
     type: integer
@@ -158,14 +158,14 @@ properties:
           target:
             type: integer
             description: Target number of reads for subsampling (approximate)
-            default: 20000000
+            default: 20_000_000
           fallback_fraction:
             type: number
             description: Fraction of reads to subsample if calculation fails
             default: 0.2
           init:
             type: string
-            description: Code to run before qlucore subsampling
+            description: Code to run before subsampling qlucore BAM files
             default: ""
 
       starfusion_ref:
