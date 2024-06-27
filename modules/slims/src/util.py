@@ -1,14 +1,15 @@
 """Module for getting samples from SLIMS"""
 
 import re
-from datetime import datetime, timedelta
-from functools import cache, reduce
+from contextlib import suppress
+from functools import cache, reduce, singledispatch
 from json import loads
 from typing import Any
-
-from humanfriendly import parse_timespan
+from warnings import warn
+from attrs import define
 from slims.criteria import (
     Criterion,
+    Junction,
     between_inclusive,
     conjunction,
     contains,
@@ -18,11 +19,15 @@ from slims.criteria import (
     equals_ignore_case,
     greater_than,
     is_not,
+    is_null,
     is_one_of,
     less_than,
     starts_with,
 )
+from slims.criteria import _JunctionType as op
 from slims.slims import Record, Slims
+
+from cellophane import Sample
 
 
 @cache
@@ -48,10 +53,10 @@ def split_criteria(criteria: str) -> list[str]:
             if depth > 1:
                 part += ")"
             depth -= 1
-        elif _criteria[0:5] == " and " and depth == 0:
+        elif _criteria.startswith(" and ") and depth == 0:
             parts = [part, "and", _criteria[5:]]
             break
-        elif _criteria[0:4] == " or " and depth == 0:
+        elif _criteria.startswith(" or ") and depth == 0:
             parts = [part, "or", _criteria[4:]]
             break
         else:
@@ -65,53 +70,32 @@ def split_criteria(criteria: str) -> list[str]:
     return parts or [part]
 
 
-def parse_criteria(  # type: ignore[return]
-    criteria: str | list[str],
-    parent_records: list[Record] | None = None,
-) -> list[Criterion]:
+def parse_criteria(criteria: str | list[str]) -> Criterion:
     """Parse criteria"""
 
     match criteria:
-        case str(criteria) if all(w not in criteria for w in [
-            "equals",
-            "not_equals",
-            "one_of",
-            "not_one_of",
-            "equals_ignore_case",
-            "not_equals_ignore_case",
-            "contains",
-            "not_contains",
-            "starts_with",
-            "not_starts_with",
-            "ends_with",
-            "not_ends_with",
-            "between",
-            "not_between",
-            "greater_than",
-            "less_than",
-        ]):
-            raise ValueError(f"Invalid criteria: {criteria}")
-        case str(criteria) if criteria.startswith("->"):
-            if parent_records is None:
-                raise ValueError("Cannot use leading '->' without parent record(s)")
-            else:
-                _parsed = parse_criteria(criteria[2:])
-                parent_pks = [p.pk() for p in parent_records]
-                return [
-                    conjunction()
-                    .add(is_one_of("cntn_fk_originalContent", parent_pks))
-                    .add(_parsed[0]),
-                    *_parsed[1:],
-                ]
-        case str(criteria) if parent_records:
-            _parsed = parse_criteria(criteria)
-            parent_pks = [p.pk() for p in parent_records]
-            return [
-                conjunction().add(is_one_of("cntn_pk", parent_pks)).add(_parsed[0]),
-                *_parsed[1:],
+        case str(criteria) if all(
+            w not in criteria
+            for w in [
+                "equals",
+                "not_equals",
+                "one_of",
+                "not_one_of",
+                "equals_ignore_case",
+                "not_equals_ignore_case",
+                "contains",
+                "not_contains",
+                "starts_with",
+                "not_starts_with",
+                "ends_with",
+                "not_ends_with",
+                "between",
+                "not_between",
+                "greater_than",
+                "less_than",
             ]
-        case str(criteria) if "->" in criteria:
-            return [parse_criteria(c)[0] for c in criteria.split("->")]
+        ):
+            raise ValueError(f"Invalid criteria: {criteria}")
         case str(criteria):
             return parse_criteria(split_criteria(criteria))
 
@@ -123,56 +107,65 @@ def parse_criteria(  # type: ignore[return]
                 return parse_criteria(criteria)
 
         case [a, "and", b]:
-            return [conjunction().add(parse_criteria(a)[0]).add(parse_criteria(b)[0])]
+            return conjunction().add(parse_criteria(a)).add(parse_criteria(b))
         case [a, "or", b]:
-            return [disjunction().add(parse_criteria(a)[0]).add(parse_criteria(b)[0])]
+            return disjunction().add(parse_criteria(a)).add(parse_criteria(b))
 
         case [_, *mid, _] if "and" in mid or "or" in mid:
             # This handles cases where multiple parentheses are used
             # around a single criterion (e.g. "((((a equals b))))")
             return parse_criteria(" ".join(criteria))
 
+        case ["has_parent", *a]:
+            return HasParent(parse_criteria(a))
+        case ["not_has_parent", *a]:
+            return HasParent(parse_criteria(a), negate=True)
+        case ["has_derived", *a]:
+            return HasDerived(parse_criteria(a))
+        case ["not_has_derived", *a]:
+            return HasDerived(parse_criteria(a), negate=True)
+
         case [field, *_] if not field.startswith("cntn_"):
             raise ValueError(f"Invalid field: {field}")
 
         case [field, "equals", value]:
-            return [equals(field, value)]
+            return equals(field, value)
         case [field, "not_equals", value]:
-            return [is_not(equals(field, value))]
+            return is_not(equals(field, value))
         case [field, "one_of", *values]:
-            return [is_one_of(field, values)]
+            return is_one_of(field, values)
         case [field, "not_one_of", *values]:
-            return [is_not(is_one_of(field, values))]
+            return is_not(is_one_of(field, values))
 
         case [field, "equals_ignore_case", value]:
-            return [equals_ignore_case(field, value)]
+            return equals_ignore_case(field, value)
         case [field, "not_equals_ignore_case", value]:
-            return [is_not(equals_ignore_case(field, value))]
+            return is_not(equals_ignore_case(field, value))
 
         case [field, "contains", value]:
-            return [contains(field, value)]
+            return contains(field, value)
         case [field, "not_contains", value]:
-            return [is_not(contains(field, value))]
+            return is_not(contains(field, value))
 
         case [field, "starts_with", value]:
-            return [starts_with(field, value)]
+            return starts_with(field, value)
         case [field, "not_starts_with", value]:
-            return [is_not(starts_with(field, value))]
+            return is_not(starts_with(field, value))
 
         case [field, "ends_with", value]:
-            return [ends_with(field, value)]
+            return ends_with(field, value)
         case [field, "not_ends_with", value]:
-            return [is_not(ends_with(field, value))]
+            return is_not(ends_with(field, value))
 
         case [field, "between", *values]:
-            return [between_inclusive(field, *values)]
+            return between_inclusive(field, *values)
         case [field, "not_between", *values]:
-            return [is_not(between_inclusive(field, *values))]
+            return is_not(between_inclusive(field, *values))
 
         case [field, "greater_than", value]:
-            return [greater_than(field, value)]
+            return greater_than(field, value)
         case [field, "less_than", value]:
-            return [less_than(field, value)]
+            return less_than(field, value)
         case _:
             raise ValueError(f"Invalid criteria: {criteria}")
 
@@ -180,106 +173,275 @@ def parse_criteria(  # type: ignore[return]
 def get_field(record: Record, field: str, default=None) -> Any:
     """Get a field from SLIMS record"""
     try:
-        if field.startswith("json:"):
-            _field, *_key = re.split(r"\.|(\[[0-9]*\])", field[5:])
-            _key = [int(k.strip("[]")) if k.startswith("[") else k for k in _key if k]
-            _json = loads(record.__dict__[_field].value)
-            return reduce(lambda x, y: x[y], _key, _json)
-        else:
+        if not field.startswith("json:"):
             return getattr(record, field).value
-    except AttributeError:
+        _field, *_key = re.split(r"\.|(\[[0-9]*\])", field[5:])
+        _key = [int(k.strip("[]")) if k.startswith("[") else k for k in _key if k]
+        _json = loads(record.__dict__[_field].value)
+        return reduce(lambda x, y: x[y], _key, _json)
+    except (AttributeError, KeyError):
+        warn(f"Unable to get field '{field}' from record")
         return default
-    except KeyError:
-        return default
+
+
+def get_fields_from_sample(
+    sample: Sample,
+    map_: dict[str, Any],
+    keys: list[tuple[str, ...]],
+    sync_keys_or_fields: list[str],
+):
+    fields = {}
+    for key in keys:
+        try:
+            field_ = reduce(lambda x, y: x.get(y), key, map_)
+            if (
+                field_ not in sync_keys_or_fields
+                and ".".join(key) not in sync_keys_or_fields
+            ):
+                continue
+            value = reduce(lambda x, y: x.get(y), key[1:], getattr(sample, key[0]))
+        except Exception as exc:
+            warn(f"Unable to map '{'.'.join(key)}' to field: {exc!r}")
+            continue
+
+        fields[field_] = value
+    return fields
+
+
+@define
+class HasParent:
+    value: Criterion
+    negate: bool = False
+
+    def to_dict(self):
+        base = {
+            "operator": "has_parent",
+            "value": self.value.to_dict(),
+        }
+        return {"operator": "not", "criteria": [base]} if self.negate else base
+
+
+@define
+class HasDerived:
+    value: Criterion
+    negate: bool = False
+
+    def to_dict(self):
+        base = {
+            "operator": "has_derived",
+            "value": self.value.to_dict(),
+        }
+        return {"operator": "not", "criteria": [base]} if self.negate else base
+
+
+def barnch_has_parent_derived_criteria(branch: Criterion) -> bool:
+    """
+    Checks if the specified junction has any HasParent or HasDerived members,
+    including nested junctions.
+
+    Args:
+        branch: The junction to check.
+
+    Returns:
+        bool: True if the junction has any HasParent or HasDerived members,
+            False otherwise.
+    """
+    ret = False
+    for member in branch.members if isinstance(branch, Junction) else [branch]:
+        if isinstance(member, Junction):
+            ret = barnch_has_parent_derived_criteria(member)
+        elif isinstance(member, (HasParent, HasDerived)):
+            ret = True
+
+    return ret
+
+
+class NoMatch(Exception):
+    """Raised when no match is found for a has_parent or has_derived criterion."""
+
+class NoOp(Exception):
+    """Raised when a no-op is encountered (eg. no records match a negated HasParent/HasDerived)."""
+
+@singledispatch
+def resolve_criteria(
+    criteria: Any,
+    connection: Slims,
+    _base: Criterion | None = None,
+) -> Criterion:  # pragma: no cover
+    """
+    Resolve criteria to a new criterion that can be used to filter records.
+    Recursively replaces HasParent and HasDerived criteria with criteria that
+    filter by the primary keys of the parent or derived records.
+
+    Args:
+        criteria: The criteria to resolve.
+        connection: The SLIMS connection.
+        _base: The base criteria to filter by.
+
+    Returns:
+        Criterion: The resolved criterion.
+    """
+    del connection, _base  # Unused
+    raise NotImplementedError(f"Cannot resolve {criteria}")
+
+
+@resolve_criteria.register
+def _(
+    criteria: HasParent,
+    connection: Slims,
+    _base: Criterion | None = None,
+) -> Criterion:
+    # Parent records must match the specified criteria
+    criteria_ = conjunction()
+    if _base:
+        # If a base criteria is provided, filter the potential parent records by it
+        derived = connection.fetch("Content", _base) if _base else None
+        criteria_.add(is_one_of("cntn_pk", [r.cntn_fk_originalContent.value for r in derived]))
+
+    if parents := connection.fetch("Content", criteria=criteria_.add(criteria.value)):
+        resolved = is_one_of("cntn_fk_originalContent", [r.pk() for r in parents])
+    elif criteria.negate:
+        raise NoOp()
+    else:
+        raise NoMatch()
+
+    # Return a new criterion that filters by the originalContent of the parent records
+    return is_not(resolved) if criteria.negate else resolved
+
+
+@resolve_criteria.register
+def _(
+    criteria: HasDerived,
+    connection: Slims,
+    _base: Criterion | None = None,
+) -> Criterion:
+    # Derived records must match the specified criteria
+    if _base:
+        # If a base criteria is provided, filter the potential derived records by it
+        parents = connection.fetch("Content", _base)
+        derived = None
+        if parent_pks := [r.pk() for r in parents]:
+            derived = connection.fetch(
+                "Content",
+                criteria=conjunction()
+                .add(criteria.value)
+                .add(is_one_of("cntn_fk_originalContent", parent_pks)),
+            )
+
+    # Fetch the matching derived records
+    if derived:
+        resolved = is_one_of(
+            "cntn_pk", [r.cntn_fk_originalContent.value for r in derived]
+        )
+        return is_not(resolved) if criteria.negate else resolved
+    elif criteria.negate:
+        raise NoOp()
+    else:
+        raise NoMatch()
+
+
+
+@resolve_criteria.register
+def _(
+    criteria: Criterion,
+    connection: Slims,
+    _base: Criterion | None = None,
+) -> Criterion:
+    del connection, _base  # Unused
+
+    # Return base criteria as is
+    return criteria
+
+
+@resolve_criteria.register
+def _(
+    criteria: Junction,
+    connection: Slims,
+    _base: Junction | None = None,
+) -> Criterion:
+    resolved = Junction(criteria.operator)
+    if criteria.operator == op.AND:
+        base = _base or conjunction()
+        for member in criteria.members:
+            if not barnch_has_parent_derived_criteria(member):
+                base.add(member)
+
+        for member in criteria.members:
+            # If a member is a no-op, it can be ignored.
+            with suppress(NoOp):
+                resolved.add(resolve_criteria(member, connection, base))
+        if not resolved.members:
+            # If all members are no-op, the entire junction can be ignored.
+            raise NoOp()
+        return resolved
+
+
+    elif criteria.operator == op.OR:
+        for member in criteria.members:
+            # In an OR junction, each member is resolved independently, so no-match
+            # should be ignored to allow other members to be resolved.
+            with suppress(NoMatch):
+                resolved.add(resolve_criteria(member, connection, _base))
+
+        if not resolved.members:
+            # If all members are no-match, the junction should match no records.
+            raise NoMatch()
+
+    return resolved
+
+
+def unnest_criteria(criteria: Criterion) -> Criterion:
+    """Unnest nested junctions with the same operator."""
+    if not isinstance(criteria, Junction):
+        return criteria
+    operator = criteria.operator
+    resolved = Junction(operator)
+    for member in criteria.members:
+        if isinstance(member, Junction):
+            resolved_member = unnest_criteria(member)
+            if resolved_member.operator == operator:
+                resolved.members.extend(resolved_member.members)
+            else:
+                resolved.add(resolved_member)
+        else:
+            resolved.add(member)
+    return resolved
+
+@singledispatch
+def validate_criteria(criteria: Criterion, connection: Slims) -> None:
+    """Validate criteria fields to ensure they are valid SLIMS fields."""
+    field = criteria.to_dict()["fieldName"]
+    if not connection.fetch("Field", equals("tbfl_name", field)):
+        raise ValueError(f"Invalid field: {field}")
+
+@validate_criteria.register
+def _(criteria: Junction, connection: Slims) -> None:
+    for member in criteria.members:
+        validate_criteria(member, connection)
+
+@validate_criteria.register
+def _(criteria: HasParent, connection: Slims) -> None:
+    validate_criteria(criteria.value, connection)
+
+@validate_criteria.register
+def _(criteria: HasDerived, connection: Slims) -> None:
+    validate_criteria(criteria.value, connection)
 
 
 def get_records(
-    *args,
+    criteria: str | Criterion,
     connection: Slims,
-    string_criteria: str | None = None,
-    slims_id: str | list[str] | None = None,
-    content_type: int | list[int] | None = None,
-    max_age: int | str | None = None,
-    derived_from: Record | list[Record] | None = None,
-    unrestrict_parents: bool = False,
-    **kwargs: str | int | list[str | int],
+    **kwargs: Any,
 ) -> list[Record]:
-    """Get records from SLIMS"""
-
-    if isinstance(derived_from, Record):
-        derived_from = [derived_from]
-
-    if string_criteria:
-        _parsed = parse_criteria(string_criteria, parent_records=derived_from)
-        parent_records: list[Record] | None = None
-        for criterion in _parsed[:-1]:
-            parent_records = get_records(
-                criterion,
-                connection=connection,
-                derived_from=parent_records,
-                slims_id=slims_id if not unrestrict_parents else None,
-                max_age=max_age if not unrestrict_parents else None,
-            )
-
-        return get_records(
-            _parsed[-1],
-            connection=connection,
-            derived_from=parent_records,
-            slims_id=slims_id,
-            max_age=max_age,
-        )
-
-    else:
-        criteria = conjunction()
-        match slims_id:
-            case str():
-                criteria = criteria.add(equals("cntn_id", slims_id))
-            case [*ids]:
-                criteria = criteria.add(is_one_of("cntn_id", ids))
-            case _ if slims_id is not None:
-                raise TypeError(f"Invalid type for id: {type(slims_id)}")
-
-        match content_type:
-            case int():
-                criteria = criteria.add(equals("cntn_fk_contentType", content_type))
-            case [*types]:
-                criteria = criteria.add(is_one_of("cntn_fk_contentType", types))
-            case _ if content_type is not None:
-                raise TypeError(f"Invalid type for content_type: {type(content_type)}")
-
-        match max_age:
-            case int() | str():
-                now = datetime.now()
-                max_date = now - timedelta(seconds=parse_timespan(str(max_age)))
-                criteria = criteria.add(
-                    between_inclusive("cntn_modifiedOn", max_date, now)
-                )
-            case _ if max_age is not None:
-                raise TypeError(f"Expected int or str, got {type(max_age)}")
-
-        match derived_from:
-            case None:
-                pass
-            case record if isinstance(record, Record):
-                original = {record.pk(): record}
-                criteria = criteria.add(
-                    is_one_of("cntn_fk_originalContent", [*original])
-                )
-            case [*records] if all(isinstance(r, Record) for r in records):
-                original = {r.pk(): r for r in records}
-                criteria = criteria.add(
-                    is_one_of("cntn_fk_originalContent", [*original])
-                )
-            case _:
-                raise TypeError(f"Expected Record(s), got {derived_from}")
-
-        for key, value in kwargs.items():
-            criteria = criteria.add(
-                is_one_of(key, [value] if isinstance(value, int | str) else value)
-            )
-
-        for arg in args:
-            criteria = criteria.add(arg)
-
-        return connection.fetch("Content", criteria)
-
+    parsed = parse_criteria(criteria) if isinstance(criteria, str) else [criteria]
+    unnested = unnest_criteria(parsed)
+    validate_criteria(unnested, connection)
+    try:
+        resolved = resolve_criteria(unnested, connection)
+    except NoMatch:
+        warn(f"No record matches criteria '{criteria}'")
+        return []
+    except NoOp:
+        warn(f"Ignoring fetch as ALL SLIMS records would match criteria '{criteria}'")
+        return []
+    return connection.fetch("Content", resolved)

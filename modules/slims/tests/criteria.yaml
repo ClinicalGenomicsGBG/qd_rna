@@ -1,16 +1,16 @@
 ---
 id: equals
 criteria: cntn_a equals 1337
-slims:
-- fieldName: cntn_a
+parsed:
+  fieldName: cntn_a
   operator: equals
   value: '1337'
 
 ---
 id: not_equals
 criteria: cntn_a not_equals 1338
-slims:
-- operator: not
+parsed:
+  operator: not
   criteria:
   - fieldName: cntn_a
     operator: equals
@@ -18,35 +18,35 @@ slims:
 
 ---
 id: one_of
-criteria: cntn_a one_of x y
-slims:
-- fieldName: cntn_a
+criteria: cntn_a one_of x y z
+parsed:
+  fieldName: cntn_a
   operator: inSet
-  value: ['x', 'y']
+  value: ['x', 'y', 'z']
 
 ---
 id: not_one_of
-criteria: cntn_a not_one_of x y
-slims:
-- operator: not
+criteria: cntn_a not_one_of x y z
+parsed:
+  operator: not
   criteria:
   - fieldName: cntn_a
     operator: inSet
-    value: ['x', 'y']
+    value: ['x', 'y', 'z']
 
 ---
 id: equals_ignore_case
 criteria: cntn_a equals_ignore_case FOO
-slims:
-- fieldName: cntn_a
+parsed:
+  fieldName: cntn_a
   operator: iEquals
   value: FOO
 
 ---
 id: not_equals_ignore_case
 criteria: cntn_a not_equals_ignore_case BAR
-slims:
-- operator: not
+parsed:
+  operator: not
   criteria:
   - fieldName: cntn_a
     operator: iEquals
@@ -55,16 +55,16 @@ slims:
 ---
 id: contains
 criteria: cntn_a contains x
-slims:
-- fieldName: cntn_a
+parsed:
+  fieldName: cntn_a
   operator: iContains
   value: x
 
 ---
 id: not_contains
 criteria: cntn_a not_contains x
-slims:
-- operator: not
+parsed:
+  operator: not
   criteria:
   - fieldName: cntn_a
     operator: iContains
@@ -73,16 +73,16 @@ slims:
 ---
 id: starts_with
 criteria: cntn_a starts_with start_
-slims:
-- fieldName: cntn_a
+parsed:
+  fieldName: cntn_a
   operator: iStartsWith
   value: start_
 
 ---
 id: not_starts_with
 criteria: cntn_a not_starts_with not_start_
-slims:
-- operator: not
+parsed:
+  operator: not
   criteria:
   - fieldName: cntn_a
     operator: iStartsWith
@@ -91,16 +91,16 @@ slims:
 ---
 id: ends_with
 criteria: cntn_a ends_with _end
-slims:
-- fieldName: cntn_a
+parsed:
+  fieldName: cntn_a
   operator: iEndsWith
   value: _end
 
 ---
 id: not_ends_with
 criteria: cntn_a not_ends_with _not_end
-slims:
-- operator: not
+parsed:
+  operator: not
   criteria:
   - fieldName: cntn_a
     operator: iEndsWith
@@ -109,8 +109,8 @@ slims:
 ---
 id: between
 criteria: cntn_a between 13 37
-slims:
-- fieldName: cntn_a
+parsed:
+  fieldName: cntn_a
   operator: betweenInclusive
   start: '13'
   end: '37'
@@ -118,9 +118,9 @@ slims:
 ---
 id: not_between
 criteria: cntn_a not_between 13 37
-slims:
-- operator: not
-  criteria: 
+parsed:
+  operator: not
+  criteria:
   - fieldName: cntn_a
     operator: betweenInclusive
     start: '13'
@@ -129,24 +129,24 @@ slims:
 ---
 id: greater_than
 criteria: cntn_a greater_than 9000
-slims:
-- fieldName: cntn_a
+parsed:
+  fieldName: cntn_a
   operator: greaterThan
   value: '9000'
 
 ---
 id: less_than
 criteria: cntn_a less_than 3
-slims:
-- fieldName: cntn_a
+parsed:
+  fieldName: cntn_a
   operator: lessThan
   value: '3'
 
 ---
 id: and
 criteria: cntn_a equals 1337 and cntn_b equals 1338
-slims:
-- operator: and
+parsed:
+  operator: and
   criteria:
   - fieldName: cntn_a
     operator: equals
@@ -158,8 +158,8 @@ slims:
 ---
 id: or
 criteria: cntn_a equals 1337 or cntn_b equals 1338
-slims:
-- operator: or
+parsed:
+  operator: or
   criteria:
   - fieldName: cntn_a
     operator: equals
@@ -171,8 +171,8 @@ slims:
 ---
 id: and_or
 criteria: cntn_a equals 1337 and cntn_b equals 1338 or cntn_c equals 1339
-slims:
-- operator: and
+parsed:
+  operator: and
   criteria:
   - fieldName: cntn_a
     operator: equals
@@ -189,8 +189,8 @@ slims:
 ---
 id: nested
 criteria: ((cntn_a equals a and cntn_b equals b) or cntn_c between 13 37) and cntn_d equals d
-slims:
-- operator: and
+parsed:
+  operator: and
   criteria:
   - operator: or
     criteria:
@@ -211,39 +211,197 @@ slims:
     value: d
 
 ---
-id: derived
-criteria: cntn_a equals a -> cntn_b equals b
-slims:
-- fieldName: cntn_a
-  operator: equals
-  value: a
-- fieldName: cntn_b
-  operator: equals
-  value: b
+id: has_parent
+criteria: cntn_id equals derived and has_parent cntn_a equals a
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_a: {value: a}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+parsed:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: derived
+  - operator: has_parent
+    value:
+      fieldName: cntn_a
+      operator: equals
+      value: a
+resolved:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: derived
+  - fieldName: cntn_fk_originalContent
+    operator: inSet
+    value: [1]
+
 
 ---
-id: parent_pk
-criteria: cntn_a equals a
-kwargs:
-  parent_records:
-  - !!python/object:unittest.mock.MagicMock
-    pk: !!python/object/apply:unittest.mock.MagicMock
-      kwds:
-        return_value: 1337
-slims:
-- operator: and
+id: not_has_parent
+criteria: cntn_id equals derived and not_has_parent cntn_a equals a
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_a: {value: a}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+parsed:
+  operator: and
   criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: derived
+  - operator: not
+    criteria:
+    - operator: has_parent
+      value:
+        fieldName: cntn_a
+        operator: equals
+        value: a
+resolved:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: derived
+  - operator: not
+    criteria:
+    - fieldName: cntn_fk_originalContent
+      operator: inSet
+      value: [1]
+
+---
+id: has_derived
+criteria: cntn_id equals parent and has_derived cntn_a equals a
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_fk_originalContent: {value: 0}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+      cntn_a: {value: a}
+parsed:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: parent
+  - operator: has_derived
+    value:
+      fieldName: cntn_a
+      operator: equals
+      value: a
+resolved:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: parent
   - fieldName: cntn_pk
     operator: inSet
-    value: [1337]
-  - fieldName: cntn_a
+    value: [1]
+
+---
+id: not_has_derived
+criteria: cntn_id equals parent and not_has_derived cntn_a equals a
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_fk_originalContent: {value: 0}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+      cntn_a: {value: a}
+parsed:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
     operator: equals
-    value: a
+    value: parent
+  - operator: not
+    criteria:
+    - operator: has_derived
+      value:
+        fieldName: cntn_a
+        operator: equals
+        value: a
+resolved:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: parent
+  - operator: not
+    criteria:
+    - fieldName: cntn_pk
+      operator: inSet
+      value: [1]
+
+
+---
+id: not_has_derived_noop
+criteria: cntn_id equals parent and not_has_derived cntn_a equals a
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_fk_originalContent: {value: 0}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+      cntn_a: {value: x}
+parsed:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: parent
+  - operator: not
+    criteria:
+    - operator: has_derived
+      value:
+        fieldName: cntn_a
+        operator: equals
+        value: a
+resolved:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: parent
+
 ---
 id: muliple_parentheses
 criteria: ((((cntn_b equals b or cntn_c equals c))))
-slims:
-- operator: or
+parsed:
+  operator: or
   criteria:
   - fieldName: cntn_b
     operator: equals
@@ -251,25 +409,6 @@ slims:
   - fieldName: cntn_c
     operator: equals
     value: c
----
-id: derived
-criteria: -> cntn_a equals a
-kwargs:
-  parent_records:
-  - !!python/object:unittest.mock.MagicMock
-    pk: !!python/object/apply:unittest.mock.MagicMock
-      kwds:
-        return_value: 1337
-slims:
-- operator: and
-  criteria:
-  - fieldName: cntn_fk_originalContent
-    operator: inSet
-    value: [1337]
-  - fieldName: cntn_a
-    operator: equals
-    value: a
-
 
 ---
 id: unmatched_parenthesis
@@ -282,16 +421,86 @@ criteria: cntn_a invalid_operator a
 exception: !!python/name:ValueError
 
 ---
-id: invalid_field
-criteria: invalid_a equals a
-exception: !!python/name:ValueError
-
----
-id: missiing_parent
-criteria: -> cntn_a equals a
-exception: !!python/name:ValueError
-
----
 id: invalid_unspecified
 criteria: cntn_a equals INVALID INVALID
 exception: !!python/name:ValueError
+
+---
+id: conjunction_no_match
+criteria: has_parent cntn_a equals a and has_parent cntn_b equals b
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_fk_originalContent: {value: 0}
+      cntn_a: {value: x}
+      cntn_b: {value: x}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+exception: !!python/name:slims_.src.util.NoMatch
+
+---
+id: conjunction_noop
+criteria: not_has_parent cntn_a equals a and not_has_parent cntn_b equals b
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_a: {value: x}
+      cntn_b: {value: x}
+      cntn_fk_originalContent: {value: 0}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+exception: !!python/name:slims_.src.util.NoOp
+
+---
+id: disjunction_no_match
+criteria: has_parent cntn_a equals a or has_parent cntn_b equals b
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_a: {value: x}
+      cntn_b: {value: x}
+      cntn_fk_originalContent: {value: 0}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+exception: !!python/name:slims_.src.util.NoMatch
+
+---
+id: disjunction_noop
+criteria: not_has_parent cntn_a equals a or not_has_parent cntn_b equals b
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_a: {value: x}
+      cntn_b: {value: x}
+      cntn_fk_originalContent: {value: 0}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+exception: !!python/name:slims_.src.util.NoOp
+
+---
+id: invalid_field
+criteria: cntn_INVALID equals a
+records:
+  - !!python/object/apply:slims_.tests.RecordMock []
+exception: !!python/name:ValueError
+

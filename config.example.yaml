@@ -199,28 +199,27 @@ logdir: ~
 # slims:
 #   # SLIMS URL [string]
 #   url: ~
-#   # Maximum age of novel samples (eg. "7 days", "1 year") [string]
-#   novel_max_age: "1 year"
-#   # Do not create SLIMS bioinformatics objects [boolean]
+#   # Do not sync data to SLIMS [boolean]
 #   dry_run: false
-#   # Allow parent records to have different IDs than the child records [boolean]
-#   unrestrict_parents: false
-#   # Allow duplicate samples (eg. if a pre-hook can handle this) [boolean]
-#   allow_duplicates: false
-#   # Manually select SLIMS Sample ID(s) [array]
-#   id: ~
-#   # SLIMS criteria for checking completed records (eg. "cntn_cstm_SecondaryAnalysis equals 1337") [string]
-#   check_criteria: ~
 #   # SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337") [string]
-#   find_criteria: ~
-#   # Mapping for creating derived records in SLIMS (Use curly braces to access keys in the samples object) [array]
-#   derive: ~
+#   criteria: ~
+#   # Mapping for creating derived records in SLIMS. Top level key identies the derived record. Use curly braces to acces keys in the 'sample' object, eg. '{sample.id}' [mapping]
+#   derive: {}
+#   # Use fields from 'slims.map' when matching samples to augment with SLIMS metadata (in addition to 'sample.id') [array]
+#   match: []
+#   # Fields in slims.map that will be synced to SLIMS in a pre and post hook [array]
+#   sync: []
 #   # Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields) [mapping]
-#   map: ~
+#   map: {}
 #   # SLIMS password [string]
 #   password: ~
 #   # SLIMS username [string]
 #   username: ~
+#   novel:
+#     # Maximum age of novel records to consider for matchin (eg. '4 days', '1 year') [string]
+#     max_age: "1 year"
+#     # SLIMS criteria to use for matching novel records (In conjunction with 'slims.criteria') [string]
+#     criteria: ~
 # grid_engine:
 #   # Grid Engine queue [string]
 #   queue: "all.q"

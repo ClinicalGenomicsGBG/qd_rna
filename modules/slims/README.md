@@ -10,15 +10,13 @@ Option                            | Type      | Required | Default | Description
 `slims.username`                  | string    | Yes      |         | SLIMS username
 `slims.password`                  | string    | Yes      |         | SLIMS password
 `slims.map`                       | mapping   |          |         | Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields)
-`slims.derive`                    | array     |          |         | Mapping for creating derived records in SLIMS (Use curly braces to access
-`slims.find_criteria`             | string    |          |         | SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
-`slims.check_criteria`            | string    |          |         | SLIMS criteria for checking completed records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
-`slims.id`                        | array     |          |         | Manually select SLIMS Sample ID(s)
-`slims.allow_duplicates`          | bool      |          | False   | Allow duplicate samples (eg. if a pre-hook can handle this)
-`slims.unrestrict_parents`        | bool      |          | False   | Allow parent records to have different IDs than the child records
-`slims.dry_run`                   | bool      |          | False   | Do not create SLIMS bioinformatics objects
-`slims.novel_max_age`             | string    |          | 1 year  | Maximum age of novel samples (eg. "7 days", "1 year")
-
+`slims.sync`                      | array     |          |         | Fields in slims.map that will be synced to SLIMS in a pre and post hook
+`slims.match`                     | array     |          |         | Use fields from 'slims.map' when matching samples to augment with SLIMS metadata (in addition to 'sample.id')
+`slims.derive`                    | mapping   |          |         | Mapping for creating derived records in SLIMS (Use curly braces to access keys in the 'sample' object, eg. '{sample.id}')
+`slims.novel.max_age`             | string    |          | 1 year  | Maximum age of novel records to consider for matching (eg. "4 days", "1 year")
+`slims.novel.criteria`            | string    |          |         | SLIMS criteria to use for matching novel records (In conjunction with 'slims.criteria')
+`slims.criteria`                  | string    |          |         | SLIMS criteria to use for finding samples (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
+`slims.dry_run`                   | boolean   |          | false   | Do not sync data to SLIMS
 
 ### Example
 
@@ -30,14 +28,16 @@ slims:
   password: apipassword
   # Find sample records with content type 22 (Fastq) and qdrna in the samplesheet decription field
   # Exclude samples explicitly marked as "Do not include"
-  find_criteria: |
+  criteria: |
     cntn_fk_contentType equals 22
     and cntn_cstm_doNotInclude not_equals true
     and cntn_cstm_rawSheetDescription contains qdrna
-  # Check for derived records (->) with contentType 23 (Bioinformatics) and complete secondary analysis state
-  check_criteria: |
-    -> cntn_fk_contentType equals 23
-    and cntn_cstm_SecondaryAnalysisState equals complete
+  novel:
+    # Only consider samples that are less than 4 days old
+    max_age: 4 days
+    # Samples are novel if they do not have records with contentType 23 (Bioinformatics)
+    criteria: |
+      not_has_derived cntn_fk_contentType equals 23
   # Get file path from slims (unless specified in samples file)
   # Add backup remote keys for HCP hook
   # Add run information to samples
@@ -45,14 +45,21 @@ slims:
     files: json:cntn_cstm_demuxerSampleResult.fastq_paths
     run: cntn_cstm_runTag
     backup: json:cntn_cstm_demuxerBackupSampleResult.remote_keys
+  # Include run tag when matching samples to SLIMS records
+  match:
+  - run
   # Create derived records with content type = 23 (Bioinformatics)
   # Include state from cellophane sample (access key using curly braces)
   # Other parameters are required by SLIMS or records will not be created
   derive:
-    cntn_fk_contentType: 23
-    cntn_fk_location: 83
-    cntn_cstm_SecondaryAnalysisState: '{sample.state}'
-    cntn_status: 10
+    bioinformatics:
+      cntn_fk_contentType: 23
+      cntn_fk_location: 83
+      cntn_cstm_SecondaryAnalysisState: '{sample.state}'
+      cntn_status: 10
+  sync:
+  -
+
 ```
 
 ## Hooks
@@ -60,9 +67,11 @@ slims:
 Name                   | When | Condition | Description
 -----------------------|------|-----------|-------------
 `slims_fetch`          | Pre  |           | Fetch sample info
-`slims_derive`         | Pre  |           | Create derived records
-`slims_running`        | Pre  |           | Mark samples as running and update derived records
-`slims_update`         | Post | Always    | Update derived records
+`slims_sync_pre`       | Pre  |           | Sync data to SLIMS (pre hook)
+`slims_sync_post`      | Post | Always    | Sync data to SLIMS (post hook)
+
+> ![NOTE]
+> The `slims_sync_pre` and `slims_sync_post` will sync any field specified in `slims.sync` to the original record based on `slims.map`. Any records specified in `slims.derive` will be created by the `slims_sync_pre` hook and updated by the `slims_sync_post` hook.
 
 ## Mixins
 
@@ -79,7 +88,7 @@ Classmethod to create a new data.Samples object from a list of SLIMS records.
 
 ```python
 Samples.from_criteria(
-  records: list[Record],
+  criteria: str,
   config: cfg.Config,
   connection: slims.SLIMS | None = None,
 ) -> data.Samples
@@ -88,7 +97,7 @@ Samples.from_criteria(
 Classmethod to create a new data.Samples object with records matching the specified [criteria](criteria). Optionally pass a SLIMS connection object to avoid creating a new one.
 
 ```python
-Samples.update_derived(
+Samples.sync_derived(
   config: cfg.Config,
 ) -> None
 ```
@@ -96,22 +105,16 @@ Samples.update_derived(
 Update bioinformatics state for all samples in SLIMS.
 
 ```python
-Samples.set_state(
-  value: Literal["novel", "running", "complete", "failed"],
+Samples.sync_records(
+  config: cfg.Config,
 ) -> None
 ```
 
-Update state for all samples.
+Update the main record for all samples in SLIMS.
 
 ---
 
 ### Sample
-
-```python
-Sample.derived: list[Record] | None
-```
-
-Derived records for this sample.
 
 ```python
 Sample.record: slims.Record | None
@@ -120,45 +123,56 @@ Sample.record: slims.Record | None
 Record object for this sample (or None if sample has no Record).
 
 ```python
-Sample.pk: str | None
+Sample.matches_record(
+  record: Record,
+  map_: dict,
+  match: list[str] | None = None,
+)
 ```
 
-SLIMS primary key for this sample (or None if sample has no Record).
+Check if the sample matches the specified record based on the `match` fields in the `map_` dictionary. Optionally pass a list of fields to match on using the `match` parameter.
 
 ```python
-Sample.connection: slims.Record | None
+sample.match_from_record(
+  record: slims.Record,
+  map_: dict,
+  map_ignore: list[str] | None = None,
 ```
 
-Cached SLIMS connection object for this sample (or None if sample has no Record).
-
-```python
-Sample.state: Literal["novel", "running", "complete", "failed"]
-```
-
-State of the sample. Used to track sample state in SLIMS
+Map values from a SLIMS record to the sample object based on the `map_` dictionary. Optionally pass a list of fields to ignore using the `map_ignore` parameter.
 
 ```python
 Sample.from_record(
   record: slims.Record,
   config: cellophane.Config,
-) -> data.Samples
+  **kwargs: Any,
+)
 ```
 
-Create a new data.Sample object from a single SLIMS record.
+Create a new data.Sample object from a single SLIMS record. Optionally pass additional keyword arguments to override fields on the sample object.
 
 ```python
-Sample.update_derived(
+Sample.sync_record(
   config: cellophane.Config,
-) -> None
+)
 ```
 
-Update bioinformatics state for single sample in SLIMS.
+Sync fields mapped to this sample object back to the SLIMS record.
+
+```python
+Sample.sync_derived(
+  config: cellophane.Config,
+)
+```
+
+Sync derived records for this sample back to SLIMS.
 
 ## Criteria
 
 Criteria are specified using `<FIELD> <OPERATOR> <VALUE> ...` syntax where operators may take one or more values.
 
-> **WARNING** Invalid field names are silently ignored. This makes it very easy to accidentally fetch more samples than expected. This behavior is inherent to the official SLIMS API python bindings.
+> [!WARNING]
+> Invalid field names are silently ignored. This makes it very easy to accidentally fetch more samples than expected. This behavior is inherent to the official SLIMS API python bindings.
 
 The following operators are supported:
 
@@ -172,12 +186,13 @@ Operator             | Inverse                  | Value(s) | Description
 `ends_with`          | `not_ends_with`          | 1        | Field ends with (or does not end with) value
 `between`            | `not_between`            | 2        | Field is between (or not between) values
 `greater_than`       | `less_than`              | 1        | Field is greater than (or less than) value
+`has_parent`         | `not_has_parent`         | 1        | Field has (or does not have) a parent record that matches the specified criteria (where criteria is the value)
+`has_derived`        | `not_has_derived`        | 1        | Field has (or does not have) a derived record that matches the specified criteria (where criteria is the value)
 
 Complex criteria can be constructed using `and`/`or` and parentheses.
 
-To find derived records, the "->" operator can be used between two criteria. This will find all records that match the first criteria and then find all records that match the second criteria and are derived from the first (and so on). This operator can not be used inside parentheses. In order to limit the search space, parent records are expected to have the same ID as the derived records. This behaviour can be disabled using the `slims.unrestrict_parents` option. The `slims.bioinfo_check_criteria` currently does not support this operator.
-
-eg. `cntn_foo equals a -> cntn_cstm_foo equals b and (cntn_bar not_between c d or cntn_baz equals e)`
+> ![IMPORTANT]
+> The `has_parent` and `has_derived` operators are implemented as separate requests to the slims API. They should only be used to refine an already reasonably specific criteria. Unless the base criteria (without `has_parent`/`has_derived`) is specific enough this means a very large number of samples may be fetched, which can be very slow.
 
 ## Fields
 
@@ -187,7 +202,8 @@ Fields are specified using the full SLIMS field name (eg. `cntn_fk_contentType`)
 
 SLIMS fields can be mapped to keys on the `data.Samples` object using `<KEY>=<FIELD>`. This can be used to override any field on the `data.Samples` object (eg. `files=json:cntn_myJSONField.fastq_paths`).
 
-> **NOTE** The key needs to be a valid attribute name on the `data.Samples` object. The `meta` attribute can be used to store arbitrary data (eg. `meta.my_key=cntn_SomeField`).
+> ![NOTE]
+> The key needs to be a valid attribute name on the `data.Samples` object. The `meta` attribute can be used to store arbitrary data (eg. `meta.my_key=cntn_SomeField`).
 
 ## Derivations
 
