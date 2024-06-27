@@ -387,6 +387,9 @@ def _(
             # If all members are no-match, the junction should match no records.
             raise NoMatch()
 
+    elif criteria.operator == op.NOT:
+        resolved.add(resolve_criteria(criteria.members[0], connection, _base))
+
     return resolved
 
 
