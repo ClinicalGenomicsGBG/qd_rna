@@ -34,12 +34,26 @@ class QDRRNASample(Sample):
         on_setattr=convert,
     )
     last_run: str | None = field(default="UNSPECIFIED")
+    slims_state: Literal["running", "complete", "error"] = field(
+        default="running",
+        on_setattr=validate,
+    )
 
     @staticmethod
     @Sample.merge.register("run")
     @Sample.merge.register("last_run")
     def _merge(this, that):
         return this or that
+
+    @slims_state.validator
+    def _validate_state(
+        self,
+        attribute: Attribute,
+        value: Literal["running", "complete", "error"],
+    ) -> None:
+        del attribute  # Unused
+        if value not in ("running", "complete", "error"):
+            raise ValueError(f"Invalid state: {value}")
 
 
 def _fetch_nf_core(
@@ -98,7 +112,7 @@ def nf_config(template, location, include: Path | None = None, **kwargs):
 @pre_hook(
     label="Find Linked",
     after=["slims_fetch"],
-    before=["hcp_fetch", "slims_derive", "set_sample_id"],
+    before=["hcp_fetch", "slims_sync_pre", "set_sample_id"],
 )
 def get_linked_samples(
     samples: SlimsSamples,
@@ -114,7 +128,7 @@ def get_linked_samples(
     """
     logger.debug("Fetching samples from earlier runs")
     criteria = "{base_criteria} and ({link_criteria})".format(
-        base_criteria=config.slims.find_criteria,
+        base_criteria=config.slims.criteria,
         link_criteria=" or ".join(
             f"(cntn_id equals {group} "
             f"and cntn_cstm_runTag not_one_of {' '.join(s.run for s in samples)})"
@@ -124,6 +138,18 @@ def get_linked_samples(
     linked_samples = samples.__class__.from_criteria(criteria=criteria, config=config)
     logger.info(f"Found {len(linked_samples)} linked records")
     return linked_samples | samples
+
+
+@post_hook(label="Set SLIMS State", before=["slims_sync_post"])
+def set_slims_state(
+    samples: Samples,
+    logger: LoggerAdapter,
+    **_,
+) -> Samples:
+    """Set SLIMS state based on the presence of a run tag."""
+    logger.info("Updating state for SLIMS bioinformatics")
+    for sample in samples:
+        sample.slims_state = "error" if sample.failed else "complete"
 
 
 @pre_hook(label="Update Most Recent Run", before=["start_mail"], after="all")
