@@ -17,7 +17,7 @@ class Extractor:
         cls.script = script
 
     @staticmethod
-    def extracted_paths(compressed_path: Path) -> Iterator[Path]:
+    def extracted_paths(compressed_path: Path) -> Iterator[Path]:  # pragma: no cover
         raise NotImplementedError
 
     def extract(
@@ -48,8 +48,8 @@ class Extractor:
             AsyncResult | None - The result of the extraction process,
                 or None if already extracted.
         """
-
         if [*self.extracted_paths(compressed_path)]:  # pylint: disable=using-constant-test
+            logger.debug(f"Already extracted {compressed_path.name}")
             if callback is not None:
                 callback(None)
             return None

@@ -1,5 +1,8 @@
-# # Log level (NOTSET will log all messages, including those from external libraries) [string]
-# log_level: "INFO"
+# log:
+#   # Log level (NOTSET will log all messages, including those from external libraries) [string]
+#   level: "INFO"
+#   # Log messages from external libraries [boolean]
+#   external: false
 # # Sample read length [integer]
 # read_length: 150
 # # Maximum number of junctions to insert for STAR [integer]
@@ -25,6 +28,13 @@ logdir: ~
 #   memory: 2000000000
 #   # Number of CPUs to allocate to jobs started (if supported by the executor) [integer]
 #   cpus: 1
+# subsample:
+#   # Number of threads to use for subsampling [integer]
+#   threads: 12
+#   # Code to run before subsampling FASTQ files [string]
+#   init: ""
+#   # Target number of reads for subsampling (approximate) [integer]
+#   target: 100000000
 # rnaseq:
 #   # Skip nf-core/rnaseq [boolean]
 #   skip: false
@@ -69,7 +79,7 @@ logdir: ~
 #   subsample:
 #     # Number of threads to use for subsampling [integer]
 #     threads: 12
-#     # Code to run before qlucore subsampling [string]
+#     # Code to run before subsampling qlucore BAM files [string]
 #     init: ""
 #     # Fraction of reads to subsample if calculation fails [number]
 #     fallback_fraction: 0.2

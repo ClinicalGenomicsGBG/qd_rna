@@ -1,8 +1,8 @@
 ### THIS FILE IS MANAGED BY CELLOPHANE - DO NOT EDIT ###
--r unpack/requirements.txt
 -r slims/requirements.txt
 -r hcp/requirements.txt
 -r mail/requirements.txt
 -r rsync/requirements.txt
 -r nextflow/requirements.txt
 -r grid_engine/requirements.txt
+-r unpack/requirements.txt
