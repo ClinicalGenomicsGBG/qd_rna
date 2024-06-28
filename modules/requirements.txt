@@ -4,5 +4,5 @@
 -r mail/requirements.txt
 -r slims/requirements.txt
 -r hcp/requirements.txt
--r rsync/requirements.txt
 -r nextflow/requirements.txt
+-r rsync/requirements.txt
