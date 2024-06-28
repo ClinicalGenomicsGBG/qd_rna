@@ -164,7 +164,6 @@
     modules:
       a.py: |
         from cellophane import runner, post_hook, output
-        from cellophane.src.testing import MockExecutor
 
         @runner()
         @output("a.txt")
