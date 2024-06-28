@@ -1,18 +1,19 @@
 from pathlib import Path
 
-import slims_
 from cellophane.src.testing import parametrize_from_yaml
 from pytest import mark, param, raises
 from pytest_mock import MockerFixture
 from ruamel.yaml import YAML
 from slims.slims import Slims
 
-ROOT = Path(__file__).parent
+import slims_
+
+_ROOT = Path(__file__).parent
 
 
 class Test_integration:
     @staticmethod
-    @parametrize_from_yaml([ROOT / "integration.yaml"])
+    @parametrize_from_yaml([_ROOT / "integration.yaml"])
     def test_integration(definition: Path, run_definition):
         run_definition(definition)
 
@@ -32,7 +33,7 @@ class Test_criteria:
                 d.get("kwargs", {}),
                 id=d["id"],
             )
-            for d in YAML(typ="unsafe").load_all((ROOT / "criteria.yaml").read_text())
+            for d in YAML(typ="unsafe").load_all((_ROOT / "criteria.yaml").read_text())
         ],
     )
     def test_criteria(
@@ -45,14 +46,19 @@ class Test_criteria:
         records,
         kwargs,
     ):
-        mocker.patch("slims.slims.Slims.fetch", new=slims_.tests.fetch_factory(records or []))
+        mocker.patch(
+            "slims.slims.Slims.fetch",
+            new=slims_.tests.fetch_factory(records or []),
+        )
         conn = Slims("DUMMY", url="DUMMY", username="DUMMY", password="DUMMY")
         if exception:
             with raises(exception):
                 parsed_ = slims_.parse_criteria(criteria, **kwargs)
                 unnested_ = slims_.unnest_criteria(parsed_, **kwargs)
                 slims_.validate_criteria(unnested_, connection=conn)
-                resolved_ = slims_.resolve_criteria(unnested_, connection=conn, **kwargs)
+                resolved_ = slims_.resolve_criteria(
+                    unnested_, connection=conn, **kwargs
+                )
         else:
             parsed_ = slims_.parse_criteria(criteria, **kwargs)
             unnested_ = slims_.unnest_criteria(parsed_)

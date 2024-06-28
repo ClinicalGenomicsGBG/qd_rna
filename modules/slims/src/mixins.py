@@ -11,7 +11,7 @@ from cellophane.src.data import Container
 from cellophane.src.util import map_nested_keys
 from slims.slims import Record, Slims
 
-from .util import get_field, get_records, get_fields_from_sample
+from .util import get_field, get_fields_from_sample, get_records
 
 
 @define(slots=False)
@@ -208,7 +208,7 @@ def _(*_):
     return None
 
 
-@Sample.merge.register("derived")
+@Sample.merge.register("_derived")
 def _(this, that):
     if not this or that is None:
         return (this or {}) | (that or {})

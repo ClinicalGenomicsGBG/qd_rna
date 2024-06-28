@@ -6,7 +6,9 @@ from functools import cache, reduce, singledispatch
 from json import loads
 from typing import Any
 from warnings import warn
+
 from attrs import define
+from cellophane import Sample
 from slims.criteria import (
     Criterion,
     Junction,
@@ -19,15 +21,12 @@ from slims.criteria import (
     equals_ignore_case,
     greater_than,
     is_not,
-    is_null,
     is_one_of,
     less_than,
     starts_with,
 )
 from slims.criteria import _JunctionType as op
 from slims.slims import Record, Slims
-
-from cellophane import Sample
 
 
 @cache
@@ -259,8 +258,10 @@ def barnch_has_parent_derived_criteria(branch: Criterion) -> bool:
 class NoMatch(Exception):
     """Raised when no match is found for a has_parent or has_derived criterion."""
 
+
 class NoOp(Exception):
     """Raised when a no-op is encountered (eg. no records match a negated HasParent/HasDerived)."""
+
 
 @singledispatch
 def resolve_criteria(
@@ -296,7 +297,9 @@ def _(
     if _base:
         # If a base criteria is provided, filter the potential parent records by it
         derived = connection.fetch("Content", _base) if _base else None
-        criteria_.add(is_one_of("cntn_pk", [r.cntn_fk_originalContent.value for r in derived]))
+        criteria_.add(
+            is_one_of("cntn_pk", [r.cntn_fk_originalContent.value for r in derived])
+        )
 
     if parents := connection.fetch("Content", criteria=criteria_.add(criteria.value)):
         resolved = is_one_of("cntn_fk_originalContent", [r.pk() for r in parents])
@@ -340,7 +343,6 @@ def _(
         raise NoMatch()
 
 
-
 @resolve_criteria.register
 def _(
     criteria: Criterion,
@@ -374,7 +376,6 @@ def _(
             # If all members are no-op, the entire junction can be ignored.
             raise NoOp()
         return resolved
-
 
     elif criteria.operator == op.OR:
         for member in criteria.members:
@@ -410,6 +411,7 @@ def unnest_criteria(criteria: Criterion) -> Criterion:
             resolved.add(member)
     return resolved
 
+
 @singledispatch
 def validate_criteria(criteria: Criterion, connection: Slims) -> None:
     """Validate criteria fields to ensure they are valid SLIMS fields."""
@@ -417,14 +419,17 @@ def validate_criteria(criteria: Criterion, connection: Slims) -> None:
     if not connection.fetch("Field", equals("tbfl_name", field)):
         raise ValueError(f"Invalid field: {field}")
 
+
 @validate_criteria.register
 def _(criteria: Junction, connection: Slims) -> None:
     for member in criteria.members:
         validate_criteria(member, connection)
 
+
 @validate_criteria.register
 def _(criteria: HasParent, connection: Slims) -> None:
     validate_criteria(criteria.value, connection)
+
 
 @validate_criteria.register
 def _(criteria: HasDerived, connection: Slims) -> None:

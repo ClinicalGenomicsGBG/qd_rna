@@ -5,7 +5,7 @@ from logging import LoggerAdapter
 from typing import Any, Sequence
 from warnings import warn
 
-from cellophane import Samples, Config, pre_hook, post_hook
+from cellophane import Config, Samples, post_hook, pre_hook
 from humanfriendly import parse_timespan
 from slims.internal import Record
 from slims.slims import Slims
