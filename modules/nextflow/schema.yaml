@@ -28,3 +28,9 @@ properties:
         type: mapping
         description: Environment variables that will be passed to the nextflow process
         default: {}
+      conda_spec:
+        type: mapping
+        description: Conda environment to activate before running Nextflow
+        default:
+          dependencies:
+            - nextflow >=24.04.1 <25.0.0

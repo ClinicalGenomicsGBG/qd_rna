@@ -177,6 +177,10 @@ logdir: ~
 # nextflow:
 #   # Threads for nextflow manager [integer]
 #   threads: 2
+#   # Conda environment to activate before running Nextflow [mapping]
+#   conda_spec:
+#     dependencies:
+#     - nextflow >=24.04.1 <25.0.0
 #   # Environment variables that will be passed to the nextflow process [mapping]
 #   env: {}
 #   # Code to run before running Nextflow (Bash) [string]

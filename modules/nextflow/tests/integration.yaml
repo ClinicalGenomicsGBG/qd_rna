@@ -49,7 +49,6 @@
       a.py: |
         from cellophane import pre_hook, Executor
         from nextflow import nextflow
-        from cellophane.src.testing import MockExecutor
 
         @pre_hook()
         def a(samples, logger, workdir, executor, config, **_):

@@ -22,11 +22,7 @@ class NextflowSamples(Samples):
                 "fastq_1": str(sample.files[0]),
                 "fastq_2": str(sample.files[1]) if len(sample.files) > 1 else "",
                 **{
-                    k: (
-                        v.format(sample=sample)
-                        if isinstance(v, str)
-                        else v
-                    )
+                    k: (v.format(sample=sample) if isinstance(v, str) else v)
                     for k, v in kwargs.items()
                 },
             }
