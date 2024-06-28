@@ -1,4 +1,5 @@
 """Module for fetching files from HCP."""
+
 from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
@@ -13,6 +14,7 @@ EXTRACORS: dict[str, Extractor] = {
     ".fasterq": PetageneExtractor(),
     ".spring": SpringExtractor(),
 }
+
 
 @pre_hook(label="unpack", after=["hcp_fetch"])
 def unpack(

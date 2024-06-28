@@ -33,7 +33,10 @@ def callback(
         sleep(1)
 
     if not extracted_paths:
-        logger.error(f"Extracted files for {path.name} not found after {timeout} seconds")
+        logger.error(
+            f"Extracted files for {path.name} "
+            f"not found after {timeout} seconds"
+        )
 
     for extracted_path in extracted_paths:
         logger.debug(f"Extracted {extracted_path.name}")
@@ -54,6 +57,7 @@ def error_callback(
     cleaner: Cleaner,
 ) -> None:
     logger.error(f"Failed to extract {path.name}: {exception!r}")
+    sample.fail(f"Failed to extract {path.name}")
     if path in sample.files:
         sample.files.remove(path)
     for extracted_path in extractor.extracted_paths(path):

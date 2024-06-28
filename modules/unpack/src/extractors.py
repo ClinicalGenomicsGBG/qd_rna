@@ -11,10 +11,17 @@ class Extractor:
 
     label: str
     script: Path
+    conda_spec: dict | None
 
-    def __init_subclass__(cls, label: str, script: Path) -> None:
+    def __init_subclass__(
+        cls,
+        label: str,
+        script: Path,
+        conda_spec: dict | None = None,
+    ) -> None:
         cls.label = label
         cls.script = script
+        cls.conda_spec = conda_spec
 
     @staticmethod
     def extracted_paths(compressed_path: Path) -> Iterator[Path]:  # pragma: no cover
@@ -69,6 +76,7 @@ class Extractor:
                 workdir=compressed_path.parent,
                 callback=callback,
                 error_callback=error_callback,
+                conda_spec=self.conda_spec,
             )
 
             return result
@@ -80,6 +88,7 @@ class PetageneExtractor(
     script=Path(__file__).parent.parent / "scripts" / "petagene.sh",
 ):
     """Petagene extractor."""
+
     @staticmethod
     def extracted_paths(compressed_path: Path) -> Iterator[Path]:
         _base = compressed_path.name.partition(".")[0]
@@ -92,8 +101,10 @@ class SpringExtractor(
     Extractor,
     label="spring",
     script=Path(__file__).parent.parent / "scripts" / "spring.sh",
+    conda_spec={"dependencies": ["spring >=1.1.1 <2.0.0"]},
 ):
     """Spring extractor."""
+
     @staticmethod
     def extracted_paths(compressed_path: Path) -> Iterator[Path]:
         _base = compressed_path.name.partition(".")[0]
