@@ -272,7 +272,6 @@ def subsample(
 
         (workdir / "subsample").mkdir(exist_ok=True, parents=True)
         for sample in group:
-            sample: Sample
             subsample_files = (
                 workdir / "subsample" / f"{sample.id}_{sample.last_run}_R1.fastq.gz",
                 workdir / "subsample" / f"{sample.id}_{sample.last_run}_R2.fastq.gz",
@@ -280,7 +279,7 @@ def subsample(
             executor.submit(
                 str(root / "scripts" / "common_subsample.sh"),
                 name=f"subsample_{id_}",
-                workdir=workdir / id_,
+                workdir=workdir,
                 cpus=config.subsample.threads,
                 env={
                     "_SUBSAMPLE_INIT": config.qlucore.subsample.init,
