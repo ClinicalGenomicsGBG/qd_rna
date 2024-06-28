@@ -154,6 +154,7 @@ def _subsample(
             name=f"qlucore_subsample_{id_}",
             workdir=workdir / id_,
             cpus=config.qlucore.subsample.threads,
+            conda_spec={"dependencies": ["samtools =1.16"]},
             env={
                 "_QLUCORE_SUBSAMPLE_INIT": config.qlucore.subsample.init,
                 "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample.threads,
@@ -311,7 +312,7 @@ def qlucore(
         workdir=workdir,
         executor=executor,
         checkpoints=checkpoints,
-        log_tag=log_tag
+        log_tag=log_tag,
     )
 
     if checkpoints.qlucore.check(qlucore_data):
