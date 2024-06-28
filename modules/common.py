@@ -273,9 +273,16 @@ def subsample(
 
         (workdir / "subsample").mkdir(exist_ok=True, parents=True)
         for sample in group:
+            names = []
+            for file in sample.files:
+                basename: str = file.name
+                for suffix in (".fq", ".fastq", ".gz"):
+                    basename = basename.replace(suffix, "")
+                names.append(f"{basename}.subsampled.fq.gz")
+
             subsample_files = (
-                workdir / "subsample" / f"{sample.id}_{sample.last_run}_R1.fastq.gz",
-                workdir / "subsample" / f"{sample.id}_{sample.last_run}_R2.fastq.gz",
+                workdir / "subsample" / names[0],
+                workdir / "subsample" / names[1],
             )
             executor.submit(
                 str(root / "scripts" / "common_subsample.sh"),
