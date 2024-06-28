@@ -15,6 +15,7 @@ def hcp_fetch(
     config: Config,
     logger: LoggerAdapter,
     cleaner: Cleaner,
+    workdir: Path,
     **_,
 ) -> Samples:
     """Fetch files from HCP."""
@@ -38,15 +39,17 @@ def hcp_fetch(
                 logger.warning(f"No backup for {sample.id}")
                 continue
 
+            fastq_temp = (workdir / "from_hcp")
             for f_idx, remote_key in enumerate(sample.hcp_remote_keys):
-                local_path = config.hcp.fastq_temp / Path(remote_key).name
+                local_path = fastq_temp / Path(remote_key).name
 
                 if local_path.exists():
                     sample.files.insert(f_idx, local_path)
                     logger.debug(f"Found {local_path.name} locally")
-                    cleaner.register(local_path.resolve(), ignore_outside_root=True)
+                    cleaner.register(local_path.resolve())
                     continue
 
+                fastq_temp.mkdir(parents=True, exist_ok=True)
                 pool.apply_async(
                     fetch,
                     kwargs={

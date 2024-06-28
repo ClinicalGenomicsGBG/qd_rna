@@ -44,7 +44,7 @@ def callback(
     def inner(local_path: Path) -> None:
         logger.debug(f"Fetched {local_path.name} from hcp")
         sample.files.insert(f_idx, local_path)
-        cleaner.register(local_path.resolve(), ignore_outside_root=True)
+        cleaner.register(local_path.resolve())
 
     return inner
 
@@ -57,6 +57,6 @@ def error_callback(
 
     def inner(exception: Exception):
         logger.error(f"Failed to fetch backup for {sample.id} ({exception})")
-        sample.files = []
+        sample.fail("Failed to fetch backup from HCP")
 
     return inner
