@@ -20,6 +20,7 @@ def _int_or_none(value: str) -> int | None:
             return int(value)
         except Exception:  # pylint: disable=broad-except
             warn(f"Failed to convert {value} to int")
+            return None
 
 
 @define(slots=False, init=False)
