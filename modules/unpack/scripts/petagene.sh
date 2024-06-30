@@ -11,12 +11,14 @@ eval ${UNPACK_INIT}
 echo "CMD: petasuite \
 --decompress \
 --numthreads $THREADS \
---validate off \ 
+--validate off \
+--dstpath $(dirname $EXTRACTED_PATH) \
 $COMPRESSED_PATH"
 
 petasuite \
     --decompress \
     --numthreads $THREADS \
+    --dstpath $(dirname $EXTRACTED_PATH) \
     $COMPRESSED_PATH
 
 eval ${UNPACK_EXIT}

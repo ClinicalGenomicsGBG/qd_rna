@@ -20,14 +20,15 @@ def callback(
     logger: LoggerAdapter,
     path: Path,
     cleaner: Cleaner,
+    workdir: Path,
 ) -> None:
     del result  # Unused
 
-    if not [*extractor.extracted_paths(path)]:
+    if not [*extractor.extracted_paths(workdir, path)]:
         logger.debug(f"Waiting up to {timeout} seconds for files to become available")
     _timeout = copy(timeout)
     while (
-        not (extracted_paths := [*extractor.extracted_paths(path)])
+        not (extracted_paths := [*extractor.extracted_paths(workdir, path)])
         and (_timeout := _timeout - 1) > 0
     ):
         sleep(1)
@@ -41,7 +42,7 @@ def callback(
     for extracted_path in extracted_paths:
         logger.debug(f"Extracted {extracted_path.name}")
         sample.files.insert(idx, extracted_path)
-        cleaner.register(extracted_path.resolve(), ignore_outside_root=True)
+        cleaner.register(extracted_path.resolve())
 
     if path in sample.files:
         sample.files.remove(path)
@@ -55,10 +56,11 @@ def error_callback(
     path: Path,
     extractor: Extractor,
     cleaner: Cleaner,
+    workdir: Path,
 ) -> None:
     logger.error(f"Failed to extract {path.name}: {exception!r}")
     sample.fail(f"Failed to extract {path.name}")
     if path in sample.files:
         sample.files.remove(path)
-    for extracted_path in extractor.extracted_paths(path):
-        cleaner.register(extracted_path.resolve(), ignore_outside_root=True)
+    for extracted_path in extractor.extracted_paths(workdir, path):
+        cleaner.register(extracted_path.resolve())

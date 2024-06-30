@@ -23,6 +23,7 @@ def unpack(
     logger: LoggerAdapter,
     executor: Executor,
     cleaner: Cleaner,
+    workdir: Path,
     **_,
 ) -> Samples:
     """Extract petagene fasterq files."""
@@ -33,11 +34,13 @@ def unpack(
         for i, p in enumerate(s.files)
         if Path(p).suffix in EXTRACORS
     ):
+        (workdir / "unpack").mkdir(parents=True, exist_ok=True)
         if result := extractor.extract(
             logger=logger,
             compressed_path=path,
             config=config,
             executor=executor,
+            workdir=workdir / "unpack",
             callback=partial(
                 callback,
                 extractor=extractor,
@@ -47,6 +50,7 @@ def unpack(
                 logger=logger,
                 path=path,
                 cleaner=cleaner,
+                workdir=workdir / "unpack",
             ),
             error_callback=partial(
                 error_callback,
@@ -55,6 +59,7 @@ def unpack(
                 path=path,
                 extractor=extractor,
                 cleaner=cleaner,
+                workdir=workdir / "unpack",
             ),
         ):
             results.append(result)

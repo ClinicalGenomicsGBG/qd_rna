@@ -11,20 +11,33 @@ class Extractor:
 
     label: str
     script: Path
+    suffixes: tuple[str, ...]
     conda_spec: dict | None
 
     def __init_subclass__(
         cls,
         label: str,
         script: Path,
+        suffixes: tuple[str, ...],
         conda_spec: dict | None = None,
     ) -> None:
         cls.label = label
         cls.script = script
+        cls.suffixes = suffixes
         cls.conda_spec = conda_spec
 
-    @staticmethod
-    def extracted_paths(compressed_path: Path) -> Iterator[Path]:  # pragma: no cover
+    def basename(self, path: Path) -> str:
+        _name = path.name
+        for suffix in self.suffixes:
+            _name = _name.replace(suffix, "")
+        return _name
+
+    def extracted_paths(
+        self,
+        workdir: Path,
+        compressed_path: Path,
+    ) -> Iterator[Path]:  # pragma: no cover
+        del workdir, compressed_path  # Unused
         raise NotImplementedError
 
     def extract(
@@ -32,6 +45,7 @@ class Extractor:
         *,
         logger: LoggerAdapter,
         compressed_path: Path,
+        workdir: Path,
         config: cfg.Config,
         env: dict | None = None,
         executor: executors.Executor,
@@ -55,11 +69,16 @@ class Extractor:
             AsyncResult | None - The result of the extraction process,
                 or None if already extracted.
         """
-        if [*self.extracted_paths(compressed_path)]:  # pylint: disable=using-constant-test
+        if not compressed_path.exists():
+            logger.error(f"Compressed file {compressed_path.name} not found")
+            return None
+
+        if [*self.extracted_paths(workdir, compressed_path)]:  # pylint: disable=using-constant-test
             logger.debug(f"Already extracted {compressed_path.name}")
             if callback is not None:
                 callback(None)
             return None
+
         else:
             logger.info(f"Extracting {compressed_path.name} with {self.label}")
             result, _ = executor.submit(
@@ -70,10 +89,11 @@ class Extractor:
                     "UNPACK_INIT": config.unpack.get("init", ""),
                     "UNPACK_EXIT": config.unpack.get("exit", ""),
                     "COMPRESSED_PATH": compressed_path,
+                    "EXTRACTED_PATH": workdir / f"{self.basename(compressed_path)}.fastq.gz",
                     "THREADS": config.unpack.threads,
                 },
                 cpus=config.unpack.threads,
-                workdir=compressed_path.parent,
+                workdir=workdir,
                 callback=callback,
                 error_callback=error_callback,
                 conda_spec=self.conda_spec,
@@ -86,14 +106,13 @@ class PetageneExtractor(
     Extractor,
     label="petagene",
     script=Path(__file__).parent.parent / "scripts" / "petagene.sh",
+    suffixes=(".fasterq",),
 ):
     """Petagene extractor."""
 
-    @staticmethod
-    def extracted_paths(compressed_path: Path) -> Iterator[Path]:
-        _base = compressed_path.name.partition(".")[0]
-        _parent = compressed_path.parent
-        if (extracted := _parent / f"{_base}.fastq.gz").exists():
+    def extracted_paths(self, workdir: Path, compressed_path: Path) -> Iterator[Path]:
+        _base = self.basename(compressed_path)
+        if (extracted := workdir / f"{_base}.fastq.gz").exists():
             yield extracted
 
 
@@ -101,21 +120,20 @@ class SpringExtractor(
     Extractor,
     label="spring",
     script=Path(__file__).parent.parent / "scripts" / "spring.sh",
+    suffixes=(".spring",),
     conda_spec={"dependencies": ["spring >=1.1.1 <2.0.0"]},
 ):
     """Spring extractor."""
 
-    @staticmethod
-    def extracted_paths(compressed_path: Path) -> Iterator[Path]:
-        _base = compressed_path.name.partition(".")[0]
-        _parent = compressed_path.parent
-        if (extracted := _parent / f"{_base}.fastq.gz").exists():
+    def extracted_paths(self, workdir: Path, compressed_path: Path) -> Iterator[Path]:
+        _base = self.basename(compressed_path)
+        if (extracted := workdir / f"{_base}.fastq.gz").exists():
             yield extracted
 
         elif all(
             (
-                (extracted1 := _parent / f"{_base}.1.fastq.gz").exists(),
-                (extracted2 := _parent / f"{_base}.2.fastq.gz").exists(),
+                (extracted1 := workdir / f"{_base}.1.fastq.gz").exists(),
+                (extracted2 := workdir / f"{_base}.2.fastq.gz").exists(),
             )
         ):
             yield extracted1
@@ -123,9 +141,9 @@ class SpringExtractor(
 
         elif all(
             (
-                (extracted1 := _parent / f"{_base}.fastq.gz.1").exists(),
-                (extracted2 := _parent / f"{_base}.fastq.gz.2").exists(),
+                (extracted1 := workdir / f"{_base}.fastq.gz.1").exists(),
+                (extracted2 := workdir / f"{_base}.fastq.gz.2").exists(),
             )
         ):
-            yield extracted1.rename(_parent / f"{_base}.1.fastq.gz")
-            yield extracted2.rename(_parent / f"{_base}.2.fastq.gz")
+            yield extracted1.rename(workdir / f"{_base}.1.fastq.gz")
+            yield extracted2.rename(workdir / f"{_base}.2.fastq.gz")
