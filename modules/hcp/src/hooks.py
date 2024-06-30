@@ -22,7 +22,7 @@ def hcp_fetch(
     for sample in samples.with_files:
         logger.debug(f"Found all files for {sample.id} locally")
 
-    if any(k not in config.get("hcp", {}) for k in ["credentials", "fastq_temp"]):
+    if not config.hcp.get("credentials"):
         logger.warning("HCP not configured")
         return samples
 

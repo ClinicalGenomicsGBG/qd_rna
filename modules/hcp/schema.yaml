@@ -12,4 +12,3 @@ properties:
         default: 4
     required:
       - credentials
-      - fastq_temp
