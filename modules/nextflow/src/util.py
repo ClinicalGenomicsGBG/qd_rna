@@ -3,7 +3,7 @@
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from cellophane import cfg, executors
+from cellophane import cfg, executors, Samples
 from mpire.async_result import AsyncResult
 
 _ROOT = Path(__file__).parent.parent
@@ -60,6 +60,44 @@ def nextflow(
         **kwargs,
     )
 
+    if check:
+        result.get()
+
+    return result, uuid
+
+def plot_fusion_only_arriba(
+    samples: Samples,
+    config: cfg.Config,
+    executor: executors.Executor,
+    workdir: Path,
+    # env: dict[str, str] | None = None,
+    # nxf_config: Path | None = None,
+    # nxf_work: Path | None = None,
+    # nxf_profile: str | None = None,
+    # ansi_log: bool = False,
+    # resume: bool = False,
+    name: str = "plot_arriba_only",
+    check: bool = True,
+    **kwargs
+) -> tuple[AsyncResult, UUID]:
+
+    uuid = uuid4() # generate random id
+
+    result, uuid = executor.submit(
+        str(Path(__file__).parent / "run_arriba.sh"),
+            f"-B {workdir}/arriba:/output", # need to refer to this output somewhere?
+            "/workspace/carolina/qd_rna/references:references:ro",
+            f"-B {workdir}/arriba/{samples}.arriba.fusions.tsv:/fusions.tsv:ro",
+            f"-B {workdir}/star_for_starfusion/{samples}.Aligned.sortedByCoord.out.bam:/Aligned.sortedByCoord.out.bam:ro",
+            f"-B {workdir}/star_for_starfusion/{samples}.Aligned.sortedByCoord.out.bam.bai:/Aligned.sortedByCoord.out.bam.bai:ro",
+            workdir=workdir,
+            uuid=uuid,
+            name=name,
+            cpus=config.nextflow.threads,
+            **kwargs,
+            # f"-B {config.rnafusion.get('genomes_base')}:/references:ro", 
+    )
+    
     if check:
         result.get()
 

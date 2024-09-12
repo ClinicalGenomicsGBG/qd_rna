@@ -7,6 +7,7 @@ from cellophane import Checkpoints, Config, Executor, Samples, output, runner
 
 from modules.common import nf_config
 from modules.nextflow import nextflow
+from modules.nextflow import plot_fusion_only_arriba
 
 # Taken from https://github.com/nf-core/rnafusion/blob/3.0.1/conf/modules.config
 # The whole string needs to be included here only to override the limitSjdbInsertNsj
@@ -221,6 +222,13 @@ def rnafusion(
         log_tag=log_tag,
     )
 
+    plot_fusion_only_arriba(
+        samples=samples,
+        workdir=workdir,
+        config=config,
+        executor=executor,
+    )
+    
     checkpoints.main.store(rnafusion_nf_config)
 
     return samples
