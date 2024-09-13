@@ -86,7 +86,7 @@ def plot_fusion_only_arriba(
     result, uuid = executor.submit(
         str(Path(__file__).parent / "run_arriba.sh"),
             f"-B {workdir}/arriba:/output", # need to refer to this output somewhere?
-            "/workspace/carolina/qd_rna/references:references:ro",
+            "-B /workspace/carolina/qd_rna/references:/references:ro",
             f"-B {workdir}/arriba/{samples}.arriba.fusions.tsv:/fusions.tsv:ro",
             f"-B {workdir}/star_for_starfusion/{samples}.Aligned.sortedByCoord.out.bam:/Aligned.sortedByCoord.out.bam:ro",
             f"-B {workdir}/star_for_starfusion/{samples}.Aligned.sortedByCoord.out.bam.bai:/Aligned.sortedByCoord.out.bam.bai:ro",
