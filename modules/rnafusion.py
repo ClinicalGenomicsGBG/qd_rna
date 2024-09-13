@@ -130,6 +130,10 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
     dst_dir="{sample.id}_{sample.last_run}/arriba",
 )
 @output(
+    "arriba/fusions.pdf",
+    dst_dir="{sample.id}_{sample.last_run}/arriba",
+)
+@output(
     "fusioncatcher/{sample.id}.*",
     dst_dir="{sample.id}_{sample.last_run}/fusioncatcher",
 )
