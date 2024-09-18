@@ -65,6 +65,8 @@ logdir: ~
 #   skip: false
 #   # Minimum number of callers for fusion to be reported [integer]
 #   tools_cutoff: 1
+#   # Path to references used by Arriba in standalone mode [path]
+#   arriba_standalone_refs: ~
 #   # Path to rnafusion references [path]
 #   genomes_base: ~
 #   # URL to use for nf-core/rnafusion [string]

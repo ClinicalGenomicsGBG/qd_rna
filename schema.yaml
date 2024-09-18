@@ -111,7 +111,7 @@ properties:
     type: object
     oneOf:
     - properties: {skip: {const: true}}
-    - required: [genomes_base, arriba_blacklist, arriba_protein_domain]
+    - required: [genomes_base, arriba_standalone_refs]
     properties:
       skip:
         type: boolean
@@ -131,6 +131,10 @@ properties:
       genomes_base:
         type: path
         description: Path to rnafusion references
+
+      arriba_standalone_refs:
+        type: path
+        description: Path to references used by Arriba in standalone mode
 
       tools_cutoff:
         type: integer

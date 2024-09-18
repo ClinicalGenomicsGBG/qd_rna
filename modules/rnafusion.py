@@ -119,6 +119,30 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
     ]
 
 
+def _standalone_arriba_visualisation(
+    samples: Samples,
+    config: Config,
+    executor: Executor,
+    workdir: Path,
+    root: Path,
+    **kwargs,
+) -> None:
+
+    result, _ = executor.submit(
+        str(root / "scripts" / "arriba_draw_fusions.sh"),
+        f"-B {workdir}/arriba:/output",
+        f"-B {config.rnafusion.arriba_standalone_refs}/references:ro",
+        f"-B {workdir}/arriba/{samples}.arriba.fusions.tsv:/fusions.tsv:ro",
+        f"-B {workdir}/star_for_starfusion/{samples}.Aligned.sortedByCoord.out.bam:/Aligned.sortedByCoord.out.bam:ro",
+        f"-B {workdir}/star_for_starfusion/{samples}.Aligned.sortedByCoord.out.bam.bai:/Aligned.sortedByCoord.out.bam.bai:ro",
+        workdir=workdir,
+        name="standalone_arriba_visualisation",
+        **kwargs,
+    )
+
+    result.get()
+
+
 @output(
     "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
     dst_dir="{sample.id}_{sample.last_run}",
@@ -126,6 +150,10 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
 )
 @output(
     "arriba/{sample.id}.*",
+    dst_dir="{sample.id}_{sample.last_run}/arriba",
+)
+@output(
+    "arriba/fusions.pdf",
     dst_dir="{sample.id}_{sample.last_run}/arriba",
 )
 @output(
@@ -219,6 +247,14 @@ def rnafusion(
         workdir=workdir,
         logger=logger,
         log_tag=log_tag,
+    )
+
+    _standalone_arriba_visualisation(
+        samples=samples,
+        workdir=workdir,
+        config=config,
+        executor=executor,
+        root=root,
     )
 
     checkpoints.main.store(rnafusion_nf_config)
