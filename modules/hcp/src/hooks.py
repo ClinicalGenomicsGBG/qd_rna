@@ -3,7 +3,7 @@
 from logging import LoggerAdapter
 from pathlib import Path
 
-from cellophane import Config, Samples, pre_hook
+from cellophane import Cleaner, Config, Samples, pre_hook
 from mpire import WorkerPool
 
 from .util import callback, error_callback, fetch
@@ -14,13 +14,15 @@ def hcp_fetch(
     samples: Samples,
     config: Config,
     logger: LoggerAdapter,
+    cleaner: Cleaner,
+    workdir: Path,
     **_,
 ) -> Samples:
     """Fetch files from HCP."""
     for sample in samples.with_files:
         logger.debug(f"Found all files for {sample.id} locally")
 
-    if any(k not in config.get("hcp", {}) for k in ["credentials", "fastq_temp"]):
+    if not config.hcp.get("credentials"):
         logger.warning("HCP not configured")
         return samples
 
@@ -37,14 +39,17 @@ def hcp_fetch(
                 logger.warning(f"No backup for {sample.id}")
                 continue
 
+            fastq_temp = (workdir / "from_hcp")
             for f_idx, remote_key in enumerate(sample.hcp_remote_keys):
-                local_path = config.hcp.fastq_temp / Path(remote_key).name
+                local_path = fastq_temp / Path(remote_key).name
 
                 if local_path.exists():
                     sample.files.insert(f_idx, local_path)
                     logger.debug(f"Found {local_path.name} locally")
+                    cleaner.register(local_path.resolve())
                     continue
 
+                fastq_temp.mkdir(parents=True, exist_ok=True)
                 pool.apply_async(
                     fetch,
                     kwargs={
@@ -52,8 +57,16 @@ def hcp_fetch(
                         "local_path": local_path,
                         "remote_key": remote_key,
                     },
-                    callback=callback(sample, f_idx, logger),
-                    error_callback=error_callback(sample, logger),
+                    callback=callback(
+                        sample=sample,
+                        f_idx=f_idx,
+                        logger=logger,
+                        cleaner=cleaner,
+                    ),
+                    error_callback=error_callback(
+                        sample=sample,
+                        logger=logger,
+                    ),
                 )
 
         pool.join()

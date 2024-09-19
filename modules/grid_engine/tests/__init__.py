@@ -1,5 +1,4 @@
 import time
-from pathlib import Path
 
 import drmaa2
 from attrs import define

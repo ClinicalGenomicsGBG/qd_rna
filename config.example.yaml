@@ -1,5 +1,8 @@
-# # Log level (NOTSET will log all messages, including those from external libraries) [string]
-# log_level: "INFO"
+# log:
+#   # Log level (NOTSET will log all messages, including those from external libraries) [string]
+#   level: "INFO"
+#   # Log messages from external libraries [boolean]
+#   external: false
 # # Sample read length [integer]
 # read_length: 150
 # # Maximum number of junctions to insert for STAR [integer]
@@ -25,6 +28,13 @@ logdir: ~
 #   memory: 2000000000
 #   # Number of CPUs to allocate to jobs started (if supported by the executor) [integer]
 #   cpus: 1
+# subsample:
+#   # Number of threads to use for subsampling [integer]
+#   threads: 12
+#   # Code to run before subsampling FASTQ files [string]
+#   init: ""
+#   # Target number of reads for subsampling (approximate) [integer]
+#   target: 100000000
 # rnaseq:
 #   # Skip nf-core/rnaseq [boolean]
 #   skip: false
@@ -69,7 +79,7 @@ logdir: ~
 #   subsample:
 #     # Number of threads to use for subsampling [integer]
 #     threads: 12
-#     # Code to run before qlucore subsampling [string]
+#     # Code to run before subsampling qlucore BAM files [string]
 #     init: ""
 #     # Fraction of reads to subsample if calculation fails [number]
 #     fallback_fraction: 0.2
@@ -184,33 +194,30 @@ logdir: ~
 #   credentials: ~
 #   # Number of parallel HCP conenctions [integer]
 #   parallel: 4
-#   # Temporary directory for fastq files [path]
-#   fastq_temp: ~
 # slims:
 #   # SLIMS URL [string]
 #   url: ~
-#   # Maximum age of novel samples (eg. "7 days", "1 year") [string]
-#   novel_max_age: "1 year"
-#   # Do not create SLIMS bioinformatics objects [boolean]
+#   # Do not sync data to SLIMS [boolean]
 #   dry_run: false
-#   # Allow parent records to have different IDs than the child records [boolean]
-#   unrestrict_parents: false
-#   # Allow duplicate samples (eg. if a pre-hook can handle this) [boolean]
-#   allow_duplicates: false
-#   # Manually select SLIMS Sample ID(s) [array]
-#   id: ~
-#   # SLIMS criteria for checking completed records (eg. "cntn_cstm_SecondaryAnalysis equals 1337") [string]
-#   check_criteria: ~
 #   # SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337") [string]
-#   find_criteria: ~
-#   # Mapping for creating derived records in SLIMS (Use curly braces to access keys in the samples object) [array]
-#   derive: ~
+#   criteria: ~
+#   # Mapping for creating derived records in SLIMS. Top level key identies the derived record. Use curly braces to acces keys in the 'sample' object, eg. '{sample.id}' [mapping]
+#   derive: {}
+#   # Use fields from 'slims.map' when matching samples to augment with SLIMS metadata (in addition to 'sample.id') [array]
+#   match: []
+#   # Fields in slims.map that will be synced to SLIMS in a pre and post hook [array]
+#   sync: []
 #   # Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields) [mapping]
-#   map: ~
+#   map: {}
 #   # SLIMS password [string]
 #   password: ~
 #   # SLIMS username [string]
 #   username: ~
+#   novel:
+#     # Maximum age of novel records to consider for matchin (eg. '4 days', '1 year') [string]
+#     max_age: "1 year"
+#     # SLIMS criteria to use for matching novel records (In conjunction with 'slims.criteria') [string]
+#     criteria: ~
 # grid_engine:
 #   # Grid Engine queue [string]
 #   queue: "all.q"

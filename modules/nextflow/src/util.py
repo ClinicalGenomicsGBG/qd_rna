@@ -6,7 +6,8 @@ from uuid import UUID, uuid4
 from cellophane import cfg, executors
 from mpire.async_result import AsyncResult
 
-ROOT = Path(__file__).parent.parent
+_ROOT = Path(__file__).parent.parent
+
 
 def nextflow(
     main: Path,
@@ -37,7 +38,7 @@ def nextflow(
     _nxf_work.mkdir(parents=True, exist_ok=True)
 
     result, uuid = executor.submit(
-        str(ROOT / "scripts" / "nextflow.sh"),
+        str(_ROOT / "scripts" / "nextflow.sh"),
         f"-log {_nxf_log}",
         (f"-config {_nxf_config}" if _nxf_config else ""),
         f"run {main}",

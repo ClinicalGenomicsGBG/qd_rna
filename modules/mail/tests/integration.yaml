@@ -47,7 +47,7 @@
   external:
     ..: modules/mail
   mocks:
-    _cellophane_module_mail.src.util.SMTP: ~
+    modules.mail.src.util.SMTP: ~
   args:
     --samples_file: samples.yaml
     --workdir: work
@@ -83,7 +83,7 @@
   external:
     ..: modules/mail
   mocks:
-    _cellophane_module_mail.src.util.SMTP: ~
+    modules.mail.src.util.SMTP: ~
   args:
     --workdir: work
     --tag: DUMMY
@@ -101,7 +101,7 @@
   external:
     ..: modules/mail
   mocks:
-    _cellophane_module_mail.src.util.SMTP: ~
+    modules.mail.src.util.SMTP: ~
   args:
     --workdir: work
     --tag: DUMMY
@@ -114,7 +114,7 @@
   external:
     ..: modules/mail
   mocks:
-    _cellophane_module_mail.src.util.SMTP: ~
+    modules.mail.src.util.SMTP: ~
   structure:
     modules:
       a.py: |
@@ -122,16 +122,22 @@
 
         @runner()
         def a(samples, **_):
+            for s in samples:
+                s.mail_attachments = {"a"}
             return samples
 
         @runner()
         def b(samples, **_):
+            for s in samples:
+                s.mail_attachments = {"b"}
             return samples
 
         @post_hook()
         def check(samples, logger, **_):
             for sample in samples:
-                logger.info(f"{sample.id=} {sample.mail_attachments=}")
+                attachments = sorted(sample.mail_attachments)
+                logger.info(f"{sample.id=}")
+                logger.info(f"{attachments=}")
     samples.yaml: |
       - id: A
         files:
@@ -151,4 +157,9 @@
     --mail_smtp_host: "localhost"
     --mail_send: ~
   logs:
-    - __NOPE__
+    - |
+      sample.id='A'
+      attachments=['a', 'b']
+    - |
+      sample.id='B'
+      attachments=['a', 'b']

@@ -5,24 +5,21 @@ from typing import Any
 from uuid import UUID
 
 import drmaa2
-from attrs import define, field
-from cellophane import executors
+from attrs import define
+from cellophane import Executor
+
+_GE_JOBS: dict[UUID, dict[UUID, tuple[drmaa2.JobSession, drmaa2.Job]]] = {}
 
 
-@define(slots=False)
-class GridEngineExecutor(
-    executors.Executor,
-    name="grid_engine",
-):  # type: ignore[call-arg]
+@define(slots=False, init=False)
+class GridEngineExecutor(Executor, name="grid_engine"):  # type: ignore[call-arg]
     """Executor using grid engine."""
 
-    ge_jobs: dict[
-        UUID,
-        tuple[
-            drmaa2.JobSession,
-            drmaa2.Job,
-        ],
-    ] = field(factory=dict, init=False)
+    @property
+    def ge_jobs(self) -> dict[UUID, tuple[drmaa2.JobSession, drmaa2.Job]]:
+        if self.uuid not in _GE_JOBS:
+            _GE_JOBS[self.uuid] = {}
+        return _GE_JOBS[self.uuid]
 
     def target(
         self,

@@ -11,6 +11,7 @@ properties:
       url:
         description: SLIMS URL
         type: string
+        format: uri
 
       username:
         description: SLIMS username
@@ -24,41 +25,43 @@ properties:
       map:
         description: "Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields)"
         type: mapping
+        default: {}
 
-      derive:
-        description: "Mapping for creating derived records in SLIMS (Use curly braces to access keys in the samples object)"
+      sync:
+        description: "Fields in slims.map that will be synced to SLIMS in a pre and post hook"
         type: array
         items:
-          type: mapping
+          type: string
+        default: []
 
-      find_criteria:
+      match:
+        description: "Use fields from 'slims.map' when matching samples to augment with SLIMS metadata (in addition to 'sample.id')"
+        type: array
+        items:
+          type: string
+        default: []
+
+      derive:
+        type: mapping
+        description: "Mapping for creating derived records in SLIMS. Top level key identies the derived record. Use curly braces to acces keys in the 'sample' object, eg. '{sample.id}'"
+        default: {}
+
+      novel:
+        type: object
+        properties:
+          max_age:
+            description: "Maximum age of novel records to consider for matchin (eg. '4 days', '1 year')"
+            type: string
+            default: 1 year
+          criteria:
+            description: "SLIMS criteria to use for matching novel records (In conjunction with 'slims.criteria')"
+            type: string
+
+      criteria:
         description: SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
         type: string
 
-      check_criteria:
-          description: SLIMS criteria for checking completed records (eg. "cntn_cstm_SecondaryAnalysis equals 1337")
-          type: string
-
-      id:
-        description: Manually select SLIMS Sample ID(s)
-        type: array
-
-      allow_duplicates:
-        description: Allow duplicate samples (eg. if a pre-hook can handle this)
-        default: false
-        type: boolean
-
-      unrestrict_parents:
-        description: Allow parent records to have different IDs than the child records
-        default: false
-        type: boolean
-
       dry_run:
-        description: Do not create SLIMS bioinformatics objects
+        description: Do not sync data to SLIMS
         default: false
         type: boolean
-
-      novel_max_age:
-        description: Maximum age of novel samples (eg. "7 days", "1 year")
-        default: 1 year
-        type: string

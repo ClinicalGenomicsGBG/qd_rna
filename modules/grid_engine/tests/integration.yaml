@@ -12,7 +12,7 @@
             executor.submit("DUMMY")
             executor.wait()
   mocks:
-    _cellophane_module_grid_engine.src.executor.drmaa2.JobSession:
+    modules.grid_engine.src.executor.drmaa2.JobSession:
       return_value: !!python/object/apply:grid_engine.tests.JobSessionMock {}
   args:
     --workdir: work
@@ -35,7 +35,7 @@
             executor.submit("DUMMY")
             executor.wait()
   mocks:
-    _cellophane_module_grid_engine.src.executor.drmaa2.JobSession:
+    modules.grid_engine.src.executor.drmaa2.JobSession:
       side_effect: !!python/object/new:drmaa2.Drmaa2Exception []
   args:
     --workdir: work
@@ -61,7 +61,7 @@
             executor.wait()
 
   mocks:
-    _cellophane_module_grid_engine.src.executor.drmaa2.JobSession:
+    modules.grid_engine.src.executor.drmaa2.JobSession:
       return_value: !!python/object/apply:grid_engine.tests.JobSessionMock {kwds: {delay: 5}}
   args:
     --workdir: work

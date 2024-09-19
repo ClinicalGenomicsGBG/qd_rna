@@ -6,13 +6,9 @@ properties:
       credentials:
         type: path
         description: IRIS credentials file
-      fastq_temp:
-        type: path
-        description: Temporary directory for fastq files
       parallel:
         type: integer
         description: Number of parallel HCP conenctions
         default: 4
     required:
       - credentials
-      - fastq_temp
