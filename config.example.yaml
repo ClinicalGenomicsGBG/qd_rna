@@ -65,14 +65,23 @@ logdir: ~
 #   skip: false
 #   # Minimum number of callers for fusion to be reported [integer]
 #   tools_cutoff: 1
-#   # Path to references used by Arriba in standalone mode [path]
-#   arriba_standalone_refs: ~
 #   # Path to rnafusion references [path]
 #   genomes_base: ~
 #   # URL to use for nf-core/rnafusion [string]
 #   nf_url: "https://github.com/nf-core/rnafusion"
 #   # Tag to use for nf-core/rnafusion [string]
 #   nf_tag: "3.0.1"
+#   arriba_standalone:
+#     # Arriba cytobands file for standalone visualisation (Autodetect from nf-core/rnafusion by default) [path]
+#     cytobands: ~
+#     # Code to run before Arriba standalone visualisation [string]
+#     init: ""
+#     # Number of threads for standalone Arriba visualsation (For samtools index and sort) [integer]
+#     threads: 12
+#     # GTF annotation for Arriba standalone visualisation (Autodetect from nf-core/rnafusion by default) [path]
+#     annotation: ~
+#     # Arriba protein domains file for standalone visualisation (Autodetect from nf-core/rnafusion by default) [path]
+#     protein_domains: ~
 # qlucore:
 #   # Skip qlucore mapping [boolean]
 #   skip: false
@@ -104,9 +113,9 @@ logdir: ~
 #     # Body of the mail (jinja2 template) [string]
 #     body: |
 #       # {{ config.analysis }}
-# 
+#
 #       Analysis has started for {{ samples.unique_ids|length }} sample(s).
-# 
+#
 #       🔎 The following samples are being analyzed:
 #       |      ID     |  Run(s)  |
 #       | ----------- | -------- |
@@ -129,9 +138,9 @@ logdir: ~
 #     # Body of the mail (jinja2 template, supports markdown) [string]
 #     body: |
 #       # {{ config.analysis }}
-# 
+#
 #       {{ samples.unique_ids|length }} sample(s) have been processed.
-# 
+#
 #       {% if samples.failed -%}
 #       ❗️ Analysis failed for the following samples:
 #       |      ID     |  Run(s)  |
@@ -144,10 +153,10 @@ logdir: ~
 #       {%- endfor %}
 #       📋 See attached log for more information
 #       {% endif -%}
-# 
+#
 #       {%- if samples.complete -%}
 #       ✅ Analysis completed successfully for the following samples:
-# 
+#
 #       |      ID     |  Run(s)  |
 #       | ----------- | -------- |
 #       {%- for id_, group in samples.complete.split(by="id") %}
@@ -156,7 +165,7 @@ logdir: ~
 #       `{{ sample.run }}`{% if not loop.last %}, {% else %} | {% endif %}
 #       {%- endfor -%}
 #       {%- endfor %}
-# 
+#
 #       {%- endif -%}
 #   smtp:
 #     # SMTP host [string]
