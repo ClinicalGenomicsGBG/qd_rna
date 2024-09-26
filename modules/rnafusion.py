@@ -1,9 +1,12 @@
 """Module for running nf-core/rnafusion."""
 
+from json import loads
 from logging import LoggerAdapter
 from pathlib import Path
 
 from cellophane import Checkpoints, Config, Executor, Samples, output, runner
+from mpire.async_result import AsyncResult
+from ruamel.yaml import YAML
 
 from modules.common import nf_config
 from modules.nextflow import nextflow
@@ -119,10 +122,80 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
     ]
 
 
+def _standalone_arriba_visualisation(
+    samples: Samples,
+    config: Config,
+    executor: Executor,
+    workdir: Path,
+    root: Path,
+    logger: LoggerAdapter,
+    **kwargs,
+) -> None:
+    logger.info("Generating standalone arriba visualisations")
+
+    try:
+        params_glob = (workdir / "pipeline_info").glob("params_*.json")
+        versions_glob = (workdir / "pipeline_info").glob("software_versions.yml")
+        params_json = next(params_glob)
+        versions_yml = next(versions_glob)
+        params = loads(params_json.read_text())
+        versions = YAML(typ="safe").load(versions_yml)
+    except Exception:
+        params = {}
+        versions = {}
+
+    cytobands, protein_domains, annotation, version = (
+        config.rnafusion.arriba_standalone.get("cytobands")
+        or params.get("arriba_ref_cytobands"),
+        config.rnafusion.arriba_standalone.get("protein_domains")
+        or params.get("arriba_ref_protein_domains"),
+        config.rnafusion.arriba_standalone.get("annotation") or params.get("gtf"),
+        config.rnafusion.arriba_standalone.get("version")
+        or versions.get("ARRIBA_VISUALISATION", {}).get("arriba"),
+    )
+
+    if not (cytobands and protein_domains and annotation and version):
+        logger.warning("Unable to detect params for standalone arriba visualisation")
+        return
+
+    results: list[AsyncResult] = []
+
+    for _id in samples.unique_ids:
+        if not (workdir / "arriba" / f"{_id}.arriba.fusions.tsv").exists():
+            logger.warning(f"No arriba fusions found for sample {_id}")
+            continue
+
+        result, _ = executor.submit(
+            str(root / "scripts" / "arriba_draw_fusions.sh"),
+            env={
+                "_ARRIBA_STANDALONE_FUSIONS": f"{workdir}/arriba/{_id}.arriba.fusions.tsv",
+                "_ARRIBA_STANDALONE_BAM": f"{workdir}/star_for_arriba/{_id}.Aligned.out.bam",
+                "_ARRIBA_STANDALONE_OUTPUT": f"{workdir}/arriba_visualisation/{_id}_standalone_arriba_visualisation.pdf",
+                "_ARRIBA_STANDALONE_CYTOBANDS": str(cytobands),
+                "_ARRIBA_STANDALONE_PROTEIN_DOMAINS": str(protein_domains),
+                "_ARRIBA_STANDALONE_ANNOTATION": str(annotation),
+                "_ARRIBA_STANDALONE_THREADS": config.rnafusion.arriba_standalone.threads,
+            },
+            workdir=workdir,
+            name=f"standalone_arriba_visualisation_{_id}",
+            conda_spec={"dependencies": [f"arriba ={version}", "samtools =1.16"]},
+            cpus=config.rnafusion.arriba_standalone.threads,
+            **kwargs,
+        )
+        results.append(result)
+
+    for result in results:
+        result.get()
+
+
 @output(
     "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
     dst_dir="{sample.id}_{sample.last_run}",
     checkpoint="DUMMY",
+)
+@output(
+    "arriba_visualisation/{sample.id}_standalone_arriba_visualisation.pdf",
+    dst_dir="{sample.id}_{sample.last_run}/arriba",
 )
 @output(
     "arriba/{sample.id}.*",
@@ -219,6 +292,15 @@ def rnafusion(
         workdir=workdir,
         logger=logger,
         log_tag=log_tag,
+    )
+
+    _standalone_arriba_visualisation(
+        samples=samples,
+        workdir=workdir,
+        config=config,
+        executor=executor,
+        root=root,
+        logger=logger,
     )
 
     checkpoints.main.store(rnafusion_nf_config)
