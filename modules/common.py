@@ -313,7 +313,7 @@ def subsample(
                     cleaner=cleaner,
                 ),
                 conda_spec={
-                    "dependencies": ["fq >= 0.11.0 < 0.12.0"],
+                    "dependencies": ["fq >= 0.12.0, < 0.13.0"],
                     "channels": ["bioconda"],
                 },
             )
