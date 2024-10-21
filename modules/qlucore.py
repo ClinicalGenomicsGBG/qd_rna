@@ -154,7 +154,8 @@ def _subsample(
             name=f"qlucore_subsample_{id_}",
             workdir=workdir / id_,
             cpus=config.qlucore.subsample.threads,
-            conda_spec={"dependencies": ["samtools =1.16"]},
+            conda_spec={"dependencies": ["samtools =1.16"],
+                "channels": ["bioconda", "conda-forge"],},
             env={
                 "_QLUCORE_SUBSAMPLE_INIT": config.qlucore.subsample.init,
                 "_QLUCORE_SUBSAMPLE_THREADS": config.qlucore.subsample.threads,

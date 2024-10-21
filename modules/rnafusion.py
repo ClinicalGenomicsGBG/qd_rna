@@ -178,7 +178,8 @@ def _standalone_arriba_visualisation(
             },
             workdir=workdir,
             name=f"standalone_arriba_visualisation_{_id}",
-            conda_spec={"dependencies": [f"arriba ={version}", "samtools =1.16"]},
+            conda_spec={"dependencies": [f"arriba ={version}", "samtools =1.16"],
+                        "channels": ["bioconda", "conda-forge"],},
             cpus=config.rnafusion.arriba_standalone.threads,
             **kwargs,
         )
