@@ -232,17 +232,17 @@ def _pipeline_args(
 
 @output(
     "starfusion/{sample.id}.*.tsv",
-    dst_dir="{sample.id}_{sample.last_run}/qlucore",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.downsampled.bam",
-    dst_dir="{sample.id}_{sample.last_run}/qlucore",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
     checkpoint="downsample_{sample.id}",
     optional=True,
 )
 @output(
     "{sample.id}.qlucore.txt",
-    dst_dir="{sample.id}_{sample.last_run}/qlucore",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
     checkpoint="qlucore",
 )
 @runner(split_by="id")
