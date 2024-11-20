@@ -191,48 +191,48 @@ def _standalone_arriba_visualisation(
 
 @output(
     "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
-    dst_dir="{sample.id}_{sample.last_run}",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
     checkpoint="DUMMY",
 )
 @output(
     "arriba_visualisation/{sample.id}_standalone_arriba_visualisation.pdf",
-    dst_dir="{sample.id}_{sample.last_run}/arriba",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/arriba",
 )
 @output(
     "arriba/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}/arriba",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/arriba",
 )
 @output(
     "fusioncatcher/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}/fusioncatcher",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/fusioncatcher",
 )
 @output(
     "starfusion/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}/starfusion",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/starfusion",
 )
 @output(
     "fusionreport/{sample.id}",
-    dst_name="{sample.id}_{sample.last_run}/fusionreport",
+    dst_name="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/fusionreport",
 )
 @output(
     "{sample.id}.fusionreport.html",
-    dst_dir="{sample.id}_{sample.last_run}",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
 )
 @output(
     "fusioninspector/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}/fusioninspector",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/fusioninspector",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam",
-    dst_dir="{sample.id}_{sample.last_run}",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam.bai",
-    dst_dir="{sample.id}_{sample.last_run}",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
 )
 @output(
     "pipeline_info",
-    dst_name="{sample.id}_{sample.last_run}/pipeline_info/rnafusion",
+    dst_name="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/pipeline_info/rnafusion",
 )
 @runner(split_by="id")
 def rnafusion(
