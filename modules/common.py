@@ -271,7 +271,7 @@ def subsample(
             f"({frac:.2%})"
         )
 
-        (workdir / "subsample").mkdir(exist_ok=True, parents=True)
+        (workdir / "subsample" / id_).mkdir(exist_ok=True, parents=True)
         for sample in group:
             names = []
             for file in sample.files:
@@ -281,8 +281,8 @@ def subsample(
                 names.append(f"{basename}.subsampled.fq.gz")
 
             subsample_files = (
-                workdir / "subsample" / names[0],
-                workdir / "subsample" / names[1],
+                workdir / "subsample" / id_ / names[0],
+                workdir / "subsample" / id_ / names[1],
             )
             executor.submit(
                 str(root / "scripts" / "common_subsample.sh"),
