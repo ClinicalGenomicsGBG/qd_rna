@@ -2,11 +2,9 @@
 
 from pathlib import Path
 from uuid import UUID, uuid4
-from functools import partial
 
-from cellophane import cfg, executors, Config
+from cellophane import cfg, executors
 from mpire.async_result import AsyncResult
-from modules.mail import send_mail
 
 _ROOT = Path(__file__).parent.parent
 
@@ -59,13 +57,6 @@ def nextflow(
         uuid=uuid,
         name=name,
         cpus=config.nextflow.threads,
-        error_callback=partial(
-            _nextflow_error_callback,
-            uuid=uuid,
-            name=name,
-            workdir=workdir,
-            config=config,
-        ),
         **kwargs,
     )
 
@@ -73,47 +64,3 @@ def nextflow(
         result.get()
 
     return result, uuid
-
-def send_crash_mail(
-    config: Config,
-    workdir: Path,
-    uuid: UUID,
-    name: str,
-):
-    """Send email if one runner fails.
-    
-    The function is intented to use as an error_callback,
-    and the email should be sent while the pipeline is continuing to run for the remaining samples.
-    """
-    if not config.mail.send:
-        return
-
-    subject = "QD-RNA: Crashing sample"
-    body = "\n".join([
-    f"<p>QD-RNA has crashed for sample {workdir.name} in UUID {uuid} ({name}).</p>",
-    "<p>The pipeline will continue to run if there are other samples in the same run,",
-    f"but the results from the above stated tool for {workdir.name} will most likely be broken.</p>",
-    f"<p>The workdir was set to the following path: <code>{workdir}</code>.</p>",
-    "<p>Please investigate the crash and restart the pipeline for the failed sample if necessary.</p>"
-    ])
-    
-    to = config.mail.to_addr[0] # Do not send crash mail to everyone, only to the first recipient
-
-    send_mail(
-        **config.mail.smtp,
-        body=body,
-        subject=subject,
-        to_addr=to,
-        from_addr=config.mail.from_addr,
-        cc_addr=config.mail.get("cc_addr")
-    )
-    
-def _nextflow_error_callback(
-    exception: Exception,
-    uuid: UUID,
-    name: str,
-    workdir: Path,
-    config: Config,
-) -> None:
-    """Error callback for Nextflow jobs."""
-    send_crash_mail(config, workdir, uuid, name)
