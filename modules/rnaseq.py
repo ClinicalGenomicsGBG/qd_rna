@@ -1,5 +1,6 @@
 """Module for running nf-core/rnaseq."""
 
+from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from cellophane import (
     runner,
 )
 
+from modules.common import crash_mail_callback
 from modules.nextflow import nextflow
 
 
@@ -192,6 +194,7 @@ def rnaseq(
         return samples
 
     log_tag = samples[0].id if (n := len(samples.unique_ids)) == 1 else f"{n} samples"
+    job_name = f"rnaseq_{samples[0].id}" if len(samples) == 1 else "rnaseq"
 
     _add_optional_outputs(samples, config)
 
@@ -215,13 +218,20 @@ def rnaseq(
             nf_samples=sample_sheet,
         ),
         config=config,
-        name="rnaseq",
+        name=job_name,
         workdir=workdir,
         resume=True,
         executor=executor,
+        error_callback=partial(
+            crash_mail_callback,
+            sample=samples[0],
+            tool="nf-core/rnafusion for qlucore",
+            config=config,
+            workdir=workdir,
+        )
     )
 
-    logger.debug(f"nf-core/rnaseq finished for sample {samples[0].id}")
+    logger.debug(f"nf-core/rnaseq finished ({log_tag})")
     checkpoints.main.store()
 
     return samples

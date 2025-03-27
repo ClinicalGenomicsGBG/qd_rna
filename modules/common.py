@@ -4,6 +4,7 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 from time import sleep
+from traceback import format_tb
 from typing import Literal
 from warnings import warn
 
@@ -12,6 +13,43 @@ from attrs.setters import convert, validate
 from cellophane import Cleaner, Config, Executor, Sample, Samples, post_hook, pre_hook
 from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 from humanfriendly.text import pluralize
+
+from modules.mail import send_mail
+
+
+def crash_mail_callback(
+    exception: Exception,
+    /,
+    sample: Sample,
+    tool: str,
+    config: Config,
+    workdir: Path,
+):
+    """Send a crash mail for a failed nextflow run.
+
+    This function is intended as a error_callback for executor jobs.
+    """
+    if not config.mail.send:
+        return
+
+    subject = f"QD-RNA Crash - {tool}"
+    body = (
+        f"QD-RNA encountered an error running {tool} for sample {sample.id}. "
+        "The pipeline will continue to run if there are other samples in the same run, "
+        f"but the results from {tool} will most likely be missing.\n\n"
+        f"Workdir: `{workdir}`\n"
+        f"Sample: `{sample.id}`\n"
+        f"Exception: `{exception!r}`\n\n"
+        f"Traceback:\n{format_tb(exception.__traceback__)}\n\n"
+        "Please investigate the crash and restart the pipeline for the failed sample if necessary.\n\n"
+    )
+    send_mail(
+        **config.mail.smtp,
+        body=body,
+        subject=subject,
+        to_addr=config.crash_mail.get("to_addr"),
+        cc_addr=config.crash_mail.get("cc_addr"),
+    )
 
 
 def _int_or_none(value: str) -> int | None:
@@ -231,8 +269,8 @@ def _subsample_error_callback(
     logger: LoggerAdapter,
     cleaner: Cleaner,
 ) -> None:
-    logger.error(f"Failed to subsample {sample.id}: {exception}")
-    sample.fail(f"Failed to subsample: {exception}")
+    logger.error(f"Failed to subsample {sample.id}: {exception!r}")
+    sample.fail(f"Failed to subsample: {exception!r}")
     for f in files:
         cleaner.register(f.resolve())
 

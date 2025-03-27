@@ -4,6 +4,15 @@ required:
   - qlucore
 
 properties:
+  crash_mail:
+    type: object
+    properties:
+      to_addr:
+        type: string
+        description: Email address to send crash reports to
+      cc_addr:
+        type: string
+        description: Email address to CC crash reports to
   subsample:
     type: object
     properties:

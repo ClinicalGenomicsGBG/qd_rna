@@ -1,5 +1,6 @@
 """Module for running nf-core/rnafusion."""
 
+from functools import partial
 from json import loads
 from logging import LoggerAdapter
 from pathlib import Path
@@ -8,7 +9,7 @@ from cellophane import Checkpoints, Config, Executor, Samples, output, runner
 from mpire.async_result import AsyncResult
 from ruamel.yaml import YAML
 
-from modules.common import nf_config
+from modules.common import crash_mail_callback, nf_config
 from modules.nextflow import nextflow
 
 # Taken from https://github.com/nf-core/rnafusion/blob/3.0.1/conf/modules.config
@@ -151,7 +152,8 @@ def _standalone_arriba_visualisation(
         or params.get("arriba_ref_protein_domains"),
         config.rnafusion.arriba_standalone.get("annotation") or params.get("gtf"),
         config.rnafusion.arriba_standalone.get("version")
-        or versions.get("ARRIBA_VISUALISATION", {}).get("arriba"),
+        or versions.get("ARRIBA_VISUALISATION", {}).get("arriba")
+        or versions.get("ARRIBA", {}).get("arriba"),
     )
 
     if not (cytobands and protein_domains and annotation and version):
@@ -247,6 +249,8 @@ def rnafusion(
 ) -> Samples:
     """Run nf-core/rnafusion."""
     log_tag = samples[0].id if (n := len(samples.unique_ids)) == 1 else f"{n} samples"
+    job_name = f"rnafusion_{samples[0].id}" if len(samples) == 1 else "rnafusion"
+
     if config.rnafusion.skip:
         samples.output = set()
         return samples
@@ -280,10 +284,17 @@ def rnafusion(
         *_pipeline_args(config, workdir, sample_sheet),
         nxf_config=workdir / "nextflow.config",
         config=config,
-        name="rnafusion",
+        name=job_name,
         workdir=workdir,
         resume=True,
         executor=executor,
+        error_callback=partial(
+            crash_mail_callback,
+            sample=samples[0],
+            tool="nf-core/rnafusion for qlucore",
+            config=config,
+            workdir=workdir,
+        )
     )
 
     logger.debug(f"nf-core/rnafusion finished ({log_tag})")

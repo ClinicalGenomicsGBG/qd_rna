@@ -15,7 +15,7 @@ from cellophane import (
     runner,
 )
 
-from modules.common import nf_config
+from modules.common import crash_mail_callback, nf_config
 from modules.nextflow import nextflow
 
 qlucore_data = """\
@@ -263,6 +263,7 @@ def qlucore(
         return samples
 
     log_tag = samples[0].id if (n := len(samples.unique_ids)) == 1 else f"{n} samples"
+    job_name = f"qlucore_{samples[0].id}" if len(samples) == 1 else "qlucore"
 
     if checkpoints.main.check(qlucore_nf_config):
         logger.info(f"Using previous nf-core/rnafusion output ({log_tag})")
@@ -296,10 +297,17 @@ def qlucore(
             ),
             nxf_config=workdir / "nextflow.config",
             config=config,
-            name="qlucore",
+            name=job_name,
             workdir=workdir,
             resume=True,
             executor=executor,
+            error_callback=partial(
+                crash_mail_callback,
+                sample=samples[0],
+                tool="nf-core/rnafusion for qlucore",
+                config=config,
+                workdir=workdir,
+            )
         )
 
         logger.debug(f"nf-core/rnafusion finished ({log_tag})")
