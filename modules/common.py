@@ -10,7 +10,17 @@ from warnings import warn
 
 from attrs import Attribute, define, field
 from attrs.setters import convert, validate
-from cellophane import Cleaner, Config, Executor, Sample, Samples, post_hook, pre_hook
+from cellophane import (
+    Checkpoint,
+    Checkpoints,
+    Cleaner,
+    Config,
+    Executor,
+    Sample,
+    Samples,
+    post_hook,
+    pre_hook,
+)
 from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 from humanfriendly.text import pluralize
 
@@ -284,12 +294,14 @@ def subsample(
     root: Path,
     workdir: Path,
     cleaner: Cleaner,
+    checkpoints: Checkpoints | None = None,
     **_,
 ) -> Samples:
     """Subsample input FASTQs.
 
     This hook is used to subsample input FASTQs to a fixed number of reads.
     """
+
     if not config.subsample.target:
         return samples
 
@@ -322,10 +334,25 @@ def subsample(
                 workdir / "subsample" / id_ / names[0],
                 workdir / "subsample" / id_ / names[1],
             )
+
+            # Use checkpoints if provided
+            if checkpoints is not None:
+                checkpoints.subsample.paths = subsample_files
+                checkpoints.subsample.samples = group
+                if checkpoints.subsample.check():
+                    logger.info(f"Using previous subsampled output for {id_}")
+                    sample.files = subsample_files
+                    continue
+            # Otherwise, assume existing files are valid
+            elif all(f.exists() for f in subsample_files):
+                logger.info(f"Subsampled files already exist for {id_}")
+                sample.files = subsample_files
+                continue
+
             executor.submit(
                 str(root / "scripts" / "common_subsample.sh"),
                 name=f"subsample_{id_}",
-                workdir=workdir,
+                workdir=workdir / "subsample" / id_,
                 cpus=config.subsample.threads,
                 env={
                     "_SUBSAMPLE_INIT": config.qlucore.subsample.init,
@@ -333,8 +360,8 @@ def subsample(
                     "_SUBSAMPLE_FRAC": frac,
                     "_SUBSAMPLE_INPUT_FQ1": sample.files[0],
                     "_SUBSAMPLE_INPUT_FQ2": sample.files[1],
-                    "_SUBSAMPLE_OUTPUT_FQ1": subsample_files[0],
-                    "_SUBSAMPLE_OUTPUT_FQ2": subsample_files[1],
+                    "_SUBSAMPLE_OUTPUT_FQ1": subsample_files[0].absolute(),
+                    "_SUBSAMPLE_OUTPUT_FQ2": subsample_files[1].absolute(),
                 },
                 callback=partial(
                     _subsample_callback,
