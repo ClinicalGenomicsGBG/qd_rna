@@ -248,8 +248,9 @@ def rnafusion(
     **_,
 ) -> Samples:
     """Run nf-core/rnafusion."""
-    log_tag = samples[0].id if (n := len(samples.unique_ids)) == 1 else f"{n} samples"
-    job_name = f"rnafusion_{samples[0].id}" if len(samples) == 1 else "rnafusion"
+    n_samples = len(samples.unique_ids)
+    log_tag = samples[0].id if n_samples == 1 else f"{n_samples} samples"
+    job_name = f"rnafusion_{samples[0].id}" if n_samples == 1 else "rnaseq"
 
     if config.rnafusion.skip:
         samples.output = set()
