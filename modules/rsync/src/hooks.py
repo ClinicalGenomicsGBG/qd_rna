@@ -22,12 +22,14 @@ def rsync_results(
     **_,
 ) -> None:
     """Sync output to a remote server."""
-
     if not samples.output:
         logger.warning("No output to sync")
         return
 
     logger.info(f"Syncing output to {config.resultdir}")
+
+    _workdir = workdir / "rsync"
+    _workdir.mkdir(parents=True, exist_ok=True)
 
     # Split outputs into large files, small files, and directories
     labels: dict[str, str] = {
@@ -62,7 +64,7 @@ def rsync_results(
     for type_, manifest in manifests.items():
         if manifest:
             logger.info(f"Syncing {len(manifest)} {labels[type_]}")
-            manifest_path = workdir / f"rsync.{type_}.manifest"
+            manifest_path = _workdir / f"rsync.{type_}.manifest"
             with open(manifest_path, "w", encoding="utf-8") as m:
                 m.writelines(
                     [
@@ -75,7 +77,7 @@ def rsync_results(
                 str(ROOT / "scripts" / "rsync.sh"),
                 name="rsync",
                 env={"MANIFEST": str(manifest_path.absolute())},
-                workdir=workdir,
+                workdir=_workdir,
                 callback=partial(
                     sync_callback,
                     logger=logger,
