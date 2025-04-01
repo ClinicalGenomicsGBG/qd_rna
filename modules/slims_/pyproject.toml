@@ -1,29 +1,15 @@
-[tool.poetry]
+[project]
 name = "cellophane-slims"
 version = "0.1.1"
 description = "SLIMS module for Cellophane"
-authors = ["dodslaser <2969909+dodslaser@users.noreply.github.com>"]
+authors = [{name = "dodslaser",email = "2969909+dodslaser@users.noreply.github.com"}]
 readme = "README.md"
+dependencies = [
+   "humanfriendly>=10.0,<11.0",
+   "slims-python-api==6.8.0"
+]
+requires-python = ">=3.11,<4.0"
 
-[tool.poetry.dependencies]
-python = "^3.11"
-slims-python-api = "6.8.0"
-humanfriendly = "10.0"
-
-[tool.poetry.group.dev.dependencies]
-mypy = "^1.0.0"
-black = "^23.1.0"
-isort = "^5.12.0"
-flake8 = "^6.0.0"
-pytest-mock = "^3.11.1"
-pytest-clarity = "^1.0.1"
-pytest-cov = "^4.1.0"
-pylint = "^3.0.2"
-cellophane={git = "https://github.com/ClinicalGenomicsGBG/cellophane.git", branch = "dev"}
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
 
 [tool.coverage.run]
 concurrency = ["multiprocessing", "thread"]
@@ -38,4 +24,21 @@ source = [
 [tool.coverage.report]
 include = [
   "src/*"
+]
+
+
+[tool.rye]
+virtual = true
+managed = true
+universal = true
+dev-dependencies = [
+    "mypy>=1.0.0,<2.0.0",
+    "black>=23.1.0,<24.0.0",
+    "isort>=5.12.0,<6.0.0",
+    "flake8>=6.0.0,<7.0.0",
+    "pytest-mock>=3.11.1,<4.0.0",
+    "pytest-clarity>=1.0.1,<2.0.0",
+    "pytest-cov>=4.1.0,<5.0.0",
+    "pylint>=3.0.2,<4.0.0",
+    "cellophane @ git+https://github.com/ClinicalGenomicsGBG/cellophane.git@dev",
 ]
