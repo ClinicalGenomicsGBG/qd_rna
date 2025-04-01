@@ -1,6 +1,8 @@
 # log:
 #   # Log level (NOTSET will log all messages, including those from external libraries) [string]
 #   level: "INFO"
+#   # Remove main log file after successful pipeline run [boolean]
+#   clean: true
 #   # Log messages from external libraries [boolean]
 #   external: false
 # # Sample read length [integer]
@@ -9,6 +11,8 @@
 # limitSjdbInsertNsj: 1000000
 # # Strandedness of RNA-seq library [string]
 # strandedness: "unstranded"
+# # Clean intermediate files after pipeline run [boolean]
+# clean: true
 # # Path YAML file with samples - eg [{id: ID, files: [F1, F2]}, ...] [path]
 # samples_file: ~
 # # Tag identifying the pipeline run (defaults to a timestamp - YYMMDDHHMMSS) [string]
@@ -28,6 +32,11 @@ logdir: ~
 #   memory: 2000000000
 #   # Number of CPUs to allocate to jobs started (if supported by the executor) [integer]
 #   cpus: 1
+# crash_mail:
+#   # Email address to send crash reports to [string]
+#   to_addr: ~
+#   # Email address to CC crash reports to [string]
+#   cc_addr: ~
 # subsample:
 #   # Number of threads to use for subsampling [integer]
 #   threads: 12
@@ -113,9 +122,9 @@ logdir: ~
 #     # Body of the mail (jinja2 template) [string]
 #     body: |
 #       # {{ config.analysis }}
-#
+# 
 #       Analysis has started for {{ samples.unique_ids|length }} sample(s).
-#
+# 
 #       🔎 The following samples are being analyzed:
 #       |      ID     |  Run(s)  |
 #       | ----------- | -------- |
@@ -138,9 +147,9 @@ logdir: ~
 #     # Body of the mail (jinja2 template, supports markdown) [string]
 #     body: |
 #       # {{ config.analysis }}
-#
+# 
 #       {{ samples.unique_ids|length }} sample(s) have been processed.
-#
+# 
 #       {% if samples.failed -%}
 #       ❗️ Analysis failed for the following samples:
 #       |      ID     |  Run(s)  |
@@ -153,10 +162,10 @@ logdir: ~
 #       {%- endfor %}
 #       📋 See attached log for more information
 #       {% endif -%}
-#
+# 
 #       {%- if samples.complete -%}
 #       ✅ Analysis completed successfully for the following samples:
-#
+# 
 #       |      ID     |  Run(s)  |
 #       | ----------- | -------- |
 #       {%- for id_, group in samples.complete.split(by="id") %}
@@ -165,7 +174,7 @@ logdir: ~
 #       `{{ sample.run }}`{% if not loop.last %}, {% else %} | {% endif %}
 #       {%- endfor -%}
 #       {%- endfor %}
-#
+# 
 #       {%- endif -%}
 #   smtp:
 #     # SMTP host [string]
@@ -188,6 +197,13 @@ logdir: ~
 # nextflow:
 #   # Threads for nextflow manager [integer]
 #   threads: 2
+#   # [mapping]
+#   conda_spec:
+#     channels:
+#     - conda-forge
+#     - bioconda
+#     dependencies:
+#     - nextflow >= 23.04.3, < 24.0.0
 #   # Environment variables that will be passed to the nextflow process [mapping]
 #   env: {}
 #   # Code to run before running Nextflow (Bash) [string]
@@ -200,11 +216,6 @@ logdir: ~
 #   profile: ~
 #   # Nextflow config file [path]
 #   config: ~
-# hcp:
-#   # IRIS credentials file [path]
-#   credentials: ~
-#   # Number of parallel HCP conenctions [integer]
-#   parallel: 4
 # slims:
 #   # SLIMS URL [string]
 #   url: ~
@@ -229,6 +240,11 @@ logdir: ~
 #     max_age: "1 year"
 #     # SLIMS criteria to use for matching novel records (In conjunction with 'slims.criteria') [string]
 #     criteria: ~
+# hcp:
+#   # IRIS credentials file [path]
+#   credentials: ~
+#   # Number of parallel HCP conenctions [integer]
+#   parallel: 4
 # grid_engine:
 #   # Grid Engine queue [string]
 #   queue: "all.q"

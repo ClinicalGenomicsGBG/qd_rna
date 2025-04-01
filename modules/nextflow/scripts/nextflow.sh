@@ -14,5 +14,6 @@ _clean () {
 trap _clean HUP INT QUIT ABRT USR1 USR2 ALRM TERM
 
 eval "${_NXF_INIT}"
+cd "${_NXF_LAUNCH}"
 NXF_HOME="${TMPDIR}/.nextflow" nextflow $@ & _nxf_pid=$!
 wait $_nxf_pid
