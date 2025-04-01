@@ -11,7 +11,6 @@ from warnings import warn
 from attrs import Attribute, define, field
 from attrs.setters import convert, validate
 from cellophane import (
-    Checkpoint,
     Checkpoints,
     Cleaner,
     Config,
@@ -323,28 +322,16 @@ def subsample(
 
         (workdir / "subsample" / id_).mkdir(exist_ok=True, parents=True)
         for sample in group:
-            names = []
+            subsample_files = []
             for file in sample.files:
                 basename: str = file.name
                 for suffix in (".fq", ".fastq", ".gz"):
                     basename = basename.replace(suffix, "")
-                names.append(f"{basename}.subsampled.fq.gz")
+                subsample_files.append(
+                    workdir / "subsample" / id_ / f"{basename}.subsample_{frac:.3f}.fq.gz"
+                )
 
-            subsample_files = (
-                workdir / "subsample" / id_ / names[0],
-                workdir / "subsample" / id_ / names[1],
-            )
-
-            # Use checkpoints if provided
-            if checkpoints is not None:
-                checkpoints.subsample.paths = subsample_files
-                checkpoints.subsample.samples = group
-                if checkpoints.subsample.check(config.subsample.target):
-                    logger.info(f"Using previous subsampled output for {id_}")
-                    sample.files = subsample_files
-                    continue
-            # Otherwise, assume existing files are valid
-            elif all(f.exists() for f in subsample_files):
+            if all(f.exists() for f in subsample_files):
                 logger.info(f"Subsampled files already exist for {id_}")
                 sample.files = subsample_files
                 continue
