@@ -339,7 +339,7 @@ def subsample(
             if checkpoints is not None:
                 checkpoints.subsample.paths = subsample_files
                 checkpoints.subsample.samples = group
-                if checkpoints.subsample.check():
+                if checkpoints.subsample.check(config.subsample.target):
                     logger.info(f"Using previous subsampled output for {id_}")
                     sample.files = subsample_files
                     continue
