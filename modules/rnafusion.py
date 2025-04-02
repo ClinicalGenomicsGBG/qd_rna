@@ -256,7 +256,8 @@ def rnafusion(
         samples.output = set()
         return samples
 
-    if checkpoints.main.check(rnafusion_nf_config):
+    checkpoints.main.params = rnafusion_nf_config
+    if checkpoints.main.check():
         logger.info(f"Using previous nf-core/rnafusion output ({log_tag})")
         return samples
 
@@ -316,6 +317,6 @@ def rnafusion(
         logger=logger,
     )
 
-    checkpoints.main.store(rnafusion_nf_config)
+    checkpoints.main.store()
 
     return samples
