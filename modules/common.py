@@ -293,7 +293,6 @@ def subsample(
     root: Path,
     workdir: Path,
     cleaner: Cleaner,
-    checkpoints: Checkpoints | None = None,
     **_,
 ) -> Samples:
     """Subsample input FASTQs.
@@ -312,7 +311,7 @@ def subsample(
             logger.info(f"Too few reads for {id_} - not subsampling")
             continue
 
-        frac = config.subsample.target / total
+        frac = (config.subsample.target / total) / len(group)
         n_files = sum(len(sample.files) for sample in group)
         logger.info(
             f"Subsampling {pluralize(n_files, 'file', 'files')} "
