@@ -276,6 +276,7 @@ def qlucore(
         sample_sheet = samples.nfcore_samplesheet(
             location=workdir,
             strandedness=config.strandedness,
+            logger=logger,
         )
 
         nf_config(
