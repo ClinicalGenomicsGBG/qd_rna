@@ -121,7 +121,10 @@ class SpringExtractor(
     label="spring",
     script=Path(__file__).parent.parent / "scripts" / "spring.sh",
     suffixes=(".spring",),
-    conda_spec={"dependencies": ["spring >=1.1.1, <2.0.0"]},
+    conda_spec={
+        "channels": ["bioconda", "conda-forge"],
+        "dependencies": ["spring >=1.1.1, <2.0.0"]
+    },
 ):
     """Spring extractor."""
 
