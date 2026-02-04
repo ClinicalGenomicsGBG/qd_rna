@@ -15,7 +15,7 @@ from cellophane import (
     runner,
 )
 
-from modules.common import nf_config
+from modules.common import crash_mail_callback, nf_config
 from modules.nextflow import nextflow
 
 qlucore_data = """\
@@ -73,7 +73,7 @@ def _subsample_callback(
 ):
     del result  # unused
     logger.debug(f"Subsampling finished for {sample_id}")
-    checkpoint.store(qlucore_nf_config)
+    checkpoint.store()
 
 
 def _subsample_error_callback(
@@ -131,9 +131,10 @@ def _subsample(
             / f"{id_}.Aligned.sortedByCoord.out.downsampled.bam"
         )
 
-        if output_path.exists() and checkpoints[f"downsample_{id_}"].check(
-            qlucore_nf_config
-        ):
+        checkpoint = checkpoints[f"qlucore_downsample_{id_}"]
+        checkpoint.params = qlucore_nf_config
+        checkpoint.samples = group
+        if output_path.exists() and checkpoint.check():
             logger.info(f"Using previous downsampled BAM ({id_})")
             continue
 
@@ -170,7 +171,7 @@ def _subsample(
                 _subsample_callback,
                 logger=logger,
                 sample_id=id_,
-                checkpoint=checkpoints[f"downsample_{id_}"],
+                checkpoint=checkpoint,
             ),
             error_callback=partial(
                 _subsample_error_callback,
@@ -232,17 +233,17 @@ def _pipeline_args(
 
 @output(
     "starfusion/{sample.id}.*.tsv",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/qlucore",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.downsampled.bam",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/qlucore",
     checkpoint="downsample_{sample.id}",
     optional=True,
 )
 @output(
     "{sample.id}.qlucore.txt",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/qlucore",
     checkpoint="qlucore",
 )
 @runner(split_by="id")
@@ -262,9 +263,12 @@ def qlucore(
         samples.output = set()
         return samples
 
-    log_tag = samples[0].id if (n := len(samples.unique_ids)) == 1 else f"{n} samples"
+    n_samples = len(samples.unique_ids)
+    log_tag = samples[0].id if n_samples == 1 else f"{n_samples} samples"
+    job_name = f"qlucore_{samples[0].id}" if n_samples == 1 else "qlucore"
 
-    if checkpoints.main.check(qlucore_nf_config):
+    checkpoints.main.params = qlucore_nf_config
+    if checkpoints.main.check():
         logger.info(f"Using previous nf-core/rnafusion output ({log_tag})")
     else:
         _validate_inputs(
@@ -297,14 +301,21 @@ def qlucore(
             ),
             nxf_config=workdir / "nextflow.config",
             config=config,
-            name="qlucore",
+            name=job_name,
             workdir=workdir,
             resume=True,
             executor=executor,
+            error_callback=partial(
+                crash_mail_callback,
+                sample=samples[0],
+                tool="nf-core/rnafusion for qlucore",
+                config=config,
+                workdir=workdir,
+            )
         )
 
         logger.debug(f"nf-core/rnafusion finished ({log_tag})")
-        checkpoints.main.store(qlucore_nf_config)
+        checkpoints.main.store()
 
     _subsample(
         samples=samples,
@@ -317,11 +328,12 @@ def qlucore(
         log_tag=log_tag,
     )
 
-    if checkpoints.qlucore.check(qlucore_data):
+    checkpoints.qlucore.params = qlucore_data
+    if checkpoints.qlucore.check():
         logger.info("Using previous qlucore output")
     else:
         for id_, _ in samples.split(by="id"):
             (workdir / f"{id_}.qlucore.txt").write_text(qlucore_data.format(id=id_))
-        checkpoints.qlucore.store(qlucore_data)
+        checkpoints.qlucore.store()
 
     return samples

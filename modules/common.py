@@ -4,14 +4,61 @@ from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 from time import sleep
+from traceback import format_tb
 from typing import Literal
 from warnings import warn
 
 from attrs import Attribute, define, field
 from attrs.setters import convert, validate
-from cellophane import Cleaner, Config, Executor, Sample, Samples, post_hook, pre_hook
+from cellophane import (
+    Checkpoints,
+    Cleaner,
+    Config,
+    Executor,
+    Sample,
+    Samples,
+    post_hook,
+    pre_hook,
+)
 from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 from humanfriendly.text import pluralize
+
+from modules.mail import send_mail
+
+
+def crash_mail_callback(
+    exception: Exception,
+    /,
+    sample: Sample,
+    tool: str,
+    config: Config,
+    workdir: Path,
+):
+    """Send a crash mail for a failed nextflow run.
+
+    This function is intended as a error_callback for executor jobs.
+    """
+    if not config.mail.send:
+        return
+
+    subject = f"QD-RNA Crash - {tool}"
+    body = (
+        f"QD-RNA encountered an error running {tool} for sample {sample.id}. "
+        "The pipeline will continue to run if there are other samples in the same run, "
+        f"but the results from {tool} will most likely be missing.\n\n"
+        f"Workdir: `{workdir}`\n"
+        f"Sample: `{sample.id}`\n"
+        f"Exception: `{exception!r}`\n\n"
+        f"Traceback:\n{format_tb(exception.__traceback__)}\n\n"
+        "Please investigate the crash and restart the pipeline for the failed sample if necessary.\n\n"
+    )
+    send_mail(
+        **config.mail.smtp,
+        body=body,
+        subject=subject,
+        to_addr=config.crash_mail.get("to_addr"),
+        cc_addr=config.crash_mail.get("cc_addr"),
+    )
 
 
 def _int_or_none(value: str) -> int | None:
@@ -231,8 +278,8 @@ def _subsample_error_callback(
     logger: LoggerAdapter,
     cleaner: Cleaner,
 ) -> None:
-    logger.error(f"Failed to subsample {sample.id}: {exception}")
-    sample.fail(f"Failed to subsample: {exception}")
+    logger.error(f"Failed to subsample {sample.id}: {exception!r}")
+    sample.fail(f"Failed to subsample: {exception!r}")
     for f in files:
         cleaner.register(f.resolve())
 
@@ -252,6 +299,7 @@ def subsample(
 
     This hook is used to subsample input FASTQs to a fixed number of reads.
     """
+
     if not config.subsample.target:
         return samples
 
@@ -263,7 +311,7 @@ def subsample(
             logger.info(f"Too few reads for {id_} - not subsampling")
             continue
 
-        frac = config.subsample.target / total
+        frac = (config.subsample.target / total) / len(group)
         n_files = sum(len(sample.files) for sample in group)
         logger.info(
             f"Subsampling {pluralize(n_files, 'file', 'files')} "
@@ -271,23 +319,26 @@ def subsample(
             f"({frac:.2%})"
         )
 
-        (workdir / "subsample").mkdir(exist_ok=True, parents=True)
+        (workdir / "subsample" / id_).mkdir(exist_ok=True, parents=True)
         for sample in group:
-            names = []
+            subsample_files = []
             for file in sample.files:
                 basename: str = file.name
                 for suffix in (".fq", ".fastq", ".gz"):
                     basename = basename.replace(suffix, "")
-                names.append(f"{basename}.subsampled.fq.gz")
+                subsample_files.append(
+                    workdir / "subsample" / id_ / f"{basename}.subsample_{frac:.3f}.fq.gz"
+                )
 
-            subsample_files = (
-                workdir / "subsample" / names[0],
-                workdir / "subsample" / names[1],
-            )
+            if all(f.exists() for f in subsample_files):
+                logger.info(f"Subsampled files already exist for {id_}")
+                sample.files = subsample_files
+                continue
+
             executor.submit(
                 str(root / "scripts" / "common_subsample.sh"),
                 name=f"subsample_{id_}",
-                workdir=workdir,
+                workdir=workdir / "subsample" / id_,
                 cpus=config.subsample.threads,
                 env={
                     "_SUBSAMPLE_INIT": config.qlucore.subsample.init,
@@ -295,8 +346,8 @@ def subsample(
                     "_SUBSAMPLE_FRAC": frac,
                     "_SUBSAMPLE_INPUT_FQ1": sample.files[0],
                     "_SUBSAMPLE_INPUT_FQ2": sample.files[1],
-                    "_SUBSAMPLE_OUTPUT_FQ1": subsample_files[0],
-                    "_SUBSAMPLE_OUTPUT_FQ2": subsample_files[1],
+                    "_SUBSAMPLE_OUTPUT_FQ1": subsample_files[0].absolute(),
+                    "_SUBSAMPLE_OUTPUT_FQ2": subsample_files[1].absolute(),
                 },
                 callback=partial(
                     _subsample_callback,

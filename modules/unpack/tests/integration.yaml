@@ -11,7 +11,7 @@
 
         class DummyExecutor(Executor, name="dummy"):
             def target(self, *args, env, **kwargs):
-              Path(env["COMPRESSED_PATH"]).with_suffix(".fastq.gz").touch()
+              Path(env["EXTRACTED_PATH"]).touch()
 
     samples.yaml: |
       - id: fasterq
@@ -41,14 +41,14 @@
 
         class DummyExecutor(Executor, name="dummy"):
             def target(self, *args, env, **kwargs):
-              Path(env["COMPRESSED_PATH"]).with_suffix(".fastq.gz").touch()
+              Path(env["EXTRACTED_PATH"]).touch()
 
     samples.yaml: |
       - id: spring
         files:
           - input/file.spring
     input:
-      file.fasterq: ""
+      file.spring: ""
   args:
     --workdir: work
     --samples_file: samples.yaml
@@ -71,15 +71,16 @@
 
         class DummyExecutor(Executor, name="dummy"):
             def target(self, *args, env, **kwargs):
-              Path(env["COMPRESSED_PATH"]).with_suffix(".fastq.gz.1").touch()
-              Path(env["COMPRESSED_PATH"]).with_suffix(".fastq.gz.2").touch()
+              base = env["EXTRACTED_PATH"].partition(".")[0]
+              Path(base).with_suffix(".fastq.gz.1").touch()
+              Path(base).with_suffix(".fastq.gz.2").touch()
 
     samples.yaml: |
       - id: spring
         files:
           - input/file.spring
     input:
-      file.fasterq: ""
+      file.spring: ""
   args:
     --workdir: work
     --samples_file: samples.yaml
@@ -103,15 +104,16 @@
 
         class DummyExecutor(Executor, name="dummy"):
             def target(self, *args, env, **kwargs):
-              Path(env["COMPRESSED_PATH"]).with_suffix(".1.fastq.gz").touch()
-              Path(env["COMPRESSED_PATH"]).with_suffix(".2.fastq.gz").touch()
+              base = env["EXTRACTED_PATH"].partition(".")[0]
+              Path(base).with_suffix(".1.fastq.gz").touch()
+              Path(base).with_suffix(".2.fastq.gz").touch()
 
     samples.yaml: |
       - id: spring
         files:
           - input/file.spring
     input:
-      file.fasterq: ""
+      file.spring: ""
   args:
     --workdir: work
     --samples_file: samples.yaml
@@ -180,32 +182,3 @@
     - Waiting up to 60 seconds for files to become available
     - Extracted files for file.fasterq not found after 60 second
 
-
-- id: unpack_exists
-  external:
-    ..: modules/unpack
-  mocks:
-    modules.unpack.src.util.sleep: ~
-  structure:
-    modules:
-      a.py: |
-        from cellophane import Executor
-        from pathlib import Path
-
-        class DummyExecutor(Executor, name="dummy"):
-            def target(self, *args, **kwargs):
-              ...
-
-    samples.yaml: |
-      - id: fasterq
-        files:
-          - input/file.fasterq
-    input:
-      file.fasterq: ""
-      file.fastq.gz: ""
-  args:
-    --workdir: work
-    --samples_file: samples.yaml
-    --executor_name: "dummy"
-  logs:
-    - Already extracted file.fasterq

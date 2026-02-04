@@ -12,14 +12,15 @@
             executor.submit("DUMMY")
             executor.wait()
   mocks:
+    cellophane.executors.executor.uuid4:
+      return_value: !!python/object/apply:uuid.UUID ["deadbeefdeadbeefdeadbeefdeadbeef"]
     modules.grid_engine.src.executor.drmaa2.JobSession:
       return_value: !!python/object/apply:grid_engine.tests.JobSessionMock {}
   args:
     --workdir: work
     --executor_name: grid_engine
   logs:
-    - "Grid Engine job started"
-    - "Job completed"
+    - Submitted job 'grid_engine' to Grid Engine (UUID=deadbeef JID=DUMMY)
 
 - id: grid_engine_exception
   external:
@@ -61,11 +62,12 @@
             executor.wait()
 
   mocks:
+    cellophane.executors.executor.uuid4:
+      return_value: !!python/object/apply:uuid.UUID ["deadbeefdeadbeefdeadbeefdeadbeef"]
     modules.grid_engine.src.executor.drmaa2.JobSession:
       return_value: !!python/object/apply:grid_engine.tests.JobSessionMock {kwds: {delay: 5}}
   args:
     --workdir: work
     --executor_name: grid_engine
   logs:
-    - "Terminating job with uuid"
-    - "Terminating SGE job (id=DUMMY)"
+    - "Terminated Grid Engine job 'grid_engine' (UUID=deadbeef JID=DUMMY)"

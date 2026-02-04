@@ -192,7 +192,7 @@ def get_fields_from_sample(
     fields = {}
     for key in keys:
         try:
-            field_ = reduce(lambda x, y: x.get(y), key, map_)
+            field_ = reduce(lambda x, y: x.get(y) or {}, key, map_)
             if (
                 field_ not in sync_keys_or_fields
                 and ".".join(key) not in sync_keys_or_fields

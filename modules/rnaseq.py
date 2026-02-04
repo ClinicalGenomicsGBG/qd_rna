@@ -1,5 +1,6 @@
 """Module for running nf-core/rnaseq."""
 
+from functools import partial
 from logging import LoggerAdapter
 from pathlib import Path
 
@@ -13,6 +14,7 @@ from cellophane import (
     runner,
 )
 
+from modules.common import crash_mail_callback
 from modules.nextflow import nextflow
 
 
@@ -88,12 +90,12 @@ def _add_optional_outputs(samples: Samples, config: Config) -> None:
         samples.output |= {
             OutputGlob(
                 src="star_salmon/salmon.merged.*",
-                dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/salmon/",
+                dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/salmon/",
                 dst_name=None,
             ),
             OutputGlob(
                 src="star_salmon/{sample.id}",
-                dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/salmon/",
+                dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/salmon/",
                 dst_name=None,
             ),
         }
@@ -102,22 +104,22 @@ def _add_optional_outputs(samples: Samples, config: Config) -> None:
         samples.output |= {
             OutputGlob(
                 src="star_salmon/rsem.merged.*",
-                dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/rsem/",
+                dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/rsem/",
                 dst_name=None,
             ),
             OutputGlob(
                 src="star_salmon/{sample.id}.genes.results",
-                dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/rsem/",
+                dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/rsem/",
                 dst_name=None,
             ),
             OutputGlob(
                 src="star_salmon/{sample.id}.isoforms.results",
-                dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/rsem/",
+                dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/rsem/",
                 dst_name=None,
             ),
             OutputGlob(
                 src="star_salmon/{sample.id}.stat",
-                dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/rsem/",
+                dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/rsem/",
                 dst_name=None,
             ),
         }
@@ -125,55 +127,55 @@ def _add_optional_outputs(samples: Samples, config: Config) -> None:
 
 @output(
     "{config.rnaseq.aligner}/{sample.id}.markdup.sorted.bam",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression",
 )
 @output(
     "{config.rnaseq.aligner}/{sample.id}.markdup.sorted.bam.bai",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression",
 )
 @output(
     "salmon",
-    dst_name="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/salmon_pseudo",
+    dst_name="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/salmon_pseudo",
 )
 @output(
     "{config.rnaseq.aligner}/stringtie",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/",
 )
 @output(
     "{config.rnaseq.aligner}/bigwig",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/",
 )
 @output(
     "{config.rnaseq.aligner}/samtools_stats",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/picard_metrics",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/rseqc",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/qualimap",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/dupradar",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/qc/",
 )
 @output(
     "{config.rnaseq.aligner}/deseq2_qc",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/expression/qc/",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/expression/qc/",
 )
 @output(
     "multiqc/{config.rnaseq.aligner}",
-    dst_name="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/multiqc",
+    dst_name="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/multiqc",
 )
 @output(
     "pipeline_info",
-    dst_name="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/pipeline_info/rnaseq",
+    dst_name="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/pipeline_info/rnaseq",
 )
 @runner(split_by="id")
 def rnaseq(
@@ -191,7 +193,9 @@ def rnaseq(
         samples.output = set()
         return samples
 
-    log_tag = samples[0].id if (n := len(samples.unique_ids)) == 1 else f"{n} samples"
+    n_samples = len(samples.unique_ids)
+    log_tag = samples[0].id if n_samples == 1 else f"{n_samples} samples"
+    job_name = f"rnaseq_{samples[0].id}" if n_samples == 1 else "rnaseq"
 
     _add_optional_outputs(samples, config)
 
@@ -216,13 +220,20 @@ def rnaseq(
             nf_samples=sample_sheet,
         ),
         config=config,
-        name="rnaseq",
+        name=job_name,
         workdir=workdir,
         resume=True,
         executor=executor,
+        error_callback=partial(
+            crash_mail_callback,
+            sample=samples[0],
+            tool="nf-core/rnafusion for qlucore",
+            config=config,
+            workdir=workdir,
+        )
     )
 
-    logger.debug(f"nf-core/rnaseq finished for sample {samples[0].id}")
+    logger.debug(f"nf-core/rnaseq finished ({log_tag})")
     checkpoints.main.store()
 
     return samples

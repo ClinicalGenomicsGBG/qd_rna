@@ -1,5 +1,6 @@
 """Module for running nf-core/rnafusion."""
 
+from functools import partial
 from json import loads
 from logging import LoggerAdapter
 from pathlib import Path
@@ -8,7 +9,7 @@ from cellophane import Checkpoints, Config, Executor, Samples, output, runner
 from mpire.async_result import AsyncResult
 from ruamel.yaml import YAML
 
-from modules.common import nf_config
+from modules.common import crash_mail_callback, nf_config
 from modules.nextflow import nextflow
 
 # Taken from https://github.com/nf-core/rnafusion/blob/3.0.1/conf/modules.config
@@ -151,7 +152,8 @@ def _standalone_arriba_visualisation(
         or params.get("arriba_ref_protein_domains"),
         config.rnafusion.arriba_standalone.get("annotation") or params.get("gtf"),
         config.rnafusion.arriba_standalone.get("version")
-        or versions.get("ARRIBA_VISUALISATION", {}).get("arriba"),
+        or versions.get("ARRIBA_VISUALISATION", {}).get("arriba")
+        or versions.get("ARRIBA", {}).get("arriba"),
     )
 
     if not (cytobands and protein_domains and annotation and version):
@@ -191,48 +193,48 @@ def _standalone_arriba_visualisation(
 
 @output(
     "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}",
     checkpoint="DUMMY",
 )
 @output(
     "arriba_visualisation/{sample.id}_standalone_arriba_visualisation.pdf",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/arriba",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/arriba",
 )
 @output(
     "arriba/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/arriba",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/arriba",
 )
 @output(
     "fusioncatcher/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/fusioncatcher",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/fusioncatcher",
 )
 @output(
     "starfusion/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/starfusion",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/starfusion",
 )
 @output(
     "fusionreport/{sample.id}",
-    dst_name="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/fusionreport",
+    dst_name="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/fusionreport",
 )
 @output(
     "{sample.id}.fusionreport.html",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}",
 )
 @output(
     "fusioninspector/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/fusioninspector",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/fusioninspector",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam.bai",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}",
 )
 @output(
     "pipeline_info",
-    dst_name="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/pipeline_info/rnafusion",
+    dst_name="{sample.id}_{sample.last_run}_{timestamp[%y%m%d-%H%M%S]}/pipeline_info/rnafusion",
 )
 @runner(split_by="id")
 def rnafusion(
@@ -246,12 +248,16 @@ def rnafusion(
     **_,
 ) -> Samples:
     """Run nf-core/rnafusion."""
-    log_tag = samples[0].id if (n := len(samples.unique_ids)) == 1 else f"{n} samples"
+    n_samples = len(samples.unique_ids)
+    log_tag = samples[0].id if n_samples == 1 else f"{n_samples} samples"
+    job_name = f"rnafusion_{samples[0].id}" if n_samples == 1 else "rnaseq"
+
     if config.rnafusion.skip:
         samples.output = set()
         return samples
 
-    if checkpoints.main.check(rnafusion_nf_config):
+    checkpoints.main.params = rnafusion_nf_config
+    if checkpoints.main.check():
         logger.info(f"Using previous nf-core/rnafusion output ({log_tag})")
         return samples
 
@@ -281,10 +287,17 @@ def rnafusion(
         *_pipeline_args(config, workdir, sample_sheet),
         nxf_config=workdir / "nextflow.config",
         config=config,
-        name="rnafusion",
+        name=job_name,
         workdir=workdir,
         resume=True,
         executor=executor,
+        error_callback=partial(
+            crash_mail_callback,
+            sample=samples[0],
+            tool="nf-core/rnafusion for qlucore",
+            config=config,
+            workdir=workdir,
+        )
     )
 
     logger.debug(f"nf-core/rnafusion finished ({log_tag})")
@@ -305,6 +318,6 @@ def rnafusion(
         logger=logger,
     )
 
-    checkpoints.main.store(rnafusion_nf_config)
+    checkpoints.main.store()
 
     return samples

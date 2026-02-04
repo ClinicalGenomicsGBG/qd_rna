@@ -15,23 +15,8 @@
     --samples_file: samples.yaml
     --workdir: work
     --hcp_credentials: "DUMMY"
-    --hcp_fastq_temp: "cache"
   logs:
     - Fetched BACKUP from hcp
-
-- <<: *hcp_test
-  id: fetch_cached
-  structure:
-    samples.yaml: |
-      - id: CACHED
-        files:
-        - input/CACHED
-        hcp_remote_keys:
-        - cache/CACHED
-    cache:
-      CACHED: CACHED
-  logs:
-    - Found CACHED locally
 
 - <<: *hcp_test
   id: no_backup

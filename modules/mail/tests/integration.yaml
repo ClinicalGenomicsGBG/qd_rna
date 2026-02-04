@@ -13,6 +13,8 @@
             dir_attachment.mkdir()
             symlink_attachment = workdir / f"attachment_samples_symlink"
             symlink_attachment.symlink_to(samples_attachment.resolve())
+            append_attachment = workdir / f"attachment_samples_append"
+            append_attachment.touch()
 
             samples.mail_attachments = {
               samples_attachment,
@@ -20,6 +22,8 @@
               symlink_attachment,
               dir_attachment,
             }
+
+            samples.mail_attachments |= {append_attachment}
 
             for sample in samples:
                 sample_attachment = workdir / f"attachment_{sample.id}"
@@ -78,6 +82,7 @@
     - "Attachment: work/DUMMY/_runner/attachment_pass"
     - "Attachment: work/DUMMY/_runner/attachment_fail"
     - "Attachment: work/DUMMY/_runner/attachment_samples"
+    - "Attachment: work/DUMMY/_runner/attachment_samples_append"
 
 - id: mail_no_samples
   external:
