@@ -1,6 +1,8 @@
 # log:
 #   # Log level (NOTSET will log all messages, including those from external libraries) [string]
 #   level: "INFO"
+#   # Remove main log file after successful pipeline run [boolean]
+#   clean: true
 #   # Log messages from external libraries [boolean]
 #   external: false
 # # Sample read length [integer]
@@ -9,6 +11,8 @@
 # limitSjdbInsertNsj: 1000000
 # # Strandedness of RNA-seq library [string]
 # strandedness: "unstranded"
+# # Clean intermediate files after pipeline run [boolean]
+# clean: true
 # # Path YAML file with samples - eg [{id: ID, files: [F1, F2]}, ...] [path]
 # samples_file: ~
 # # Tag identifying the pipeline run (defaults to a timestamp - YYMMDDHHMMSS) [string]
@@ -96,6 +100,16 @@ logdir: ~
 #     fallback_fraction: 0.2
 #     # Target number of reads for subsampling (approximate) [integer]
 #     target: 20000000
+# grid_engine:
+#   # Grid Engine queue [string]
+#   queue: "all.q"
+#   # Grid Engine parallel environment [string]
+#   pe: "mpi"
+# hcp:
+#   # IRIS credentials file [path]
+#   credentials: ~
+#   # Number of parallel HCP conenctions [integer]
+#   parallel: 4
 # mail:
 #   # Send mail [boolean]
 #   send: false
@@ -113,9 +127,9 @@ logdir: ~
 #     # Body of the mail (jinja2 template) [string]
 #     body: |
 #       # {{ config.analysis }}
-#
+# 
 #       Analysis has started for {{ samples.unique_ids|length }} sample(s).
-#
+# 
 #       🔎 The following samples are being analyzed:
 #       |      ID     |  Run(s)  |
 #       | ----------- | -------- |
@@ -138,9 +152,9 @@ logdir: ~
 #     # Body of the mail (jinja2 template, supports markdown) [string]
 #     body: |
 #       # {{ config.analysis }}
-#
+# 
 #       {{ samples.unique_ids|length }} sample(s) have been processed.
-#
+# 
 #       {% if samples.failed -%}
 #       ❗️ Analysis failed for the following samples:
 #       |      ID     |  Run(s)  |
@@ -153,10 +167,10 @@ logdir: ~
 #       {%- endfor %}
 #       📋 See attached log for more information
 #       {% endif -%}
-#
+# 
 #       {%- if samples.complete -%}
 #       ✅ Analysis completed successfully for the following samples:
-#
+# 
 #       |      ID     |  Run(s)  |
 #       | ----------- | -------- |
 #       {%- for id_, group in samples.complete.split(by="id") %}
@@ -165,7 +179,7 @@ logdir: ~
 #       `{{ sample.run }}`{% if not loop.last %}, {% else %} | {% endif %}
 #       {%- endfor -%}
 #       {%- endfor %}
-#
+# 
 #       {%- endif -%}
 #   smtp:
 #     # SMTP host [string]
@@ -178,13 +192,6 @@ logdir: ~
 #     tls: false
 #     # SMTP port [integer]
 #     port: 25
-# rsync:
-#   # Overwrite existing results [boolean]
-#   overwrite: false
-#   # Timeout (in seconds) for files to be available after rsync is complete [integer]
-#   timeout: 30
-#   # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) [string]
-#   large_file_threshold: "100M"
 # nextflow:
 #   # Threads for nextflow manager [integer]
 #   threads: 2
@@ -200,11 +207,13 @@ logdir: ~
 #   profile: ~
 #   # Nextflow config file [path]
 #   config: ~
-# hcp:
-#   # IRIS credentials file [path]
-#   credentials: ~
-#   # Number of parallel HCP conenctions [integer]
-#   parallel: 4
+# rsync:
+#   # Overwrite existing results [boolean]
+#   overwrite: false
+#   # Timeout (in seconds) for files to be available after rsync is complete [integer]
+#   timeout: 30
+#   # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) [string]
+#   large_file_threshold: "100M"
 # slims:
 #   # SLIMS URL [string]
 #   url: ~
@@ -229,11 +238,6 @@ logdir: ~
 #     max_age: "1 year"
 #     # SLIMS criteria to use for matching novel records (In conjunction with 'slims.criteria') [string]
 #     criteria: ~
-# grid_engine:
-#   # Grid Engine queue [string]
-#   queue: "all.q"
-#   # Grid Engine parallel environment [string]
-#   pe: "mpi"
 # unpack:
 #   # Code to run before unpacking (Bash) [string]
 #   init: ~
