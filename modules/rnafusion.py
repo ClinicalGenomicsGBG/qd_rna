@@ -191,48 +191,48 @@ def _standalone_arriba_visualisation(
 
 @output(
     "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
     checkpoint="DUMMY",
 )
 @output(
     "arriba_visualisation/{sample.id}_standalone_arriba_visualisation.pdf",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/arriba",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
 )
 @output(
     "arriba/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/arriba",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
 )
 @output(
     "fusioncatcher/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/fusioncatcher",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioncatcher",
 )
 @output(
     "starfusion/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/starfusion",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
 )
 @output(
     "fusionreport/{sample.id}",
-    dst_name="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/fusionreport",
+    dst_name="{sample.id}_{sample.last_run}_{timestamp}/fusionreport",
 )
 @output(
     "{sample.id}.fusionreport.html",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
 )
 @output(
     "fusioninspector/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/fusioninspector",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam.bai",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
 )
 @output(
     "pipeline_info",
-    dst_name="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/pipeline_info/rnafusion",
+    dst_name="{sample.id}_{sample.last_run}_{timestamp}/pipeline_info/rnafusion",
 )
 @runner(split_by="id")
 def rnafusion(
