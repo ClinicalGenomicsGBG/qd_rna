@@ -13,6 +13,7 @@ def _mail_hook(
     config: Config,
     workdir: Path,
     when: Literal["start", "end"],
+    timestamp=None,
     **_,
 ):
     if not samples:
@@ -29,6 +30,7 @@ def _mail_hook(
         body=config.mail[when].body,
         samples=samples,
         config=config,
+        timestamp=timestamp,
     )
 
     attachments = resolve_attachments(
