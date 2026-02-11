@@ -23,7 +23,7 @@ def compress_results(
         logger.info("Compression is disabled")
         return samples
 
-    rules = list(getattr(config.compress, "files", []) or [])
+    rules = list(getattr(config.compress, "rules", []) or [])
     threads = int(getattr(config.compress, "threads", 4))
 
     if not rules:
