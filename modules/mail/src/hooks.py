@@ -103,6 +103,7 @@ def end_mail(
     logger: LoggerAdapter,
     config: Config,
     workdir: Path,
+    timestamp,
     **_,
 ):
     """Send a mail at the end of the analysis"""
@@ -112,4 +113,5 @@ def end_mail(
         config=config,
         workdir=workdir,
         when="end",
+        timestamp=timestamp,
     )
