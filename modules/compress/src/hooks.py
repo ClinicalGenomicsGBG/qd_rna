@@ -6,7 +6,7 @@ from cellophane import Config, Samples, Output, Executor, post_hook
 from .util import cram_compress, should_convert, find_bai_output
 
 
-@post_hook(label="Compress Output", before="rsync_results", condition="always")
+@post_hook(label="Compress Output", per="sample", before="rsync_results", after="slims_sync_post", condition="complete")
 def compress_results(
     samples: Samples,
     logger: LoggerAdapter,
@@ -33,10 +33,11 @@ def compress_results(
     new_outputs = set(samples.output)  # set of original outputs, will be modified in place
 
     for out in list(samples.output):
-        convert, method, ref = should_convert(out, rules, workdir)
+        convert, method, ref = should_convert(out, rules, workdir, logger)
         if not convert:
             continue
 
+        logger.info(f"Compressing {out.src} using method '{method}'")
         if method == "cram":
             bam_src = Path(out.src)
             bam_dst = Path(out.dst)
@@ -86,5 +87,11 @@ def compress_results(
     executor.wait()  # wait for all compression jobs to finish before proceeding
 
     samples.output = new_outputs
+
+    logger.debug("COMPRESS hook: samples id=%s output id=%s", id(samples), id(samples.output))
+    logger.debug("COMPRESS hook: any cram=%s any bam=%s",
+                any(str(o.src).endswith(".cram") for o in samples.output),
+                any(str(o.src).endswith(".bam") for o in samples.output))
+
     return samples
 
