@@ -71,13 +71,15 @@ class SlimsSample(Sample):
             for key in _keys:
                 if key in _map_ignore:
                     continue
-                value = get_field(record, c_map[key])
+                value = get_field(record, c_map[key])  # The value is what we retrieve from SLIMS
                 if isinstance(self[key[0]], Container):
+                    # Before setting the value, we check the current value
                     try:
                         current = self[key[0]][key[1:]]
                     except Exception:
                         current = None
 
+                    # If the current value is missing, we set it to the value from SLIMS
                     if self._missing(current):
                         self[key[0]][key[1:]] = value
 
