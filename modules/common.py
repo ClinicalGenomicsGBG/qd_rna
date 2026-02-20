@@ -319,3 +319,116 @@ def subsample(
             )
     executor.wait()
     return samples
+
+
+def _cram_compress(
+    *,
+    executor: Executor,
+    input_bam: str | Path,
+    reference: str | Path,
+    root: Path,
+    config: Config,
+    logger: LoggerAdapter | None = None,
+    output_cram: str | Path | None = None,
+    name: str | None = None,
+    workdir: Path | None = None,
+    conda_spec: dict | None = None,
+):
+    input_bam = Path(input_bam)
+    reference = Path(reference)
+    output_cram = Path(output_cram) if output_cram else input_bam.with_suffix(".cram")
+    threads = getattr(config, "compress", {}).get("threads", 4)
+
+    if name is None:
+        name = f"cram_{input_bam.stem}"
+
+    if conda_spec is None:
+        conda_spec = {
+            "channels": ["bioconda", "conda-forge"],
+            "dependencies": ["samtools=1.16"],
+        }
+
+    script = str(root / "scripts" / "cram_compress.sh")
+
+    if logger:
+        logger.info(f"Submitting CRAM compression: {input_bam.name} -> {output_cram.name}")
+        logger.debug(
+            "CRAM script command: "
+            f"{script} {input_bam} {output_cram} {reference} {threads}"
+        )
+
+    return executor.submit(
+        str(script),
+        str(input_bam),
+        str(output_cram),
+        str(reference),
+        str(threads),
+        name=name,
+        workdir=workdir,
+        cpus=threads,
+        # conda_spec=conda_spec,  # Use module samtools in the script instead
+    )
+
+
+def _resolve_src_template(src_tmpl: str, *, samples, sample, config, runner, workdir) -> Path:
+    rendered = src_tmpl.format(
+        samples=samples,
+        sample=sample,
+        config=config,
+        runner=runner,
+        workdir=workdir,
+    )
+    return (workdir / rendered).resolve()
+
+
+def compress_bams(
+    samples: Samples,
+    logger: LoggerAdapter,
+    root: Path,
+    executor: Executor,
+    config: Config,
+    reference: Path,
+    workdir: Path,
+):
+    """ Convert delared crams from bams if available """
+    srcs = [str(o.src) for o in samples.output if hasattr(o, "src")]
+    logger.debug(f"Declared output paths: {srcs}")
+    for src in srcs:
+        if not src.endswith(".cram"):
+            continue
+        cram_path = _resolve_src_template(
+            src, 
+            samples=samples, 
+            sample=samples[0], 
+            config=config, 
+            runner="rnaseq", 
+            workdir=workdir, 
+        )
+        logger.debug(f"Cram detected: {cram_path}")
+        if cram_path.exists():
+            logger.debug(f"cram file already exists, skipping: {cram_path}")
+            continue
+        bam_path = cram_path.with_suffix(".bam")
+        if not bam_path.exists():
+            logger.warning(f"Warning: bam {bam_path} not found, cannot generate {cram_path}")
+            continue
+        logger.info(f"Creating {cram_path} from {bam_path}")
+        _cram_compress(
+            executor=executor,
+            input_bam=bam_path,
+            reference=reference,
+            root=root,
+            config=config,
+            logger=logger,
+            output_cram=cram_path,
+            workdir=workdir,
+        )
+        executor.wait()
+
+        # Cleanup bams
+        if bam_path.exists() and cram_path.exists():
+            logger.debug(f"Removing BAM file: {bam_path}")
+            bam_path.unlink(missing_ok=True)
+            bam_path.with_suffix(".bam.bai").unlink(missing_ok=True)
+    return
+
