@@ -1,0 +1,13 @@
+name: qdrna_env
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip=26.0
+  - jinja2=3.1.6
+  - mistletoe=1.5.1
+  - uge-drmaa2=8.9.0
+  - pip:
+    - git+https://github.com/ClinicalGenomicsGBG/cellophane.git@1.2.0
+    - NGPIris==4.3.0
+    - slims-python-api==6.8.0

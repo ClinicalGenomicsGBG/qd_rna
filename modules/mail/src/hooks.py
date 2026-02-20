@@ -13,6 +13,7 @@ def _mail_hook(
     config: Config,
     workdir: Path,
     when: Literal["start", "end"],
+    timestamp=None,
     **_,
 ):
     if not samples:
@@ -29,6 +30,7 @@ def _mail_hook(
         body=config.mail[when].body,
         samples=samples,
         config=config,
+        timestamp=timestamp,
     )
 
     attachments = resolve_attachments(
@@ -101,6 +103,7 @@ def end_mail(
     logger: LoggerAdapter,
     config: Config,
     workdir: Path,
+    timestamp,
     **_,
 ):
     """Send a mail at the end of the analysis"""
@@ -110,4 +113,5 @@ def end_mail(
         config=config,
         workdir=workdir,
         when="end",
+        timestamp=timestamp,
     )
