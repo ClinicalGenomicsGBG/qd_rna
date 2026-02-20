@@ -8,7 +8,7 @@ from cellophane import Checkpoints, Config, Executor, Samples, output, runner
 from mpire.async_result import AsyncResult
 from ruamel.yaml import YAML
 
-from modules.common import nf_config
+from modules.common import nf_config, compress_bams
 from modules.nextflow import nextflow
 
 # Taken from https://github.com/nf-core/rnafusion/blob/3.0.1/conf/modules.config
@@ -119,6 +119,7 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
         f"--fusioncatcher_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
         f"--fusioninspector_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
         "--all",
+        "--cram [arriba,starfusion]"
     ]
 
 
@@ -223,11 +224,11 @@ def _standalone_arriba_visualisation(
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
 )
 @output(
-    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam",
+    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.cram",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
 )
 @output(
-    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam.bai",
+    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.cram.crai",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
 )
 @output(
@@ -303,6 +304,17 @@ def rnafusion(
         executor=executor,
         root=root,
         logger=logger,
+    )
+
+    # compress_bams creates declared output crams from available bams
+    compress_bams(
+        samples=samples,
+        logger=logger,
+        root=root,
+        executor=executor,
+        config=config,
+        reference=config.rnafusion.fasta,
+        workdir=workdir
     )
 
     checkpoints.main.store(rnafusion_nf_config)

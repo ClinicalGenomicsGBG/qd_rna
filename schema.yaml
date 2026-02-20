@@ -137,6 +137,10 @@ properties:
         type: path
         description: Path to rnafusion references
 
+      fasta:
+        type: path
+        description: Path to rnafusion genome fasta
+
       arriba_standalone:
         type: object
         properties:
