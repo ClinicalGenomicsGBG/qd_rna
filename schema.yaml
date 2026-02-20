@@ -20,6 +20,11 @@ properties:
         description: Code to run before subsampling FASTQ files
         default: ""
 
+  clean:
+    type: boolean
+    description: Whether to delete the work directory after a successful run
+    default: true
+
   strandedness:
     type: string
     description: Strandedness of RNA-seq library
