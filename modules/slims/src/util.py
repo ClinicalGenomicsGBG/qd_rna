@@ -4,7 +4,9 @@ import re
 from contextlib import suppress
 from functools import cache, reduce, singledispatch
 from json import loads
-from typing import Any
+from pathlib import Path
+from ruamel.yaml import safe_load
+from typing import Any, Optional
 from warnings import warn
 
 from attrs import define
@@ -27,6 +29,72 @@ from slims.criteria import (
 )
 from slims.criteria import _JunctionType as op
 from slims.slims import Record, Slims
+
+
+def _parse_slims_credentials(credentials: Path | str) -> tuple[str, str, str]:
+    """ 
+    Parse SLIMS credentials from a YAML file. The file must contain the following fields:
+    - url: The URL of the SLIMS instance
+    - user or username: The username to use for authentication
+    - password, pass, or pwd: The password to use for authentication
+
+    returns a tuple of (url, user, password)
+    """
+    credentials = Path(credentials)
+    if not credentials.is_file():
+        raise FileNotFoundError(f"Credentials file not found: {credentials}")
+    if credentials.suffix not in {".yaml", ".yml"}:
+        raise ValueError(f"Credentials file must be a YAML file: {credentials}")
+
+    creds = safe_load(credentials.read_text())
+
+    if not isinstance(creds, dict):
+        raise ValueError(f"Credentials YAML must be a mapping/object, got {type(creds).__name__}")
+
+        # Allow either top-level keys OR nested under "slims:"
+    if "slims" in creds and isinstance(creds["slims"], dict):
+        creds = creds["slims"]
+
+    url = creds.get("url")
+    username = creds.get("user") or creds.get("username")
+    password = creds.get("password") or creds.get("pass") or creds.get("pwd")
+
+    if not url or not username or not password:
+        raise ValueError("Credentials file must contain 'url', 'user', and 'password' fields")
+
+    return url, username, password
+
+
+def slims_from_config(config, logger=None) -> Slims:
+    """Get Slims connection from config (optionally via credentials file)."""
+
+    creds: dict[str, Optional[str]] = {"url": None, "username": None, "password": None}
+
+    # credentials file
+    cred_path = getattr(config.slims, "credentials", None)
+    if cred_path:
+        credentials_path = Path(cred_path)
+        if logger:
+            logger.debug(f"Using credentials from {credentials_path}")
+        creds["url"], creds["username"], creds["password"] = _parse_slims_credentials(credentials_path)
+
+    # overrides from config (only if provided / truthy)
+    for key in ("url", "username", "password"):
+        val = getattr(config.slims, key, None)
+        if val:
+            if creds[key] is not None and logger:
+                logger.info(f"Overriding SLIMS {key} from credentials with config value")
+            creds[key] = val
+
+    if not all([creds["url"], creds["username"], creds["password"]]):
+        raise ValueError("SLIMS connection not fully configured - Missing url, username, or password")
+
+    return Slims(
+        name=__package__,
+        url=creds["url"],
+        username=creds["username"],
+        password=creds["password"],
+    )
 
 
 @cache

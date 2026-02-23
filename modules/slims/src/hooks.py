@@ -8,10 +8,9 @@ from warnings import warn
 from cellophane import Config, Samples, post_hook, pre_hook
 from humanfriendly import parse_timespan
 from slims.internal import Record
-from slims.slims import Slims
 
 from .mixins import SlimsSample, SlimsSamples
-from .util import get_records
+from .util import get_records, slims_from_config
 
 
 def _augment_sample(
@@ -46,21 +45,12 @@ def slims_fetch(
     **_,
 ) -> SlimsSamples | None:
     """Load novel samples from SLIMS."""
-    if any(w not in config.slims for w in ["url", "username", "password"]):
-        logger.warning("SLIMS connection not configured")
-        return None
-
     criteria: str
     if not (criteria := config.slims.get("criteria")):
         logger.warning("No SLIMS criteria - Skipping fetch")
         return None
 
-    slims_connection = Slims(
-        name=__package__,
-        url=config.slims.url,
-        username=config.slims.username,
-        password=config.slims.password,
-    )
+    slims_connection = slims_from_config(config, logger)
 
     if samples:
         logger.info("Augmenting existing samples with info from SLIMS")

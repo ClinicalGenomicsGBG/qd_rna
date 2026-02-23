@@ -11,7 +11,7 @@ from cellophane.src.data import Container
 from cellophane.src.util import map_nested_keys
 from slims.slims import Record, Slims
 
-from .util import get_field, get_fields_from_sample, get_records
+from .util import get_field, get_fields_from_sample, get_records, slims_from_config
 
 
 @define(slots=False)
@@ -254,12 +254,8 @@ class SlimsSamples(Samples):
         **kwargs,
     ) -> "SlimsSamples":
         """Get samples from SLIMS records"""
-        _connection = connection or Slims(
-            name=__package__,
-            url=config.slims.url,
-            username=config.slims.username,
-            password=config.slims.password,
-        )
+        _connection = connection or slims_from_config(config)
+
         records = get_records(
             criteria=criteria,
             connection=_connection,
