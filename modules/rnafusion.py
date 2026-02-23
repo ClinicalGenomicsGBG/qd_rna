@@ -189,39 +189,15 @@ def _standalone_arriba_visualisation(
     for result in results:
         result.get()
 
-
-@output(
-    "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
-    checkpoint="DUMMY",
-)
-@output(
-    "arriba_visualisation/{sample.id}_standalone_arriba_visualisation.pdf",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
-)
-@output(
-    "arriba/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
-)
-@output(
-    "fusioncatcher/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioncatcher",
-)
-@output(
-    "starfusion/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
-)
-@output(
-    "fusionreport/{sample.id}",
-    dst_name="{sample.id}_{sample.last_run}_{timestamp}/fusionreport",
-)
+# Main outputs
 @output(
     "{sample.id}.fusionreport.html",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
 )
 @output(
-    "fusioninspector/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
+    "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
+    checkpoint="DUMMY",
 )
 @output(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.cram",
@@ -231,6 +207,40 @@ def _standalone_arriba_visualisation(
     "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.cram.crai",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
 )
+# Intermediate outputs
+@output(
+    "arriba_visualisation/{sample.id}_standalone_arriba_visualisation.pdf",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
+)
+@output(
+    "arriba/{sample.id}.arriba.fusions.tsv",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
+)
+@output(
+    "fusioncatcher/{sample.id}.fusioncatcher.fusion-genes.txt",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioncatcher",
+)
+@output(
+    "fusioninspector/{sample.id}.FusionInspector.fusions.tsv",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
+)
+@output(
+    "fusioninspector/{sample.id}.FusionInspector.fusions.abridged.tsv.annotated.coding_effect",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
+)
+@output(
+    "fusionreport/{sample.id}/{sample.id}.fusionreport.tsv",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusionreport",
+)
+@output(
+    "starfusion/{sample.id}.starfusion.fusion_predicions.tsv",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
+)
+@output(
+    "starfusion/{sample.id}.starfusion.abridged.coding_effect.tsv",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
+)
+# Logs etc
 @output(
     "pipeline_info",
     dst_name="{sample.id}_{sample.last_run}_{timestamp}/pipeline_info/rnafusion",
