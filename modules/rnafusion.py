@@ -119,7 +119,6 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
         f"--fusioncatcher_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
         f"--fusioninspector_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
         "--all",
-        "--cram [arriba,starfusion]"
     ]
 
 
