@@ -232,7 +232,7 @@ def _standalone_arriba_visualisation(
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusionreport",
 )
 @output(
-    "starfusion/{sample.id}.starfusion.fusion_predicions.tsv",
+    "starfusion/{sample.id}.starfusion.fusion_predictions.tsv",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
 )
 @output(
