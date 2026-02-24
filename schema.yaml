@@ -201,3 +201,11 @@ properties:
       starfusion_ref:
         type: path
         description: Path to STAR-Fusion reference
+
+  compress:
+    type: object
+    properties:
+      threads:
+        type: integer
+        description: Number of threads to use for compression
+        default: 4
