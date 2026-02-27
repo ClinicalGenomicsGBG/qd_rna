@@ -400,6 +400,8 @@ def compress_bams(
     workdir: Path,
 ):
     """ Convert declared crams from bams if available """
+    jobs: list[tuple[Path, Path]] = []  # keep track of what we submitted so we know what to clean up later
+
     srcs = [str(output.src) for output in samples.output if hasattr(output, "src")]  # Get all declared output paths from the samples
     logger.debug(f"Declared output paths: {srcs}")
     for src in srcs:
@@ -415,8 +417,7 @@ def compress_bams(
         )
         logger.debug(f"Cram detected: {cram_path}")
         if cram_path.exists():
-            logger.debug(f"cram file already exists, skipping: {cram_path}")
-            continue
+            logger.warning(f"cram file already exists, overwriting: {cram_path}")
         bam_path = cram_path.with_suffix(".bam")
         if not bam_path.exists():
             logger.warning(f"Warning: bam {bam_path} not found, cannot generate {cram_path}")
@@ -432,12 +433,17 @@ def compress_bams(
             output_cram=cram_path,
             workdir=workdir,
         )
+        jobs.append((bam_path, cram_path))
+
+    if jobs:
+        # wait for all compression jobs to finish
         executor.wait()
 
-        # Cleanup bams
-        if bam_path.exists() and cram_path.exists():
-            logger.debug(f"Removing BAM file: {bam_path}")
-            bam_path.unlink(missing_ok=True)
-            bam_path.with_suffix(".bam.bai").unlink(missing_ok=True)
+        # cleanup bam files after compression
+        for bam_path, cram_path in jobs:
+            if cram_path.exists():
+                bam_path.unlink(missing_ok=True)
+                bam_path.with_suffix(".bam.bai").unlink(missing_ok=True)
+                bam_path.with_suffix(".bai").unlink(missing_ok=True)
     return
 
