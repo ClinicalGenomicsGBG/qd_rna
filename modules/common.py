@@ -334,6 +334,7 @@ def _cram_compress(
     workdir: Path | None = None,
     conda_spec: dict | None = None,
 ):
+    """ Executor for cram compression. Takes a bam file and reference and compresses to cram using samtools. """
     input_bam = Path(input_bam)
     reference = Path(reference)
     output_cram = Path(output_cram) if output_cram else input_bam.with_suffix(".cram")
@@ -371,6 +372,11 @@ def _cram_compress(
 
 
 def _resolve_src_template(src_tmpl: str, *, samples, sample, config, runner, workdir) -> Path:
+    """ 
+    Resolve the path template in the src field of the output declaration
+    e.g. get absolute path for results/{sample.id}/{runner}/output.cram"
+    Assumes that the path is in the workdir if not absolute.
+    """
     rendered = src_tmpl.format(
         samples=samples,
         sample=sample,
@@ -378,7 +384,10 @@ def _resolve_src_template(src_tmpl: str, *, samples, sample, config, runner, wor
         runner=runner,
         workdir=workdir,
     )
-    return (workdir / rendered).resolve()
+    p = Path(rendered)
+    if not p.is_absolute():
+        p = workdir / p
+    return p.resolve()
 
 
 def compress_bams(
@@ -390,8 +399,8 @@ def compress_bams(
     reference: Path,
     workdir: Path,
 ):
-    """ Convert delared crams from bams if available """
-    srcs = [str(o.src) for o in samples.output if hasattr(o, "src")]
+    """ Convert declared crams from bams if available """
+    srcs = [str(output.src) for output in samples.output if hasattr(output, "src")]  # Get all declared output paths from the samples
     logger.debug(f"Declared output paths: {srcs}")
     for src in srcs:
         if not src.endswith(".cram"):
@@ -399,7 +408,7 @@ def compress_bams(
         cram_path = _resolve_src_template(
             src, 
             samples=samples, 
-            sample=samples[0], 
+            sample=samples[0],  # since we run split_by=id, there should be only one sample
             config=config, 
             runner="rnaseq", 
             workdir=workdir, 
