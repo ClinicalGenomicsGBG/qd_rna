@@ -1,0 +1,10 @@
+!include:qd_rna.routine.yaml
+
+resultdir: "/clinical/data/qdrna/manual/results" # Results base directory where output files are copied (path)
+workdir: "/clinical/data/qdrna/manual/work" # Working directory where intermediate files are stored (path)
+logdir: "/clinical/data/qdrna/manual/log" # Log directory (path)
+
+clean: false
+
+mail:
+  send: false
