@@ -14,6 +14,7 @@ from cellophane import (
 )
 
 from modules.nextflow import nextflow
+from modules.common import compress_bams
 
 
 def _validate_inputs(config: Config, logger: LoggerAdapter) -> None:
@@ -124,11 +125,11 @@ def _add_optional_outputs(samples: Samples, config: Config) -> None:
 
 
 @output(
-    "{config.rnaseq.aligner}/{sample.id}.markdup.sorted.bam",
+    "{config.rnaseq.aligner}/{sample.id}.markdup.sorted.cram",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/expression",
 )
 @output(
-    "{config.rnaseq.aligner}/{sample.id}.markdup.sorted.bam.bai",
+    "{config.rnaseq.aligner}/{sample.id}.markdup.sorted.cram.crai",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/expression",
 )
 @output(
@@ -220,6 +221,17 @@ def rnaseq(
         workdir=workdir,
         resume=True,
         executor=executor,
+    )
+
+    # compress_bams creates declared output crams from available bams
+    compress_bams(
+        samples=samples,
+        logger=logger,
+        root=root,
+        executor=executor,
+        config=config,
+        reference=config.rnaseq.fasta,
+        workdir=workdir
     )
 
     logger.debug(f"nf-core/rnaseq finished for sample {samples[0].id}")

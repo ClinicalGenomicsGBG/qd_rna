@@ -8,7 +8,7 @@ from cellophane import Checkpoints, Config, Executor, Samples, output, runner
 from mpire.async_result import AsyncResult
 from ruamel.yaml import YAML
 
-from modules.common import nf_config
+from modules.common import nf_config, compress_bams
 from modules.nextflow import nextflow
 
 # Taken from https://github.com/nf-core/rnafusion/blob/3.0.1/conf/modules.config
@@ -188,48 +188,58 @@ def _standalone_arriba_visualisation(
     for result in results:
         result.get()
 
-
+# Main outputs
+@output(
+    "{sample.id}.fusionreport.html",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
+)
 @output(
     "arriba_visualisation/{sample.id}_combined_fusions_arriba_visualisation.pdf",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
     checkpoint="DUMMY",
 )
 @output(
+    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.cram",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
+)
+@output(
+    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.cram.crai",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
+)
+# Intermediate outputs
+@output(
     "arriba_visualisation/{sample.id}_standalone_arriba_visualisation.pdf",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
 )
 @output(
-    "arriba/{sample.id}.*",
+    "arriba/{sample.id}.arriba.fusions.tsv",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
 )
 @output(
-    "fusioncatcher/{sample.id}.*",
+    "fusioncatcher/{sample.id}.fusioncatcher.fusion-genes.txt",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioncatcher",
 )
 @output(
-    "starfusion/{sample.id}.*",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
-)
-@output(
-    "fusionreport/{sample.id}",
-    dst_name="{sample.id}_{sample.last_run}_{timestamp}/fusionreport",
-)
-@output(
-    "{sample.id}.fusionreport.html",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
-)
-@output(
-    "fusioninspector/{sample.id}.*",
+    "fusioninspector/{sample.id}.FusionInspector.fusions.tsv",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
 )
 @output(
-    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
+    "fusioninspector/{sample.id}.FusionInspector.fusions.abridged.tsv.annotated.coding_effect",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
 )
 @output(
-    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.bam.bai",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
+    "fusionreport/{sample.id}/{sample.id}.fusionreport.tsv",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusionreport",
 )
+@output(
+    "starfusion/{sample.id}.starfusion.fusion_predictions.tsv",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
+)
+@output(
+    "starfusion/{sample.id}.starfusion.abridged.coding_effect.tsv",
+    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
+)
+# Logs etc
 @output(
     "pipeline_info",
     dst_name="{sample.id}_{sample.last_run}_{timestamp}/pipeline_info/rnafusion",
@@ -303,6 +313,17 @@ def rnafusion(
         executor=executor,
         root=root,
         logger=logger,
+    )
+
+    # compress_bams creates declared output crams from available bams
+    compress_bams(
+        samples=samples,
+        logger=logger,
+        root=root,
+        executor=executor,
+        config=config,
+        reference=config.rnafusion.fasta,
+        workdir=workdir
     )
 
     checkpoints.main.store(rnafusion_nf_config)
