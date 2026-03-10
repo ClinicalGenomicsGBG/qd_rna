@@ -38,9 +38,11 @@ qlucore:
 
 mail: !include:emails.yaml
   send: true  # Send mail (boolean)
-  #cc_addr: # list of CC recipients (array), in emails.yaml
+  #cc_addr: ~ # list of CC recipients (array), in emails.yaml
   #to_addr: # list of recipients (array), in emails.yaml
-  #from_addr: # sender address (string), in emails.yaml
+  # - "recipient1@email.com"
+  # - "recipient2@email.com"
+  #from_addr: "sender@email.com" # sender address (string), in emails.yaml
   start:
     subject: "QD-RNA started" # Subject of the mail (jinja2 template) (string)
     body: | # Body of the mail (jinja2 template) (string)
@@ -132,6 +134,9 @@ hcp:
   parallel: 4 # Number of parallel HCP conenctions (integer)
 
 slims: !include:slims_credentials.yaml
+  #url: 'http://slimsexample.com/slimsrest' # URL to slimsrest, in slims_credentials.yaml
+  #username: 'user' # slims user, in slims_credentials.yaml
+  #password: 'password' # slims password, in slims_credentials.yaml
   dry_run: false # Do not create SLIMS bioinformatics objects (boolean)
   map:  # Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields) (mapping
     files: "json:cntn_cstm_demuxerSampleResult.fastq_paths"
@@ -157,10 +162,10 @@ slims: !include:slims_credentials.yaml
       cntn_cstm_SecondaryAnalysisState: "{sample.slims_state}"
       cntn_status: 10
       cntn_cstm_runTag: "{sample.run}"
-  allow_duplicates: true# Allow duplicate samples (eg. if a spre-hook can handle this) (boolean)
+  allow_duplicates: true # Allow duplicate samples (eg. if a spre-hook can handle this) (boolean)
 
 grid_engine:
-  queue: "development.q"  # Grid Engine queue (string)
+  queue: "routine.q"  # Grid Engine queue (string)
   pe: "mpi" # Grid Engine parallel environment (string)
 
 unpack:
