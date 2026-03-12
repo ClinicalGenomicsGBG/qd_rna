@@ -4,6 +4,7 @@ from logging import LoggerAdapter
 from xml.etree import ElementTree as ET
 from datetime import datetime
 from functools import partial
+import re
 
 
 def generate_qsd(sample: Sample, outpath: Path) -> None:
@@ -28,8 +29,7 @@ def generate_qsd(sample: Sample, outpath: Path) -> None:
     ET.SubElement(sample_data, "SampleTissue").text = "Blood sample"
 
     xml_content = ET.tostring(qff, encoding="unicode", xml_declaration=True)
-    with open(outpath, "w") as f:
-        f.write(xml_content)
+    outpath.write_text(xml_content, encoding="utf-8")
 
 
 def _calculate_samtools_fraction(star_log: Path, target_reads: int, logger: LoggerAdapter) -> float | None:
@@ -45,9 +45,10 @@ def _calculate_samtools_fraction(star_log: Path, target_reads: int, logger: Logg
     uniquely_mapped = int(match.group(1))
     if uniquely_mapped <= 0:
         logger.error(f"No uniquely mapped reads found in STAR log: {star_log}")
-        return None
+        return 1.0
     fraction = target_reads / uniquely_mapped
     return min(fraction, 1.0)  # Cap at 1.0
+
 
 def _star_error_callback(
     samples: Samples, exc: Exception, logger: LoggerAdapter
@@ -98,11 +99,12 @@ DEFAULT_STAR_ARGS = [
 @output(
     "Aligned.sortedByCoord.out.bam",
     dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
+    dst_name="{sample.id}_Aligned.sortedByCoord.out.bam",
     checkpoint="star",
 )
 @output(
-    "subsampled.bam",
-    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%MS/qlucore",
+    "{sample.id}_subsampled.bam",
+    dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
     checkpoint="subsample",
 )
 @output(
@@ -121,7 +123,10 @@ def qlucore(
     **_,
 ) -> None:
     """Run STAR + samtools subsampling for qlucore."""
-    if not checkpoints.star.check():
+    if config.qlucore.skip:
+        samples.output = set()
+        return
+    if not checkpoints.star.check(samples=samples, config=config.qlucore.star):
         fw_reads = [sample.files[0] for sample in samples]
         rw_reads = [sample.files[1] for sample in samples]
         bind_paths = set(
@@ -134,49 +139,57 @@ def qlucore(
             *bind_args,
             config.qlucore.star.container,
             "STAR",
-            "--readFilesIn", ",".join(fw_reads), ",".join(rw_reads),
+            "--readFilesIn", ",".join(str(f) for f in fw_reads), ",".join(str(f) for f in rw_reads),
             "--runThreadN", config.qlucore.star.threads,
             "--genomeDir", config.qlucore.star.index,
             *DEFAULT_STAR_ARGS,
             workdir=workdir,
             cpus=config.qlucore.star.threads,
-            name=f"STAR_{samples[0].id}",
+            name=f"qlucore_STAR_{samples[0].id}",
             wait=True,
             error_callback=partial(
                 _star_error_callback, samples=samples, logger=logger
             ),
         )
         executor.wait(star_uuid)
+    else:
+        logger.info("STAR output already exists for %s, skipping STAR step", samples[0].id)
 
-    if not checkpoints.subsample.check():
+    if not checkpoints.subsample.check(samples=samples, config=config.qlucore.samtools, bam=(workdir / "Aligned.sortedByCoord.out.bam").stat()):
         subsample_fraction = _calculate_samtools_fraction(
             workdir / "Log.final.out",
             target_reads=config.qlucore.samtools.target,
             logger=logger
         ) or config.qlucore.samtools.fraction
+        subsampled_bam = workdir / f"{samples[0].id}_subsampled.bam"
         if subsample_fraction == 1.0:
             logger.info("No subsampling needed for %s (fraction=1.0)", samples[0].id)
             # Just Crete a symlink to avoid unnecessary work
-            (workdir / "subsampled.bam").symlink_to(workdir / "Aligned.sortedByCoord.out.bam")
+            # Expecting that every file in the same workdir is on the same filesystem, so hardlink should work
+            subsampled_bam.hardlink_to(workdir / "Aligned.sortedByCoord.out.bam")
         else:
-            samtools_extra_args = config.qclucore.samtools.args or []
+            logger.info("Subsampling %s to %d reads (%.6f)", samples[0].id, config.qlucore.samtools.target, subsample_fraction)
             samtools_result, samtools_uuid = executor.submit(
-                "appatainer exec",
-                config.samtools.container,
+                "apptainer exec",
+                config.qlucore.samtools.container,
                 "samtools view",
                 "-s", f"{subsample_fraction:.6f}",
                 "-@", config.qlucore.samtools.threads,
-                "-o", workdir / "subsampled.bam",
-                *samtools_extra_args,
+                "-o", subsampled_bam,
+                "--no-PG",
+                *config.qlucore.samtools.args,  # Should be fine like this because default is empty list
                 "Aligned.sortedByCoord.out.bam",
                 cpus=config.qlucore.samtools.threads,
-                name=f"samtools_subsample_{samples[0].id}",
+                name=f"qlucore_samtools_subsample_{samples[0].id}",
                 wait=True,
+                workdir=workdir,
                 error_callback=partial(
                     _samtools_error_callback, samples=samples, logger=logger
                 ),
             )
-        executor.wait(samtools_uuid)
+            executor.wait(samtools_uuid)
+    else:
+        logger.info("Subsampled BAM already exists for %s, skipping samtools subsampling step", samples[0].id)
 
-    if not checkpoints.main.check():
+    if not checkpoints.main.check(samples=samples):
         generate_qsd(samples[0], workdir / f"{samples[0].id}.qsd")
