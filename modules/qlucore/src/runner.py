@@ -67,7 +67,9 @@ def _samtools_error_callback(
     for sample in samples:
         sample.fail(reason)
 
-
+# STAR parameters to create BAMs suitable for qlucore.
+# Qlucore is very fussy about the BAM format, so we need to set a lot of parameters to make sure it works well.
+# Considering these are required for qlucore, we set them as defaults here and don't allow overriding them from config to avoid user errors.
 DEFAULT_STAR_ARGS = [
     "--outSAMattrRGline", "ID:GRPundef",
     "--twopassMode", "Basic",
@@ -121,12 +123,13 @@ def qlucore(
     executor: Executor,
     checkpoints: Checkpoints,
     **_,
-) -> None:
+) -> Samples:
     """Run STAR + samtools subsampling for qlucore."""
     if config.qlucore.skip:
         samples.output = set()
-        return
-    if not checkpoints.star.check(samples=samples, config=config.qlucore.star):
+        return samples
+
+    if not checkpoints.star.check(config=config.qlucore.star):
         fw_reads = [sample.files[0] for sample in samples]
         rw_reads = [sample.files[1] for sample in samples]
         bind_paths = set(
@@ -152,10 +155,11 @@ def qlucore(
             ),
         )
         executor.wait(star_uuid)
+        checkpoints.star.store(config=config.qlucore.star)
     else:
         logger.info("STAR output already exists for %s, skipping STAR step", samples[0].id)
 
-    if not checkpoints.subsample.check(samples=samples, config=config.qlucore.samtools, bam=(workdir / "Aligned.sortedByCoord.out.bam").stat()):
+    if not checkpoints.subsample.check(config=config.qlucore.samtools):
         subsample_fraction = _calculate_samtools_fraction(
             workdir / "Log.final.out",
             target_reads=config.qlucore.samtools.target,
@@ -164,7 +168,7 @@ def qlucore(
         subsampled_bam = workdir / f"{samples[0].id}_subsampled.bam"
         if subsample_fraction == 1.0:
             logger.info("No subsampling needed for %s (fraction=1.0)", samples[0].id)
-            # Just Crete a symlink to avoid unnecessary work
+            # Just Crete a hardlink to avoid unnecessary work
             # Expecting that every file in the same workdir is on the same filesystem, so hardlink should work
             subsampled_bam.hardlink_to(workdir / "Aligned.sortedByCoord.out.bam")
         else:
@@ -188,8 +192,12 @@ def qlucore(
                 ),
             )
             executor.wait(samtools_uuid)
+            checkpoints.subsample.store(config=config.qlucore.samtools)
     else:
         logger.info("Subsampled BAM already exists for %s, skipping samtools subsampling step", samples[0].id)
 
-    if not checkpoints.main.check(samples=samples):
+    if not checkpoints.main.check():
         generate_qsd(samples[0], workdir / f"{samples[0].id}.qsd")
+        checkpoints.main.store()
+
+    return samples
