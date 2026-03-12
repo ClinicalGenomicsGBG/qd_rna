@@ -168,7 +168,7 @@ def qlucore(
         subsampled_bam = workdir / f"{samples[0].id}_subsampled.bam"
         if subsample_fraction == 1.0:
             logger.info("No subsampling needed for %s (fraction=1.0)", samples[0].id)
-            # Just Crete a hardlink to avoid unnecessary work
+            # Just create a hardlink to avoid unnecessary work
             # Expecting that every file in the same workdir is on the same filesystem, so hardlink should work
             subsampled_bam.hardlink_to(workdir / "Aligned.sortedByCoord.out.bam")
         else:
