@@ -3,10 +3,12 @@
 **qd_rna** is a [cellophane](https://github.com/ClinicalGenomicsGBG/cellophane) based wrapper for analyzing Whole Transcriptome Sequencing (WTS/RNAseq) data, used at Clinical Genomics Göteborg (CGG).
 
 It runs three main processes:
-- [nfcore/rnafusion](https://nf-co.re/rnafusion) for detecting gene fusions with Arriba, FusionCatcher and STAR-Fusion
-- [nfcore/rnaseq](https://nf-co.re/rnaseq) for gene expression data processing and quantification
-- Subsampling and STAR mapping with hg19 for Qlucore-based tumor classification
+- [nfcore/rnafusion](https://nf-co.re/rnafusion) for detecting gene fusions with Arriba, FusionCatcher and STAR-Fusion. Genome version GRCh38.
+- [nfcore/rnaseq](https://nf-co.re/rnaseq) for gene expression data processing and quantification. Genome version GRCh38.
+- Subsampling and STAR mapping with hg19 for Qlucore-based tumor classification. 
   - For now the Qlucore interpretation is performed externally, by the clinical geneticists
+
+By default it downsamples the input if the number of reads exceeds 1M (see `properties.subsample.target` in [schema.yaml](schema.yaml))
 
 ## Usage
 
@@ -44,10 +46,13 @@ You can and should specify different things in the samples file depending on you
     - /clinical/data/qdrna/test_data/sub_55778845_240110_AHWV7HDRX3_S1_R2_001.fastq.gz
 ```
 
-- Make sure R1 is the first file, and R2 the second. If you use only a single fastq, it will be treated as single-end data.
-- If you specify reads, qd_rna can downsample in case they are above the cutoff (see `properties.subsample.target` in [schema.yaml](schema.yaml))
+- `id`: [required] Name of the sample to run. It doesn't need to match the name in the fastq name
+- `run`: [required] Name of the run. It doesn't need to match the name in the fastq name
+- `reads`: [optional] Used by the subsample hook to know which fraction to subsample to. If no reads are specified, QDRNA will subsample the data to a fixed number of reads, which is slower. (see `properties.subsample.target` in [schema.yaml](schema.yaml))
+- `files` [optional] Path to the fastq files. **Make sure R1 is the first file, and R2 the second**. If you use only a single fastq, it will be treated as single-end data.
+
 - If your sample is in slims and you added slims credentials, you can specify the `id` and `run` and it will find the rest for you.
-  - Note: If there are any samples with an identical `id`, it will download and merge them
+- Note: If there are any samples with an identical `id`, it will download and merge them. This also happens if you specify the fastq files in the samples file. To avoid this, change the `id` in the samples file to an `id` that is not in slims.
 
 #### Restarting a run
 
@@ -58,9 +63,11 @@ If your fastqs were subsampled in the initial run, you will need to point to tho
 
 ### Routine run
 
-For running the routine pipeline, the process is as above but you specify `--config_file` [configs/qd_rna.routine.yaml](configs/qd_rna.routine.yaml). Additionally, you need slims credentials and email addresses. You do not need samples_files, instead it will start running on any slims samples with `qdrna_reverse` in the raw samplesheet description unless if they have a bioinformatics object with `Secondary Analysis State = complete|error|running` or are more than a year old (see `slims.novel.criteria` in [configs/qd_rna.base.yaml](configs/qd_rna.base.yaml).
+For running the routine pipeline, the process is as above but you specify `--config_file` [configs/qd_rna.routine.yaml](configs/qd_rna.routine.yaml). Additionally, you need slims credentials and email addresses. You do not need samples_files, instead it will start running on any slims samples with `qdrna_reverse` in the raw samplesheet description unless they have a bioinformatics object with `Secondary Analysis State = complete|error|running` or are more than a year old (see `slims.novel.criteria` in [configs/qd_rna.base.yaml](configs/qd_rna.base.yaml).
 
 For the routine run, the results will be on webstore. The working directory is in `/clinical/data/qdrna/cron/work`, but will be cleaned upon successful completion.
+
+If you have your own copy of QDRNA, make sure you also have the `emails.yaml` and the `slims_credentials.yaml` files in the QDRNA `config` directory or edit these parameters to the [configs/qd_rna.routine.yaml](configs/qd_rna.routine.yaml). Prefilled configs are available at `/clinical/exec/qdrna/qdrna/configs/`.
 
 ```bash
 # Copy the email addresses and slims credentials
@@ -71,9 +78,17 @@ rsync /clinical/exec/qdrna/qdrna/configs/slims_credentials.yaml configs/
 python -m qd_rna --config_file configs/qd_rna.routine.yaml
 ```
 
+### Testing
+
+There's a test dataset available:
+- `samples file`: `/clinical/exec/qdrna/qdrna/configs/samples/samples.testing.yaml`
+- `fastq files`: `/clinical/data/qdrna/test_data/`
+
+To test QDRNA, follow the steps above in [Minimal manual run](#minimal-manual-run)
+
 ## Workflow details
 
-The main code for running the pipeline is distributed over the modules. In the modules, the functions to run are decorated with either `@pre_hook`, `@runner` or `@post_hook`. [cellophane](https://github.com/ClinicalGenomicsGBG/cellophane), the backbone of `qd_rna`, will discover these and resolve in which order they should be run. The `samples` contain the information of what is run through these hooks and runners. The `runners` are decorated with `@outputs`. These outputs are expected to be present after runner completion and will be further processed by the post_hooks. For more information on how cellophane works, see the [cellophane usage](https://github.com/ClinicalGenomicsGBG/cellophane/blob/main/USAGE.md).
+The main code for running the pipeline is distributed over the cellophane modules. In the modules, the functions to run are decorated with either `@pre_hook`, `@runner` or `@post_hook`. [cellophane](https://github.com/ClinicalGenomicsGBG/cellophane), the backbone of `qd_rna`, will discover these and resolve in which order they should be run. The `samples` contain the information of what is run through these hooks and runners. The `runners` are decorated with `@outputs`. These outputs are expected to be present after runner completion and will be further processed by the post_hooks. For more information on how cellophane works, see the [cellophane usage](https://github.com/ClinicalGenomicsGBG/cellophane/blob/main/USAGE.md).
 
 The following steps are typically performed in the pipeline (with relevant `modules`):
 
@@ -95,7 +110,7 @@ The following steps are typically performed in the pipeline (with relevant `modu
 - Copy declared outputs to results directory -- [modules/rsync/src/hooks.py](modules/rsync/src/hooks.py)
 - Update slims objects -- [modules/slims/src/hooks.py](modules/slims/src/hooks.py)
 - End email -- [modules/slims/src/hooks.py](modules/slims/src/hooks.py)
-- Cleanup workdir -- in `cellophane/src/cellophane/cleanup`
+- Cleanup workdir -- in [cellophane/src/cellophane/cleanup](https://github.com/ClinicalGenomicsGBG/cellophane/tree/main/src/cellophane/cleanup)
 
 ## Updates/Development
 
