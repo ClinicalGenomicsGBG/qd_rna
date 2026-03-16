@@ -112,6 +112,29 @@ The following steps are typically performed in the pipeline (with relevant `modu
 - End email -- [modules/slims/src/hooks.py](modules/slims/src/hooks.py)
 - Cleanup workdir -- in [cellophane/src/cellophane/cleanup](https://github.com/ClinicalGenomicsGBG/cellophane/tree/main/src/cellophane/cleanup)
 
+### Sample properties available to runners
+Pre-hooks can add additional information to samples by declaring mixins.
+These are the fields available to use in runners after all pre-hooks have finished:
+
+| Field | Type | Source | Typical Value at Runner Entry |
+|-------|------|--------|-------------------------------|
+| **`id`** | `str` | YAML / SLIMS | `"SAMPLE001"` |
+| **`files`** | `list[Path]` | SLIMS → HCP → unpack → subsample | `[Path("/workdir/.../R1.fq.gz"), Path("/workdir/.../R2.fq.gz")]` |
+| **`processed`** | `bool` | cellophane base | `False` (set to `True` after runner completes) |
+| **`uuid`** | `UUID` | auto-generated | `UUID('a1b2c3...')` |
+| **`meta`** | `Container` | SLIMS mapping | Arbitrary nested metadata |
+| **`_fail`** | `str \| None` | cellophane base | `None` (samples reaching runners haven't failed) |
+| **`run`** | `str \| None` | SLIMS via `slims_fetch` | `"230615_A00001_0123_ABCDEFG"` |
+| **`reads`** | `int \| None` | SLIMS via `slims_fetch` | `45000000` |
+| **`last_run`** | `str \| None` | `update_most_recent_run` | `"230915_A00001_0456_HIJKLMN"` (max of all linked) |
+| **`slims_state`** | `str` | `QDRRNASample` default | `"running"` |
+| **`record`** | `Record \| None` | SLIMS via `slims_fetch` | `None` in runner subprocess (not picklable) |
+| **`_derived`** | `dict \| None` | SLIMS mixin | `None` or populated dict |
+| **`_connection`** | `Slims \| None` | SLIMS mixin | `None` (dropped during pickle/fork) |
+| **`hcp_remote_keys`** | `set[str] \| None` | SLIMS mapping | `{"bucket/path/R1.fq.gz", "bucket/path/R2.fq.gz"}` |
+| **`mail_attachments`** | `set[Path]` | mail mixin | `set()` (runners can add to this) |
+
+
 ## Updates/Development
 
 We currently have the code for all the modules tracked in the qd_rna repo. This means we can make changes as needed to the modules in the repository. At the same time, both [cellophane](https://github.com/ClinicalGenomicsGBG/cellophane) and its [cellophane_modules](https://github.com/ClinicalGenomicsGBG/cellophane_modules) are under active development. The used `cellophane` version is specified in `qd_rna_env.yaml`. We can update this to get the latest features when needed, but may need to update the `modules` as well when there are breaking changes.
