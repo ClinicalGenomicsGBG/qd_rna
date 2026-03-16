@@ -67,10 +67,12 @@ def _samtools_error_callback(
     for sample in samples:
         sample.fail(reason)
 
+
 # STAR parameters to create BAMs suitable for qlucore.
 # Qlucore is very fussy about the BAM format, so we need to set a lot of parameters to make sure it works well.
-# Considering these are required for qlucore, we set them as defaults here and don't allow overriding them from config to avoid user errors.
-DEFAULT_STAR_ARGS = [
+# Considering these are required for qlucore, we set them here and don't allow overriding them from config to avoid user errors.
+# I talked to FB and she said that the parameters must be "exactly exactly like these" - DZ
+STAR_ARGS = [
     "--outSAMattrRGline", "ID:GRPundef",
     "--twopassMode", "Basic",
     "--outReadsUnmapped", "None",
@@ -145,7 +147,7 @@ def qlucore(
             "--readFilesIn", ",".join(str(f) for f in fw_reads), ",".join(str(f) for f in rw_reads),
             "--runThreadN", config.qlucore.star.threads,
             "--genomeDir", config.qlucore.star.index,
-            *DEFAULT_STAR_ARGS,
+            *STAR_ARGS,
             workdir=workdir,
             cpus=config.qlucore.star.threads,
             name=f"qlucore_STAR_{samples[0].id}",
