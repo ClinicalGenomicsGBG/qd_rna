@@ -101,11 +101,11 @@ DEFAULT_STAR_ARGS = [
 @output(
     "Aligned.sortedByCoord.out.bam",
     dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
-    dst_name="{sample.id}_Aligned.sortedByCoord.out.bam",
+    dst_name="{sample.id}_aligned_sorted_for_qlucore.out.bam",
     checkpoint="star",
 )
 @output(
-    "{sample.id}_subsampled.bam",
+    "{sample.id}_subsampled_for_qlucore.bam",
     dst_dir="{sample.id}_{sample.last_run}_%y%m%d-%H%M%S/qlucore",
     checkpoint="subsample",
 )
@@ -165,7 +165,7 @@ def qlucore(
             target_reads=config.qlucore.samtools.target,
             logger=logger
         ) or config.qlucore.samtools.fraction
-        subsampled_bam = workdir / f"{samples[0].id}_subsampled.bam"
+        subsampled_bam = workdir / f"{samples[0].id}_subsampled_for_qlucore.bam"
         if subsample_fraction == 1.0:
             logger.info("No subsampling needed for %s (fraction=1.0)", samples[0].id)
             # Just create a hardlink to avoid unnecessary work
