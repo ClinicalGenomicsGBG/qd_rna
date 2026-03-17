@@ -1,0 +1,160 @@
+merge: true # Merge samples with same ID (boolean)
+read_length: 150 # Sample read length (integer)
+strandedness: "reverse" # Strandedness of RNA-seq library (string)
+limitSjdbInsertNsj: 4000000 # Maximum number of junctions to insert for STAR
+
+
+executor:
+  name: "grid_engine"  # Name of the executor to use (string)
+  memory: "2 GiB"  # Ammount of memory to allocate to jobs started (if supported by the executor) (size)
+  cpus: 1  # Number of CPUs to allocate to jobs started (if supported by the executor) (integer)
+
+rnaseq:
+  nf_tag: "3.14.0"
+  aligner: "star_salmon"  # RNA-seq aligner (string)
+  fasta:            "/clinical/exec/qdrna/dependencies/nf-core/igenomes/Homo_sapiens/NCBI/GRCh38/Sequence/WholeGenomeFasta/genome.fa"  # Path to genome fasta file (path)
+  transcript_fasta: "/clinical/exec/qdrna/dependencies/nf-core/nf-core-rnaseq-3.14.0/genome.transcripts.fa"
+  gene_bed:         "/clinical/exec/qdrna/dependencies/nf-core/igenomes/Homo_sapiens/NCBI/GRCh38/Annotation/Genes/genes.bed"  # Path to genome gene bed file (path)
+  gtf:              "/clinical/exec/qdrna/dependencies/nf-core/igenomes/Homo_sapiens/NCBI/GRCh38/Annotation/Genes/genes.gtf"  # Path to genome gtf file (path)
+  star_index:       "/clinical/exec/qdrna/dependencies/nf-core/igenomes/Homo_sapiens/NCBI/GRCh38/Sequence/STARIndex/"  # Path to STAR genome index (path)
+  salmon_index:     "/clinical/exec/qdrna/dependencies/nf-core/nf-core-rnaseq-3.14.0/salmon"
+
+rnafusion:
+  nf_tag: "3.0.1"
+  tools_cutoff: 1 # Minimum number of callers for fusion to be reported (integer)
+  genomes_base: "/clinical/exec/qdrna/dependencies/nf-core/nf-core-rnafusion-3.0.1"  # Path to rnafusion references (path)
+  fasta: "/clinical/exec/qdrna/dependencies/nf-core/nf-core-rnafusion-3.0.1/ensembl/Homo_sapiens.GRCh38.102.all.fa"
+
+qlucore:
+  subsample:
+    fallback_fraction: 0.2 # Fraction of reads to subsample (number)
+    threads: 12 # Number of threads to use for subsampling (integer)
+    init: "source /apps/bio/software/Modules/5.3.1/init/profile.sh; module load samtools/1.16" # Code to run before qlucore subsampling (string)
+  starfusion_ref: "/clinical/exec/qdrna/dependencies/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play/ctat_genome_lib_build_dir/" # Path to STAR-Fusion reference (path)
+
+mail:
+  start:
+    subject: "QD-RNA started" # Subject of the mail (jinja2 template) (string)
+    body: | # Body of the mail (jinja2 template) (string)
+      # 🧬 QD-RNA
+
+      Analysis has started for {{ samples.unique_ids|length }} sample(s).
+
+      🔎 The following samples are being analyzed:
+      |      ID     |  Run(s)  |
+      | ----------- | -------- |
+      {%- for id_, group in samples.split(by="id") %}
+      | `{{ id_ }}` |
+      {%- for sample in group -%}
+      `{{ sample.run }}`{% if not loop.last %}, {% endif %}
+      {%- endfor -%} |
+      {%- endfor -%}
+      
+  end:
+    subject: "QD-RNA finished" # Subject of the mail (jinja2 template) (string)
+    body: | # Body of the mail (jinja2 template) (string)
+      # 🧬 QD-RNA
+
+      {{ samples.unique_ids|length }} sample(s) have been processed.
+
+      {% if samples.complete -%}
+      ✅ Analysis completed successfully for the following samples:
+
+      {%-
+        set has_output =
+            samples.complete.output and
+            config.resultdir.is_relative_to('/webstore/clinical')
+      %}
+      {% if has_output -%}
+      |      ID     |  Run(s)  |  Results  |
+      | ----------- | -------- | --------- |
+      {%- else -%}
+      |      ID     |  Run(s)  |
+      | ----------- | -------- |
+      {%- endif -%}
+      {%- for id_, group in samples.complete.split(by="id") %}
+      | `{{ id_ }}` |
+      {%- for sample in group -%}
+      `{{ sample.run }}`{% if not loop.last %}, {% else %}|{% endif %}
+      {%- endfor -%}
+      {%- if has_output -%}
+      {%- set results_base = config.resultdir.relative_to('/webstore/clinical/')| string -%}
+      {%- set results_node = id_ + '_' + group.0.last_run + '_' + (timestamp|string) -%}
+      {%- set vgr = 'http://webstore-gu.vgregion.se/tree/' + results_base + '/' + results_node  -%}
+      {%- set gu = 'http://webstore.sa.gu.se/tree/' + results_base + '/' + results_node -%}
+      [GU]({{ gu }}) [VGR]({{ vgr }}) |
+      {%- endif -%}
+      {%- endfor -%}
+      {%- endif -%}
+      {%- if samples.failed %}
+      ❗️ Analysis failed for the following samples:
+      |      ID     |  Run(s)  |
+      | ----------- | -------- |
+      {%- for id_, group in samples.failed.split(by="id") %}
+      | `{{ id_ }}` |
+      {%- for sample in group -%}
+      `{{ sample.run }}`{% if not loop.last %}, {% else %}|{% endif %}
+      {%- endfor -%}
+      {%- endfor %}
+      📋 See attached log for more information
+      {% endif -%}
+
+  smtp:
+    host: "smtp.gu.se"  # SMTP host (string)
+    port: "25" # SMTP port (integer)
+
+rsync:
+  large_file_threshold: "100M" # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) (string)
+
+nextflow:
+  threads: 1  # Threads for nextflow manager (integer)
+  env: # Environment variables that will be passed to the nextflow process (mapping)
+    HTTPS_PROXY: "http://nyabud.net.gu.se:8080"
+    HTTP_PROXY: "http://nyabud.net.gu.se:8080"
+    NO_PROXY: ".medair.lcl,slims2.sa.gu.se,.vgregion.se,10."
+    FTP_PROXY: "http://nyabud.net.gu.se:8080"
+  init: "source /apps/bio/software/Modules/5.3.1/init/profile.sh && module load java/jdk19.0.2 && module load nextflow/23.04.3" # Code to run before running Nextflow (Bash) (string)
+  ansi_log: false # Enable ANSI log (boolean)
+  workdir: ~ # Nextflow workdir (path)
+  profile: "singularity,routine,pipeline" # Nextflow profile (string)
+  config: "/clinical/exec/qdrna/qdrna/configs/nextflow.qd_rna.config" # Nextflow config file (path)
+
+hcp:
+  credentials: "/clinical/exec/qdrna/credentials/gmc-legacy_credentials.json"  # IRIS credentials file (path)
+  parallel: 4 # Number of parallel HCP conenctions (integer)
+
+slims:
+  map:  # Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields) (mapping
+    files: "json:cntn_cstm_demuxerSampleResult.fastq_paths"
+    hcp_remote_keys: "json:cntn_cstm_demuxerBackupSampleResult.remote_keys"
+    run: "cntn_cstm_runTag"
+    reads: "cntn_cstm_fastqReads"
+  match:
+  - "run"
+  novel:
+    max_age: "1 years"
+    criteria: |
+        not_has_derived (cntn_cstm_SecondaryAnalysisState equals complete)
+        and not_has_derived (cntn_cstm_SecondaryAnalysisState equals running)
+        and not_has_derived (cntn_cstm_SecondaryAnalysisState equals error)
+  criteria: | # SLIMS criteria for finding records (eg. "cntn_cstm_SecondaryAnalysis equals 1337") (string)
+    cntn_fk_contentType equals 22
+    and cntn_cstm_doNotInclude not_equals true
+    and cntn_cstm_rawSheetDescription contains qdrna_
+  derive:
+    bioinformatics:
+      cntn_fk_contentType: 23
+      cntn_fk_location: 83
+      cntn_cstm_SecondaryAnalysisState: "{sample.slims_state}"
+      cntn_status: 10
+      cntn_cstm_runTag: "{sample.run}"
+  allow_duplicates: true # Allow duplicate samples (eg. if a spre-hook can handle this) (boolean)
+
+grid_engine:
+  pe: "mpi" # Grid Engine parallel environment (string)
+
+unpack:
+  init: "source /apps/bio/software/Modules/5.3.1/init/profile.sh && module load petasuite && module load spring"  # Code to run before unpacking (Bash) (string)
+  timeout: 60 # Timeout (in seconds) to wait for unpacked file to become available (integer)
+  threads: 40 # Threads for decompression (integer)
+

@@ -146,6 +146,11 @@ def get_linked_samples(
     that should be picked up by QD-RNA.
     """
     logger.debug("Fetching samples from earlier runs")
+    
+    if any(w not in config.slims for w in ["url", "username", "password"]):
+        logger.warning("SLIMS connection not configured")
+        return None
+
     criteria = "{base_criteria} and ({link_criteria})".format(
         base_criteria=config.slims.criteria,
         link_criteria=" or ".join(

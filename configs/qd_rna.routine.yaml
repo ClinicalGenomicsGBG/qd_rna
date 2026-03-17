@@ -1,0 +1,25 @@
+!include:qd_rna.base.yaml
+
+resultdir: "/webstore/clinical/routine/qdrna/current" # Results base directory where output files are copied (path)
+workdir: "/clinical/data/qdrna/cron/work" # Working directory where intermediate files are stored (path)
+logdir: "/clinical/exec/qdrna/logs" # Log directory (path)
+
+clean: true  # Clean up the workdir upon successful completion
+
+mail: !include:emails.yaml
+  send: true  # Send mail (boolean)
+  #cc_addr: ~ # list of CC recipients (array), in emails.yaml
+  #to_addr: # list of recipients (array), in emails.yaml
+  # - "recipient1@email.com"
+  # - "recipient2@email.com"
+  #from_addr: "sender@email.com" # sender address (string), in emails.yaml
+
+slims: !include:slims_credentials.yaml
+  #url: 'http://slimsexample.com/slimsrest'  # URL to slimsrest, in slims_credentials.yaml
+  #username: 'user'  # slims user, in slims_credentials.yaml
+  #password: 'password'  # slims password, in slims_credentials.yaml
+  dry_run: false  # Do not create SLIMS bioinformatics objects (boolean)
+ 
+grid_engine:
+  queue: "routine.q"  # Grid Engine queue (string)
+
