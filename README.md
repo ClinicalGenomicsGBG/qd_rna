@@ -8,7 +8,7 @@ It runs three main processes:
 - Subsampling and STAR mapping with hg19 for Qlucore-based tumor classification. 
   - For now the Qlucore interpretation is performed externally, by the clinical geneticists
 
-By default it downsamples the input if the number of reads exceeds 1M (see `properties.subsample.target` in [schema.yaml](schema.yaml))
+By default it downsamples the input if the number of reads exceeds 100M (see `properties.subsample.target` in [schema.yaml](schema.yaml))
 
 ## Usage
 
@@ -37,7 +37,7 @@ python -m qd_rna --config_file configs/qd_rna.manual.yaml --samples_file ./sampl
 
 You can and should specify different things in the samples file depending on your needs.
 
-```bash
+```yaml
 - id: "sub_55778845"
   run: "240430_AHGTK7DRX3"
   reads: 1102526
@@ -63,7 +63,7 @@ If your fastqs were subsampled in the initial run, you will need to point to tho
 
 ### Routine run
 
-For running the routine pipeline, the process is as above but you specify `--config_file` [configs/qd_rna.routine.yaml](configs/qd_rna.routine.yaml). Additionally, you need slims credentials and email addresses. You do not need samples_files, instead it will start running on any slims samples with `qdrna_reverse` in the raw samplesheet description unless they have a bioinformatics object with `Secondary Analysis State = complete|error|running` or are more than a year old (see `slims.novel.criteria` in [configs/qd_rna.base.yaml](configs/qd_rna.base.yaml).
+For running the routine pipeline, the process is as above but you specify `--config_file` [configs/qd_rna.routine.yaml](configs/qd_rna.routine.yaml). Additionally, you need slims credentials and email addresses. You do not need sample files; instead it will start running on any slims samples with `qdrna_reverse` in the raw samplesheet description unless they have a bioinformatics object with `Secondary Analysis State = complete|error|running` or are more than a year old (see `slims.novel.criteria` in [configs/qd_rna.base.yaml](configs/qd_rna.base.yaml)).
 
 For the routine run, the results will be on webstore. The working directory is in `/clinical/data/qdrna/cron/work`, but will be cleaned upon successful completion.
 
