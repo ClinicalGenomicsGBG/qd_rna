@@ -48,17 +48,17 @@ You can and should specify different things in the samples file depending on you
 
 - `id`: [required] Name of the sample to run. It doesn't need to match the name in the fastq name
 - `run`: [required] Name of the run. It doesn't need to match the name in the fastq name
-- `reads`: [optional] Used by the subsample hook to know which fraction to subsample to. If no reads are specified, QDRNA will subsample the data to a fixed number of reads, which is slower. (see `properties.subsample.target` in [schema.yaml](schema.yaml))
+- `reads`: [optional] Used by the subsample hook to know which fraction to subsample to. (see `properties.subsample.target` in [schema.yaml](schema.yaml))
 - `files` [optional] Path to the fastq files. **Make sure R1 is the first file, and R2 the second**. If you use only a single fastq, it will be treated as single-end data.
 
 - If your sample is in slims and you added slims credentials, you can specify the `id` and `run` and it will find the rest for you.
-- Note: If there are any samples with an identical `id`, it will download and merge them. This also happens if you specify the fastq files in the samples file. To avoid this, change the `id` in the samples file to an `id` that is not in slims.
+- Note: If there are any samples with an identical `id`, it will download and merge them.
 
 #### Restarting a run
 
 To restart a run, locate the workdir (in `/clinical/data/qdrna/manual/work` if you used the above config) and copy the directory name (e.g. `260419-154331`). Restart qd_rna with the `--tag` parameter (`--tag 260419-154331`). If you include `clean: true` in the config, the workdir will be removed once qd_rna finishes.
 
-If your fastqs were subsampled in the initial run, you will need to point to those subsampled fastqs in the samples file (e.g. in `260419-154331/subsample/123456-mRNA_R[1|2]_001.subsampled.fq.gz`). You will also need to adjust the `reads` to below the cutoff, or pass `--subsample_target 0` to skip subsampling.
+If your fastqs were subsampled in the initial run, you will need to point to those subsampled fastqs in the samples file (e.g. in `260419-154331/subsample/123456-mRNA_R[1|2]_001.subsampled.fq.gz`). You will also need to adjust the `reads` to below the cutoff (e.g. `reads: 0`), or pass `--subsample_target 0` to skip subsampling.
 
 
 ### Routine run
@@ -80,11 +80,7 @@ python -m qd_rna --config_file configs/qd_rna.routine.yaml
 
 ### Testing
 
-There's a test dataset available:
-- `samples file`: `/clinical/exec/qdrna/qdrna/configs/samples/samples.testing.yaml`
-- `fastq files`: `/clinical/data/qdrna/test_data/`
-
-To test QDRNA, follow the steps above in [Minimal manual run](#minimal-manual-run)
+To test QDRNA, follow the steps above in [Minimal manual run](#minimal-manual-run). The test should take ~30 min. There are even smaller test datasets available in `/clinical/data/qdrna/test_data/` (~10 min runtime), but they don't produce all expected outputs.
 
 ## Workflow details
 
@@ -113,6 +109,7 @@ The following steps are typically performed in the pipeline (with relevant `modu
 - Cleanup workdir -- in [cellophane/src/cellophane/cleanup](https://github.com/ClinicalGenomicsGBG/cellophane/tree/main/src/cellophane/cleanup)
 
 ### Sample properties available to runners
+
 Pre-hooks can add additional information to samples by declaring mixins.
 These are the fields available to use in runners after all pre-hooks have finished:
 
@@ -133,7 +130,6 @@ These are the fields available to use in runners after all pre-hooks have finish
 | **`_connection`** | `Slims \| None` | SLIMS mixin | `None` (dropped during pickle/fork) |
 | **`hcp_remote_keys`** | `set[str] \| None` | SLIMS mapping | `{"bucket/path/R1.fq.gz", "bucket/path/R2.fq.gz"}` |
 | **`mail_attachments`** | `set[Path]` | mail mixin | `set()` (runners can add to this) |
-
 
 ## Updates/Development
 
