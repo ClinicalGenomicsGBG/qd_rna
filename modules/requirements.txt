@@ -6,3 +6,4 @@
 -r rsync/requirements.txt
 -r slims/requirements.txt
 -r unpack/requirements.txt
+-r slims_/requirements.txt

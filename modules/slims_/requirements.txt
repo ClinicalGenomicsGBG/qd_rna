@@ -1,0 +1,2 @@
+humanfriendly>=10.0, <11.0
+slims-python-api==6.8.0
