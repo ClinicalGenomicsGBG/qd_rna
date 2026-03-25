@@ -19,6 +19,10 @@ slims:
   password: ~  # slims password, in slims_credentials.yaml
   dry_run: true  # Do not create SLIMS bioinformatics objects (boolean)
 
+s3:
+  upload:
+    enable: false
+
 grid_engine:
   queue: "development.q" # Grid Engine queue (string)
 

@@ -123,6 +123,14 @@ hcp:
   credentials: "/clinical/exec/qdrna/credentials/gmc-legacy_credentials.json"  # IRIS credentials file (path)
   parallel: 4 # Number of parallel HCP conenctions (integer)
 
+s3:
+  credentials: "/clinical/exec/qdrna/credentials/sg1.json"
+  parallel: 1
+  upload:
+    enable: true
+    path: "s3://qdrna-results/2026"
+    endpoint: "https://sg1.vgregion.se"
+
 slims:
   map:  # Mapping of keys to SLIMS field(s) (Use json: prefix and dot notation for JSON fields) (mapping
     files: "json:cntn_cstm_demuxerSampleResult.fastq_paths"
