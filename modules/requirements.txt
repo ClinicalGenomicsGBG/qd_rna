@@ -4,6 +4,6 @@
 -r mail/requirements.txt
 -r nextflow/requirements.txt
 -r rsync/requirements.txt
--r slims/requirements.txt
--r unpack/requirements.txt
 -r slims_/requirements.txt
+-r unpack/requirements.txt
+-r s3/requirements.txt
