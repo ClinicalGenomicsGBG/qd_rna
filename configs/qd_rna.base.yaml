@@ -26,11 +26,15 @@ rnafusion:
   fasta: "/clinical/exec/qdrna/dependencies/nf-core/nf-core-rnafusion-3.0.1/ensembl/Homo_sapiens.GRCh38.102.all.fa"
 
 qlucore:
-  subsample:
-    fallback_fraction: 0.2 # Fraction of reads to subsample (number)
-    threads: 12 # Number of threads to use for subsampling (integer)
-    init: "source /apps/bio/software/Modules/5.3.1/init/profile.sh; module load samtools/1.16" # Code to run before qlucore subsampling (string)
-  starfusion_ref: "/clinical/exec/qdrna/dependencies/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play/ctat_genome_lib_build_dir/" # Path to STAR-Fusion reference (path)
+  star:
+    container: "https://depot.galaxyproject.org/singularity/star:2.7.8a--0"
+    index: "/clinical/exec/qdrna/dependencies/GRCh37_gencode_v19_CTAT_lib_Mar012021.plug-n-play/ctat_genome_lib_build_dir/ref_genome.fa.star.idx"
+    threads: 32
+  samtools:
+    container: "https://depot.galaxyproject.org/singularity/samtools:1.20--h50ea8bc_1" 
+    target: 20000000
+    fraction: 0.2
+    threads: 32
 
 mail:
   start:
