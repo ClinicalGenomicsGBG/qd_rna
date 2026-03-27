@@ -33,7 +33,7 @@ qlucore:
   samtools:
     container: "https://depot.galaxyproject.org/singularity/samtools:1.20--h50ea8bc_1" 
     target: 20000000
-    fraction: 0.2
+    fallback_fraction: 0.2
     threads: 32
 
 mail:

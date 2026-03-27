@@ -26,7 +26,7 @@ properties:
             description: Number of threads to use for STAR aligner
       samtools:
         type: object
-        required: [container, target, fraction, threads]
+        required: [container, target, fallback_fraction, threads]
         properties:
           container:
             type: string
@@ -34,7 +34,7 @@ properties:
           target:
             type: integer
             description: Target number of reads for samtools subsampling (approximate)
-          fraction:
+          fallback_fraction:
             type: number
             description: Fraction of reads to subsample for samtools. If >= 1, the whole part of the argument is used as the seed.
           args:

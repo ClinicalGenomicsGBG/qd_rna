@@ -166,7 +166,7 @@ def qlucore(
             workdir / "Log.final.out",
             target_reads=config.qlucore.samtools.target,
             logger=logger
-        ) or config.qlucore.samtools.fraction
+        ) or config.qlucore.samtools.fallback_fraction
         subsampled_bam = workdir / f"{samples[0].id}_subsampled_for_qlucore.bam"
         if subsample_fraction == 1.0:
             logger.info("No subsampling needed for %s (fraction=1.0)", samples[0].id)
