@@ -166,3 +166,11 @@ properties:
         type: integer
         description: Minimum number of callers for fusion to be reported
         default: 1
+
+  compress:
+    type: object
+    properties:
+      threads:
+        type: integer
+        description: Number of threads to use for compression
+        default: 4
