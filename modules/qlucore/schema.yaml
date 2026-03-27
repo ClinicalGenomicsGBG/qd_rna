@@ -36,7 +36,7 @@ properties:
             description: Target number of reads for samtools subsampling (approximate)
           fallback_fraction:
             type: number
-            description: Fraction of reads to subsample for samtools. If >= 1, the whole part of the argument is used as the seed.
+            description: Fraction of reads to subsample for samtools
           args:
             type: array
             items:
