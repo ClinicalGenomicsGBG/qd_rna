@@ -107,7 +107,7 @@ STAR_ARGS = [
     checkpoint="star",
 )
 @output(
-    "{sample.id}_subsampled_for_qlucore.bam",
+    "{sample.id}*qlucore.bam",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/qlucore",
     checkpoint="subsample",
 )
@@ -127,6 +127,9 @@ def qlucore(
     **_,
 ) -> Samples:
     """Run STAR + samtools subsampling for qlucore."""
+    # File name for the final subsampled BAM that will be used for qlucore.
+    # If you want to change this, make sure to also change the output decorator if needed.
+    subsampled_bam = workdir / f"{samples[0].id}.Aligned.sortedByCoord.qlucore.bam"
     if config.qlucore.skip:
         samples.output = set()
         return samples
@@ -167,7 +170,6 @@ def qlucore(
             target_reads=config.qlucore.samtools.target,
             logger=logger
         ) or config.qlucore.samtools.fallback_fraction
-        subsampled_bam = workdir / f"{samples[0].id}_subsampled_for_qlucore.bam"
         if subsample_fraction == 1.0:
             logger.info("No subsampling needed for %s (fraction=1.0)", samples[0].id)
             # Just create a hardlink to avoid unnecessary work
