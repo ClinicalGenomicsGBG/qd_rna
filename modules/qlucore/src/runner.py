@@ -103,11 +103,11 @@ STAR_ARGS = [
 @output(
     "Aligned.sortedByCoord.out.bam",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/qlucore",
-    dst_name="{sample.id}_aligned_sorted_for_qlucore.out.bam",
+    dst_name="{sample.id}.Aligned.sortedByCoord.qlucore.bam",
     checkpoint="star",
 )
 @output(
-    "{sample.id}*qlucore.bam",
+    "{sample.id}*subsampled.qlucore.bam",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/qlucore",
     checkpoint="subsample",
 )
@@ -129,7 +129,7 @@ def qlucore(
     """Run STAR + samtools subsampling for qlucore."""
     # File name for the final subsampled BAM that will be used for qlucore.
     # If you want to change this, make sure to also change the output decorator if needed.
-    subsampled_bam = workdir / f"{samples[0].id}.Aligned.sortedByCoord.qlucore.bam"
+    subsampled_bam = workdir / f"{samples[0].id}.Aligned.sortedByCoord.subsampled.qlucore.bam"
     if config.qlucore.skip:
         samples.output = set()
         return samples

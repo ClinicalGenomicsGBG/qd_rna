@@ -7,3 +7,4 @@
 -r slims_/requirements.txt
 -r unpack/requirements.txt
 -r s3/requirements.txt
+-r qlucore/requirements.txt
