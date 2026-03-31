@@ -125,7 +125,7 @@ hcp:
 
 s3:
   credentials: "/clinical/exec/qdrna/credentials/sg1.json"
-  parallel: 1
+  parallel: 4
   upload:
     enable: true
     path: "s3://qdrna-results/2026"
