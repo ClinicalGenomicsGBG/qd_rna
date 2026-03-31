@@ -7,7 +7,9 @@ dependencies:
   - jinja2=3.1.6
   - mistletoe=1.5.1
   - uge-drmaa2=8.9.0
+  - boto3=1.37.25
   - pip:
     - git+https://github.com/ClinicalGenomicsGBG/cellophane.git@1.2.0
     - NGPIris==4.3.0
     - slims-python-api==6.8.0
+    - boto3-stubs[s3]

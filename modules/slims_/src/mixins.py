@@ -7,8 +7,8 @@ from warnings import warn
 from attrs import Attribute, define, field
 from attrs.setters import validate
 from cellophane import Config, Sample, Samples
-from cellophane.src.data import Container
-from cellophane.src.util import map_nested_keys
+from cellophane.data import Container
+from cellophane.util import map_nested_keys
 from slims.slims import Record, Slims
 
 from .util import get_field, get_fields_from_sample, get_records
@@ -54,14 +54,11 @@ class SlimsSample(Sample):
 
         return matches_
 
-    def _missing(self, x) -> bool:
-        return x in (None, "", [], {}, set(), ())
-
     def map_from_record(
         self,
         record: Record,
         map_: dict,
-        map_ignore: list[str] | None = None,
+        map_ignore: list[tuple[str, ...]] | None = None,
     ):
         """Map fields from a SLIMS record to the sample"""
         _map_ignore = map_ignore or []
@@ -71,25 +68,12 @@ class SlimsSample(Sample):
             for key in _keys:
                 if key in _map_ignore:
                     continue
-                value = get_field(record, c_map[key])  # The value is what we retrieve from SLIMS
+                value = get_field(record, c_map[key])
                 if isinstance(self[key[0]], Container):
-                    # Before setting the value, we check the current value
-                    try:
-                        current = self[key[0]][key[1:]]
-                    except Exception:
-                        current = None
-
-                    # If the current value is missing, we set it to the value from SLIMS
-                    if self._missing(current):
-                        self[key[0]][key[1:]] = value
-
+                    self[key[0]][key[1:]] = value
                 else:
                     node = reduce(getattr, key[:-1], self)
-                    current = getattr(node, key[-1], value)
-
-                    if self._missing(current):
-                        setattr(node, key[-1], value)
-
+                    setattr(node, key[-1], value)
         except (KeyError, AttributeError):
             warn(f"Unable to map '{'.'.join(key)}' to field in sample")
         except Exception as exc:

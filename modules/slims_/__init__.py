@@ -7,7 +7,6 @@ from .src.util import (
     get_records,
     parse_criteria,
     resolve_criteria,
-    split_criteria,
     unnest_criteria,
     validate_criteria,
 )

@@ -1,0 +1,39 @@
+type: object
+properties:
+  s3:
+    type: object
+    properties:
+      credentials:
+        type: array
+        items:
+          type: path
+        description: S3 credentials file(s)
+      parallel:
+        type: integer
+        description: Number of parallel S3 connections
+        default: 4
+      upload:
+        type: object
+        oneOf:
+          - properties:
+              enable:
+                const: false
+          - required:
+            - path
+            - endpoint
+        properties:
+          enable:
+            type: boolean
+            description: Whether to enable S3 upload
+            default: false
+          path:
+            type: string
+            description: S3 path to upload results to in the the form s3://bucket/path
+            pattern: "^s3://[^/]+/.*$"
+          endpoint:
+            type: string
+            description: S3 endpoint URL (e.g. https://s3.amazonaws.com)
+            pattern: "^https?://.+$"
+    required:
+      - credentials
+      - upload

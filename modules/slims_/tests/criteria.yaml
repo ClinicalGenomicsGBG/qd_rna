@@ -504,3 +504,66 @@ records:
   - !!python/object/apply:slims_.tests.RecordMock []
 exception: !!python/name:ValueError
 
+---
+id: has_derived_conjunction_outer
+criteria: cntn_id equals parent and has_derived cntn_a equals a and cntn_b equals b
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_fk_originalContent: {value: 0}
+      cntn_b: {value: b}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+      cntn_a: {value: a}
+unnested:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: parent
+  - operator: has_derived
+    value:
+      fieldName: cntn_a
+      operator: equals
+      value: a
+  - fieldName: cntn_b
+    operator: equals
+    value: b
+
+---
+id: has_derived_conjunction_inner
+criteria: cntn_id equals parent and has_derived (cntn_a equals a and cntn_b equals b)
+records:
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: parent}
+      cntn_pk: {value: 1}
+      cntn_fk_originalContent: {value: 0}
+  - !!python/object/apply:slims_.tests.RecordMock
+    kwds:
+      cntn_id: {value: derived}
+      cntn_pk: {value: 2}
+      cntn_fk_originalContent: {value: 1}
+      cntn_a: {value: a}
+      cntn_b: {value: b}
+unnested:
+  operator: and
+  criteria:
+  - fieldName: cntn_id
+    operator: equals
+    value: parent
+  - operator: has_derived
+    value:
+      operator: and
+      criteria:
+      - fieldName: cntn_a
+        operator: equals
+        value: a
+      - fieldName: cntn_b
+        operator: equals
+        value: b

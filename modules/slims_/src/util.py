@@ -28,36 +28,30 @@ from slims.criteria import (
 from slims.criteria import _JunctionType as op
 from slims.slims import Record, Slims
 
-
-@cache
 def split_criteria(criteria: str) -> list[str]:
     """
-    Split string on "and"/"or" but not within parentheses
+    Tokenize string criteria, maintaining parentheses
 
-    >>> _parse_bool("a is x and (b is y or c is d) or g is h")
-    ['a is x', 'and', 'b is y or c is d', 'or', 'g is h']
+    >>> split_criteria("a is x and (b is y or c is d) or g is h")
+    ['a', 'is', 'x', 'and', 'b is y or c is d', 'or', 'g', 'is', 'h']
     """
-
-    parts = []
-    _criteria = " ".join(criteria.split())
-    part = ""
     depth = 0
+    part = ""
+    parts = []
+    # Ensure that criteria is separated by spaces
+    _criteria = " ".join(criteria.split())
 
     while _criteria:
-        if _criteria[0] == "(":
-            if depth > 0:
-                part += "("
-            depth += 1
-        elif _criteria[0] == ")":
-            if depth > 1:
-                part += ")"
-            depth -= 1
-        elif _criteria.startswith(" and ") and depth == 0:
-            parts = [part, "and", _criteria[5:]]
-            break
-        elif _criteria.startswith(" or ") and depth == 0:
-            parts = [part, "or", _criteria[4:]]
-            break
+        if (delta := _criteria[0] == "(") and (depth := depth + delta) == 1:
+            part = ""
+        elif (delta := _criteria[0] == ")") and (depth := depth - delta) == 0:
+            parts.append(part)
+            part = ""
+        elif depth > 0:
+            part += _criteria[0]
+        elif _criteria[0] == " " and part:
+            parts.append(part.strip())
+            part = ""
         else:
             part += _criteria[0]
 
@@ -66,8 +60,9 @@ def split_criteria(criteria: str) -> list[str]:
     if depth != 0:
         raise ValueError(f"Unmatched parentheses: {criteria}")
 
-    return parts or [part]
-
+    if part:
+        parts.append(part.strip())
+    return parts
 
 def parse_criteria(criteria: str | list[str]) -> Criterion:
     """Parse criteria"""
@@ -95,25 +90,22 @@ def parse_criteria(criteria: str | list[str]) -> Criterion:
             ]
         ):
             raise ValueError(f"Invalid criteria: {criteria}")
-        case str(criteria):
-            return parse_criteria(split_criteria(criteria))
+        case str(criterion):
+            c = split_criteria(criterion)
+            return parse_criteria(c)
 
         case [criterion]:
-            criteria = split_criteria(criterion)
-            if len(criteria) == 1:
-                return parse_criteria(criteria[0].split(" "))
-            else:
-                return parse_criteria(criteria)
+            c = split_criteria(criterion)
+            return parse_criteria(c)
 
-        case [a, "and", b]:
+        case [*criterion] if "and" in criterion:
+            idx = criterion.index("and")
+            a, b = criterion[:idx], criterion[idx+1:]
             return conjunction().add(parse_criteria(a)).add(parse_criteria(b))
-        case [a, "or", b]:
+        case [*criterion] if "or" in criterion:
+            idx = criterion.index("or")
+            a, b = criterion[:idx], criterion[idx+1:]
             return disjunction().add(parse_criteria(a)).add(parse_criteria(b))
-
-        case [_, *mid, _] if "and" in mid or "or" in mid:
-            # This handles cases where multiple parentheses are used
-            # around a single criterion (e.g. "((((a equals b))))")
-            return parse_criteria(" ".join(criteria))
 
         case ["has_parent", *a]:
             return HasParent(parse_criteria(a))
@@ -192,7 +184,7 @@ def get_fields_from_sample(
     fields = {}
     for key in keys:
         try:
-            field_ = reduce(lambda x, y: x.get(y), key, map_)
+            field_ = reduce(lambda x, y: x.get(y) or {}, key, map_)
             if (
                 field_ not in sync_keys_or_fields
                 and ".".join(key) not in sync_keys_or_fields
