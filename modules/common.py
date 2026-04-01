@@ -295,8 +295,8 @@ def subsample(
                 workdir=workdir,
                 cpus=config.subsample.threads,
                 env={
-                    "_SUBSAMPLE_INIT": config.qlucore.subsample.init,
-                    "_SUBSAMPLE_THREADS": config.qlucore.subsample.threads,
+                    "_SUBSAMPLE_INIT": config.subsample.init,
+                    "_SUBSAMPLE_THREADS": config.subsample.threads,
                     "_SUBSAMPLE_FRAC": frac,
                     "_SUBSAMPLE_INPUT_FQ1": sample.files[0],
                     "_SUBSAMPLE_INPUT_FQ2": sample.files[1],

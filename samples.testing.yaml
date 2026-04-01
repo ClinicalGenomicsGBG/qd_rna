@@ -1,0 +1,13 @@
+- id: "SNE15-22-1H_test"
+  run: "010101_DUMMY"
+  reads: 500_000_000
+  files:
+    - "/clinical/data/qdrna/test_data/SNE15-22-1H_230224_BHJ2J5DMXY_S47_R1_001.subsample.verysmol.fastq.gz"
+    - "/clinical/data/qdrna/test_data/SNE15-22-1H_230224_BHJ2J5DMXY_S47_R2_001.subsample.verysmol.fastq.gz"
+
+- id: "SNE15-22-1H_test"
+  run: "010101_DUMMY"
+  reads: 500_000_000
+  files:
+    - "/clinical/data/qdrna/test_data/SNE15-22-1H_230224_BHJ2J5DMXY_S47_R1_001.subsample.verysmol.dup.fastq.gz"
+    - "/clinical/data/qdrna/test_data/SNE15-22-1H_230224_BHJ2J5DMXY_S47_R2_001.subsample.verysmol.dup.fastq.gz"

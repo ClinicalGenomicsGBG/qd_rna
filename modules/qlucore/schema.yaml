@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=https://json-schema.org/draft/2020-12/schema
+type: object
+properties:
+  qlucore:
+    type: object
+    oneOf:
+    - properties: {skip: {const: true}}
+    - required: [star, samtools]
+    properties:
+      skip:
+        type: boolean
+        default: false
+        description: Skip qlucore data generation
+      star:
+        type: object
+        required: [container, index, threads]
+        properties:
+          container:
+            type: string
+            description: Container image for STAR aligner
+          index:
+            type: path
+            description: STAR index Path
+          threads:
+            type: integer
+            description: Number of threads to use for STAR aligner
+      samtools:
+        type: object
+        required: [container, target, fallback_fraction, threads]
+        properties:
+          container:
+            type: string
+            description: Container image for samtools
+          target:
+            type: integer
+            description: Target number of reads for samtools subsampling (approximate)
+          fallback_fraction:
+            type: number
+            description: Fraction of reads to subsample for samtools
+          args:
+            type: array
+            items:
+              type: string
+              description: Additional arguments for samtools
+            default: []
+          threads:
+            type: integer
+            description: Number of threads to use for samtools
+
