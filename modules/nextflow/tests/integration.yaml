@@ -16,18 +16,18 @@
     samples.yaml: |
       - id: A
         files:
-        - input/A_1
-        - input/A_2
+        - input/A_1.fastq.gz
+        - input/A_2.fastq.gz
 
       - id: B
         files:
-        - input/B_1
-        - input/B_2
+        - input/B_1.fastq.gz
+        - input/B_2.fastq.gz
     input:
-      A_1: A_1
-      A_2: A_2
-      B_1: B_1
-      B_2: B_2
+      A_1.fastq.gz: A_1
+      A_2.fastq.gz: A_2
+      B_1.fastq.gz: B_1
+      B_2.fastq.gz: B_2
   args:
     --workdir: work
     --tag: DUMMY
@@ -37,8 +37,8 @@
     - nf_samples=PosixPath('work/DUMMY/samples.csv/samples.nextflow.csv')
     - |
       sample,fastq_1,fastq_2
-      A,input/A_1,input/A_2
-      B,input/B_1,input/B_2
+      A,input/A_1.fastq.gz,input/A_2.fastq.gz
+      B,input/B_1.fastq.gz,input/B_2.fastq.gz
 
 - id: nextflow_call
   external:
