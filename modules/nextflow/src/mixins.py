@@ -6,9 +6,9 @@ from pathlib import Path
 
 from cellophane import Samples
 
-# Prefer explicit tokens first (R1/R2), then fall back to bare 1/2 tokens.
-_EXPLICIT = re.compile(r"(?i)(?<=[._-])R([12])(?=[._-])")
-_NUMERIC  = re.compile(r"(?<=[._-])([12])(?=[._-])")
+# Prefer explicit tokens first (_R1/_R2), then fall back to bare _1/2 tokens.
+_EXPLICIT = re.compile(r"(?i)(?<=_)R([12])(?=[._-])")
+_NUMERIC  = re.compile(r"(?<=_)([12])(?=[._-])")
 
 def _infer_read(path: str | Path) -> tuple[int | None, str]:
     """
