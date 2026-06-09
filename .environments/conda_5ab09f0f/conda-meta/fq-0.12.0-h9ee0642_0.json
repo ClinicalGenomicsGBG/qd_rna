@@ -1,0 +1,39 @@
+{
+  "build": "h9ee0642_0",
+  "build_number": 0,
+  "constrains": [
+    "__glibc >=2.17"
+  ],
+  "depends": [],
+  "license": "MIT",
+  "md5": "a57f43d9910c10fcb9e9c45fd3db54ce",
+  "name": "fq",
+  "sha256": "5c94672101bcaf61d385b841475121683a7642e3c65bede08157224030e902e5",
+  "size": 1175124,
+  "subdir": "linux-64",
+  "timestamp": 1720459208727,
+  "version": "0.12.0",
+  "fn": "fq-0.12.0-h9ee0642_0.tar.bz2",
+  "url": "https://conda.anaconda.org/bioconda/linux-64/fq-0.12.0-h9ee0642_0.tar.bz2",
+  "channel": "https://conda.anaconda.org/bioconda/",
+  "extracted_package_dir": "/home/xschmy/.cache/rattler/cache/pkgs/fq-0.12.0-h9ee0642_0",
+  "requested_specs": [],
+  "files": [
+    "bin/fq"
+  ],
+  "paths_data": {
+    "paths_version": 1,
+    "paths": [
+      {
+        "_path": "bin/fq",
+        "path_type": "hardlink",
+        "sha256": "ab837cd106d8e98eb96ddee3afcbce83d07bc8c8fe65bc6ffcf1a3a6408e5d12",
+        "size_in_bytes": 3124192
+      }
+    ]
+  },
+  "link": {
+    "source": "/home/xschmy/.cache/rattler/cache/pkgs/fq-0.12.0-h9ee0642_0",
+    "type": 1
+  }
+}

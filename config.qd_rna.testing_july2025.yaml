@@ -1,0 +1,9 @@
+!include:configs/qd_rna.base.yaml
+resultdir: "/oldseqstore/workspace/daniel/qlucore/" # Results base directory where output files are copied (path)
+workdir: "/clinical/data/qdrna/work_development" # Working directory where intermediate files are stored (path)
+logdir: "/clinical/exec/qdrna/logs_development" # Log directory (path)
+
+merge: true # Merge samples with same ID (boolean)
+read_length: 150 # Sample read length (integer)
+strandedness: "reverse" # Strandedness of RNA-seq library (string)
+limitSjdbInsertNsj: 4000000 # Maximum number of junctions to insert for STAR

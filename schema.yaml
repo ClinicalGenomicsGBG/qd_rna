@@ -167,41 +167,6 @@ properties:
         description: Minimum number of callers for fusion to be reported
         default: 1
 
-  qlucore:
-    type: object
-    oneOf:
-    - properties: {skip: {const: true}}
-    - required: [starfusion_ref]
-    properties:
-      skip:
-        type: boolean
-        default: false
-        description: Skip qlucore mapping
-
-      subsample:
-        type: object
-        properties:
-          threads:
-            type: integer
-            description: Number of threads to use for subsampling
-            default: 12
-          target:
-            type: integer
-            description: Target number of reads for subsampling (approximate)
-            default: 20_000_000
-          fallback_fraction:
-            type: number
-            description: Fraction of reads to subsample if calculation fails
-            default: 0.2
-          init:
-            type: string
-            description: Code to run before subsampling qlucore BAM files
-            default: ""
-
-      starfusion_ref:
-        type: path
-        description: Path to STAR-Fusion reference
-
   compress:
     type: object
     properties:

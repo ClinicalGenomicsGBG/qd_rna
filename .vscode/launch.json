@@ -1,0 +1,18 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run qd_rna module",
+      "type": "python",
+      "request": "launch",
+      "module": "qd_rna",
+      "args": [
+        "--config_file", "config.qd_rna.testing_july2025.yaml",
+        "--log_level", "DEBUG",
+        "--rnaseq_skip",
+        "--rnafusion_skip",
+        "--samples_file", "samples.testing.yaml"
+      ]
+    }
+  ]
+}
