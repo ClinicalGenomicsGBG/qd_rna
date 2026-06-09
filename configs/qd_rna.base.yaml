@@ -80,9 +80,8 @@ mail:
       {%- if has_output -%}
       {%- set results_base = config.resultdir.relative_to('/webstore/clinical/')| string -%}
       {%- set results_node = id_ + '_' + group.0.last_run + '_' + (timestamp|string) -%}
-      {%- set vgr = 'http://webstore-gu.vgregion.se/tree/' + results_base + '/' + results_node  -%}
-      {%- set gu = 'http://webstore.sa.gu.se/tree/' + results_base + '/' + results_node -%}
-      [GU]({{ gu }}) [VGR]({{ vgr }}) |
+      {%- set cmg = 'https://cmg-portal.vgregion.se/tree/' + results_base + '/' + results_node  -%}
+      [CMG]({{ cmg }}) |
       {%- endif -%}
       {%- endfor -%}
       {%- endif -%}
