@@ -118,6 +118,7 @@ def rnavar(
         workdir=workdir,
         resume=True,
         executor=executor,
+        conda_spec={"nextflow": ">=26.04"}
     )
 
     logger.debug(f"nf-core/rnavar finished ({log_tag})")
