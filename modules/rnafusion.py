@@ -295,6 +295,7 @@ def rnafusion(
         workdir=workdir,
         resume=True,
         executor=executor,
+        conda_spec={"nextflow": ">=24.04"},
     )
 
     logger.debug(f"nf-core/rnafusion finished ({log_tag})")

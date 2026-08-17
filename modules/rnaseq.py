@@ -221,6 +221,7 @@ def rnaseq(
         workdir=workdir,
         resume=True,
         executor=executor,
+        conda_spec={"nextflow": ">=24.04"}
     )
 
     # compress_bams creates declared output crams from available bams
