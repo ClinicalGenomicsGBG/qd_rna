@@ -118,6 +118,13 @@ def fetch_nfcore_pipelines(
         url=config.rnafusion.nf_url,
         logger=logger,
     )
+    _fetch_nf_core(
+        name="nf-core/rnavar",
+        path=root / "dependencies" / "nf-core" / "rnavar",
+        tag=config.rnavar.nf_tag,
+        url=config.rnavar.nf_url,
+        logger=logger,
+    )
 
 
 def nf_config(template, location, include: Path | None = None, **kwargs):
@@ -451,4 +458,3 @@ def compress_bams(
                 bam_path.with_suffix(".bam.bai").unlink(missing_ok=True)
                 bam_path.with_suffix(".bai").unlink(missing_ok=True)
     return
-
