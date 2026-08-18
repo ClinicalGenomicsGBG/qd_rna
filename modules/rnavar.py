@@ -119,7 +119,7 @@ def rnavar(
         resume=True,
         executor=executor,
         conda_spec={
-            "dependencies" : ["bioconda::nextflow>=26.04"].
+            "dependencies" : ["bioconda::nextflow>=25.04,<26"],
             "channels": ["conda-forge", "bioconda"]
         }
     )
