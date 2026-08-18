@@ -118,7 +118,10 @@ def rnavar(
         workdir=workdir,
         resume=True,
         executor=executor,
-        conda_spec={"nextflow": ">=26.04"}
+        conda_spec={
+            "dependencies" : ["bioconda::nextflow>=26.04"].
+            "channels": ["conda-forge", "bioconda"]
+        }
     )
 
     logger.debug(f"nf-core/rnavar finished ({log_tag})")
