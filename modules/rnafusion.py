@@ -295,7 +295,10 @@ def rnafusion(
         workdir=workdir,
         resume=True,
         executor=executor,
-        conda_spec={"nextflow": ">=24.04"},
+        conda_spec={
+            "dependencies" : ["bioconda::nextflow>=24.04,<25"],
+            "channels" : ["conda-forge", "bioconda"]
+        },
     )
 
     logger.debug(f"nf-core/rnafusion finished ({log_tag})")

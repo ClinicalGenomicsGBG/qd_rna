@@ -119,6 +119,7 @@ nextflow:
     FTP_PROXY: "http://nyabud.net.gu.se:8080"
   ansi_log: false # Enable ANSI log (boolean)
   workdir: ~ # Nextflow workdir (path)
+  init: "export PATH=$CONDA_PREFIX/lib/jvm/bin:$PATH" # Necessary to find correct java binary in environment for grid engine jobs
   profile: "singularity,routine,pipeline" # Nextflow profile (string)
   config: "/clinical/exec/qdrna/qdrna/configs/nextflow.qd_rna.config" # Nextflow config file (path)
 
