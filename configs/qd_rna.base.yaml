@@ -117,9 +117,9 @@ nextflow:
     HTTP_PROXY: "http://nyabud.net.gu.se:8080"
     NO_PROXY: ".medair.lcl,slims2.sa.gu.se,.vgregion.se,10."
     FTP_PROXY: "http://nyabud.net.gu.se:8080"
+  init: "source /apps/bio/software/Modules/5.3.1/init/profile.sh && module load java/jdk19.0.2 && module load nextflow/23.04.3" # Code to run before running Nextflow (Bash) (string)
   ansi_log: false # Enable ANSI log (boolean)
   workdir: ~ # Nextflow workdir (path)
-  init: "export PATH=$CONDA_PREFIX/lib/jvm/bin:$PATH" # Necessary to find correct java binary in environment for grid engine jobs
   profile: "singularity,routine,pipeline" # Nextflow profile (string)
   config: "/clinical/exec/qdrna/qdrna/configs/nextflow.qd_rna.config" # Nextflow config file (path)
 
