@@ -9,7 +9,7 @@ from warnings import warn
 
 from attrs import Attribute, define, field
 from attrs.setters import convert, validate
-from cellophane import Cleaner, Config, Executor, Sample, Samples, post_hook, pre_hook
+from cellophane import Cleaner, Config, Executor, Sample, Samples, Timestamp, post_hook, pre_hook
 from git import InvalidGitRepositoryError, NoSuchPathError, Repo
 from humanfriendly.text import pluralize
 
@@ -126,6 +126,26 @@ def nf_config(template, location, include: Path | None = None, **kwargs):
         if include is not None:
             f.write(f"includeConfig '{include}'\n\n")
         f.write(template.format(**kwargs))
+
+
+def resolve_s3_upload_path(
+    config: Config,
+    timestamp: Timestamp,
+) -> None:
+    path = config.s3.upload.get("path")
+    if path:
+        config.s3.upload.path = path.format(
+            timestamp=timestamp,
+        )
+
+
+@pre_hook(label="Set S3 result year", before=["all"])
+def set_s3_result_year(
+    config: Config,
+    timestamp: Timestamp,
+    **_,
+) -> None:
+    resolve_s3_upload_path(config, timestamp)
 
 
 @pre_hook(

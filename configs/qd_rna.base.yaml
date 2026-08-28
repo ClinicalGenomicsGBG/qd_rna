@@ -132,7 +132,7 @@ s3:
   parallel: 4
   upload:
     enable: true
-    path: "s3://qdrna-results/2026"
+    path: 's3://qdrna-results/{timestamp[%Y]}'
     endpoint: "https://sg1.vgregion.se"
 
 slims:
