@@ -13,3 +13,17 @@ dependencies:
     - NGPIris==4.3.0
     - slims-python-api==6.8.0
     - boto3-stubs[s3]
+
+    # Cellophane test dependencies
+    - coverage[toml]
+    - ddt>=1.1.1,!=1.4.3
+    - mock
+    - mypy
+    - pre-commit
+    - pytest>=7.3.1
+    - pytest-cov
+    - pytest-instafail
+    - pytest-mock
+    - pytest-subprocess
+    - pytest-sugar
+    - typing-extensions
