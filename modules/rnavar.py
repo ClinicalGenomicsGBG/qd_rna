@@ -53,24 +53,17 @@ def _pipeline_args(config: Config, nf_samples: Path, workdir: Path) -> list[str]
         f"--gtf {references['gtf']}",
         f"--star_index {references['star_index']}",
         f"--read_length {config.read_length}",
+        "--tools merge",
         "--skip_tools baserecalibrator",
     ]
 
 
 @output(
-    "variant_calling/{sample.id}/{sample.id}.haplotypecaller.filtered.vcf.gz",
+    "annotation/{sample.id}/{sample.id}_snpEff_VEP.ann.vcf.gz*",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/rnavar",
 )
 @output(
-    "variant_calling/{sample.id}/{sample.id}.haplotypecaller.filtered.vcf.gz.tbi",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/rnavar",
-)
-@output(
-    "preprocessing/{sample.id}/{sample.id}.md.bam",
-    dst_dir="{sample.id}_{sample.last_run}_{timestamp}/rnavar",
-)
-@output(
-    "preprocessing/{sample.id}/{sample.id}.md.bam.bai",
+    "preprocessing/{sample.id}/{sample.id}.md.bam*",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/rnavar",
 )
 @output(
