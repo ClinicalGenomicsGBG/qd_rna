@@ -5,10 +5,17 @@
 It runs three main processes:
 - [nfcore/rnafusion](https://nf-co.re/rnafusion) for detecting gene fusions with Arriba, FusionCatcher and STAR-Fusion. Genome version GRCh38.
 - [nfcore/rnaseq](https://nf-co.re/rnaseq) for gene expression data processing and quantification. Genome version GRCh38.
+- [nfcore/rnavar](https://nf-co.re/rnavar) for core GATK RNA small-variant calling. Genome version GRCh38.
 - Subsampling and STAR mapping with hg19 for Qlucore-based tumor classification. 
   - For now the Qlucore interpretation is performed externally, by the clinical geneticists
 
 By default it downsamples the input if the number of reads exceeds 100M (see `properties.subsample.target` in [schema.yaml](schema.yaml))
+
+`rnavar` has independent FASTA, FASTA index, sequence dictionary, GTF, and
+STAR-index configuration. It reuses the global read length and skips GATK base
+recalibration, so dbSNP and known-indels resources are not required. The
+initial integration performs core calling only; VEP and snpEff annotation
+caches are not configured.
 
 ## Usage
 
@@ -100,6 +107,7 @@ The following steps are typically performed in the pipeline (with relevant `modu
 --- runners ---
 - nfcore/rnaseq -- [modules/rnaseq.py](modules/rnaseq.py)
 - nfcore/rnafusion -- [modules/rnafusion.py](modules/rnafusion.py)
+- nfcore/rnavar -- [modules/rnavar.py](modules/rnavar.py)
 - STAR mapping for Qlucore -- [modules/qlucore.py](modules/qlucore.py)
 
 --- post_hooks ---
