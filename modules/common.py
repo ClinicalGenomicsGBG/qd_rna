@@ -132,6 +132,7 @@ def resolve_s3_upload_path(
     config: Config,
     timestamp: Timestamp,
 ) -> None:
+    """Resolve timestamp placeholders in the configured S3 upload path."""
     path = config.s3.upload.get("path")
     if path:
         config.s3.upload.path = path.format(
@@ -139,8 +140,8 @@ def resolve_s3_upload_path(
         )
 
 
-@pre_hook(label="Set S3 result year", before=["all"])
-def set_s3_result_year(
+@pre_hook(label="Resolve S3 upload path", before=["all"])
+def configure_s3_upload_path(
     config: Config,
     timestamp: Timestamp,
     **_,
