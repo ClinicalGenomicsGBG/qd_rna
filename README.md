@@ -90,6 +90,7 @@ The following steps are typically performed in the pipeline (with relevant `modu
 
 --- pre_hooks ---
 - Fetch nf-core pipelines -- [modules/common.py](modules/common.py)
+- Resolve s3 upload path timestamp -- [modules/common.py](modules/common.py)
 - Fetch information from slims -- [modules/slims/src/hooks.py](modules/slims/src/hooks.py)
 - Find additional samples with the same id -- [modules/common.py](modules/common.py)
 - Collect the necessary fastqs from long-term storage -- [modules/hcp/src/hooks.py](modules/hcp/src/hooks.py)
