@@ -1,6 +1,7 @@
 required:
   - rnaseq
   - rnafusion
+  - rnavar
   - qlucore
 
 properties:
@@ -166,6 +167,47 @@ properties:
         type: integer
         description: Minimum number of callers for fusion to be reported
         default: 1
+
+  rnavar:
+    type: object
+    oneOf:
+    - properties: {skip: {const: true}}
+    - required: [fasta, fasta_fai, dict, gtf, star_index]
+    properties:
+      skip:
+        type: boolean
+        description: Skip nf-core/rnavar
+        default: false
+
+      nf_tag:
+        type: string
+        description: Tag to use for nf-core/rnavar
+        default: "1.3.0"
+
+      nf_url:
+        type: string
+        description: URL to use for nf-core/rnavar
+        default: "https://github.com/nf-core/rnavar"
+
+      fasta:
+        type: path
+        description: Path to rnavar genome FASTA file
+
+      fasta_fai:
+        type: path
+        description: Path to rnavar FASTA index
+
+      dict:
+        type: path
+        description: Path to rnavar FASTA sequence dictionary
+
+      gtf:
+        type: path
+        description: Path to rnavar GTF annotation
+
+      star_index:
+        type: path
+        description: Path to rnavar STAR genome index
 
   compress:
     type: object
