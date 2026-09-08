@@ -4,6 +4,10 @@ properties:
   rsync:
     type: object
     properties:
+      copy_results:
+        type: boolean
+        description: Enable copying of results with rsync
+        default: false
       overwrite:
         type: boolean
         description: Overwrite existing results

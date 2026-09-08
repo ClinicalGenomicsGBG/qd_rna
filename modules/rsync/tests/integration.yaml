@@ -62,6 +62,7 @@
   external:
     ..: modules/rsync
   args:
+    --rsync_copy_results:
     --samples_file: samples.yaml
     --workdir: work
     --tag: DUMMY
@@ -113,6 +114,16 @@
   logs:
     - "No output to sync"
 
+- <<: *rsync_test
+  id: rsync_copy_results_false
+  args:
+    --rsync_no_copy_results:
+    --samples_file: samples.yaml
+    --workdir: work
+    --tag: DUMMY
+    --resultdir: rsync
+  logs:
+    - "copy_results is False, skipping rsync"
 
 - <<: *rsync_test
   id: rsync_overwrite
@@ -177,6 +188,7 @@
         files:
         - input/A
   args:
+    --rsync_copy_results:
     --samples_file: samples.yaml
     --workdir: work
     --tag: DUMMY
