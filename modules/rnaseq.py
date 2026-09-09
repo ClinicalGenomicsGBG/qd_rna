@@ -222,7 +222,7 @@ def rnaseq(
         resume=True,
         executor=executor,
         conda_spec={
-            "dependencies" : ["bioconda::nextflow>=24.04,<25"],
+            "dependencies" : ["bioconda::nextflow>=25,<26"],
             "channels" : ["conda-forge", "bioconda"]
         }
     )
