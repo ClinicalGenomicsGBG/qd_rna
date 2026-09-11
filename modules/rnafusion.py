@@ -118,7 +118,12 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
         f"--tools_cutoff {config.rnafusion.tools_cutoff}",
         f"--fusioncatcher_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
         f"--fusioninspector_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
-        "--all",
+        f"--fusioncatcher_ref {config.rnafusion.genomes_base}/GRCh38/gencode_v46/fusioncatcher/",
+        f"--arriba_ref_blacklist {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/blacklist_hg38_GRCh38_v2.5.0.tsv.gz",
+        f"--arriba_ref_cytobands {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/cytobands_hg38_GRCh38_v2.5.0.tsv",
+        f"--arriba_ref_known_fusions {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/known_fusions_hg38_GRCh38_v2.5.0.tsv.gz",
+        f"--arriba_ref_protein_domains {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/protein_domains_hg38_GRCh38_v2.5.0.gff3",
+        "--tools all",
     ]
 
 
@@ -285,7 +290,6 @@ def rnafusion(
         strandedness=config.strandedness,
         logger=logger
     )
-
     nextflow(
         root / "dependencies" / "nf-core" / "rnafusion" / "main.nf",
         *_pipeline_args(config, workdir, sample_sheet),
@@ -296,7 +300,7 @@ def rnafusion(
         resume=True,
         executor=executor,
         conda_spec={
-            "dependencies" : ["bioconda::nextflow>=24.04,<25"],
+            "dependencies" : ["bioconda::nextflow>=25,<26"],
             "channels" : ["conda-forge", "bioconda"]
         },
     )
