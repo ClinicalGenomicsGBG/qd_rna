@@ -22,6 +22,10 @@ def rsync_results(
     **_,
 ) -> None:
     """Sync output to a remote server."""
+    
+    if not config.rsync.copy_results:
+        logger.info("copy_results is False, skipping rsync")
+        return
 
     if not samples.output:
         logger.warning("No output to sync")
