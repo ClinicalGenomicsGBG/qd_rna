@@ -106,6 +106,7 @@ mail:
     port: "25" # SMTP port (integer)
 
 rsync:
+  copy_results: false
   large_file_threshold: "100M" # Files larger than this will be copied in a separate job (eg. 100M, 1 GB) (string)
 
 nextflow:
