@@ -118,7 +118,12 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
         f"--tools_cutoff {config.rnafusion.tools_cutoff}",
         f"--fusioncatcher_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
         f"--fusioninspector_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
-        "--all",
+        f"--fusioncatcher_ref {config.rnafusion.genomes_base}/GRCh38/gencode_v46/fusioncatcher/",
+        f"--arriba_ref_blacklist {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/blacklist_hg38_GRCh38_v2.5.0.tsv.gz",
+        f"--arriba_ref_cytobands {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/cytobands_hg38_GRCh38_v2.5.0.tsv",
+        f"--arriba_ref_known_fusions {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/known_fusions_hg38_GRCh38_v2.5.0.tsv.gz",
+        f"--arriba_ref_protein_domains {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/protein_domains_hg38_GRCh38_v2.5.0.gff3",
+        "--tools all",
     ]
 
 
@@ -216,15 +221,15 @@ def _standalone_arriba_visualisation(
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
 )
 @output(
-    "fusioncatcher/{sample.id}.fusioncatcher.fusion-genes.txt",
+    "fusioncatcher/{sample.id}.fusion-genes.txt",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioncatcher",
 )
 @output(
-    "fusioninspector/{sample.id}.FusionInspector.fusions.tsv",
+    "fusioninspector/{sample.id}/{sample.id}.FusionInspector.fusions.tsv",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
 )
 @output(
-    "fusioninspector/{sample.id}.FusionInspector.fusions.abridged.tsv.annotated.coding_effect",
+    "fusioninspector/{sample.id}/{sample.id}.FusionInspector.fusions.abridged.tsv.annotated.coding_effect",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
 )
 @output(
@@ -236,7 +241,7 @@ def _standalone_arriba_visualisation(
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
 )
 @output(
-    "starfusion/{sample.id}.starfusion.abridged.coding_effect.tsv",
+    "starfusion/{sample.id}.starfusion.abridged.tsv",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
 )
 # Logs etc
