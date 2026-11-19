@@ -120,7 +120,7 @@ nextflow:
   ansi_log: false # Enable ANSI log (boolean)
   workdir: ~ # Nextflow workdir (path)
   profile: "singularity,routine,pipeline" # Nextflow profile (string)
-  config: "/clinical/dev/cgg-cancer/mattias/qd_rna/qd_rna_rnafusion-update2/configs/nextflow.qd_rna.config" # Nextflow config file (path)
+  config: "/clinical/exec/qdrna/qdrna/configs/nextflow.qd_rna.config" # Nextflow config file (path)
 
 hcp:
   credentials: "/clinical/exec/qdrna/credentials/gmc-legacy_credentials.json"  # IRIS credentials file (path)
