@@ -15,23 +15,8 @@
     --samples_file: samples.yaml
     --workdir: work
     --hcp_credentials: "DUMMY"
-    --hcp_fastq_temp: "cache"
   logs:
     - Fetched BACKUP from hcp
-
-- <<: *hcp_test
-  id: fetch_cached
-  structure:
-    samples.yaml: |
-      - id: CACHED
-        files:
-        - input/CACHED
-        hcp_remote_keys:
-        - cache/CACHED
-    cache:
-      CACHED: CACHED
-  logs:
-    - Found CACHED locally
 
 - <<: *hcp_test
   id: no_backup
@@ -78,6 +63,7 @@
     modules:
       runner.py: |
         from cellophane import runner, post_hook, pre_hook
+
         @runner()
         def a(samples, **_):
             return samples
@@ -94,20 +80,21 @@
     samples.yaml: |
       - id: A
         files:
-        - input/A
+        - input/A_1
+        - input/A_2
         hcp_remote_keys:
-        - A
+        - A_0
+        - A_1
       - id: B
         files:
-        - input/B
+        - input/B_1
+        - input/B_2
         hcp_remote_keys:
-        - B
-    input:
-      A: A
-      B: B
+        - B_0
+        - B_1
   logs:
-    - sample.id='A' sample.hcp_remote_keys={'A'}
-    - sample.id='B' sample.hcp_remote_keys={'B'}
+    - sample.id='A' sample.hcp_remote_keys=['A_0', 'A_1']
+    - sample.id='B' sample.hcp_remote_keys=['B_0', 'B_1']
 
 - <<: *hcp_test
   id: hcp_length_missmatch
@@ -124,3 +111,48 @@
   logs:
     - "Unhandled exception: ValueError('Length mismatch between hcp_remote_keys and files: 2 != 1')"
   exception: SystemExit(1)
+
+- <<: *hcp_test
+  id: hcp_order
+  args:
+    --samples_file: samples.yaml
+    --workdir: work
+    --hcp_credentials: "DUMMY"
+    --tag: "DUMMY"
+  structure:
+    modules:
+      runner.py: |
+        from cellophane import runner, post_hook, pre_hook
+
+        @pre_hook(after="all")
+        def ensure_files(samples, **_):
+            for sample in samples:
+                for f in sample.files:
+                    f.touch()
+
+        @runner()
+        def a(samples, **_):
+            return samples
+
+        @runner()
+        def b(samples, **_):
+            return samples
+
+        @post_hook()
+        def check(samples, logger, **_):
+            for sample in samples:
+              logger.info(f"{sample.id=} {sample.hcp_remote_keys=}")
+              logger.info(f"{sample.id=} files={[str(f) for f in sample.files]}")
+
+    samples.yaml: |
+      - id: A
+        files: [input/A_0, input/A_1, input/A_2, input/A_3, input/A_4, input/A_5, input/A_6, input/A_7, input/A_8, input/A_9]
+        hcp_remote_keys: [A_0, A_1, A_2, A_3, A_4, A_5, A_6, A_7, A_8, A_9]
+      - id: B
+        files: [input/B_0, input/B_1, input/B_2, input/B_3, input/B_4, input/B_5, input/B_6, input/B_7, input/B_8, input/B_9]
+        hcp_remote_keys: [B_0, B_1, B_2, B_3, B_4, B_5, B_6, B_7, B_8, B_9]
+  logs:
+    - sample.id='A' sample.hcp_remote_keys=['A_0', 'A_1', 'A_2', 'A_3', 'A_4', 'A_5', 'A_6', 'A_7', 'A_8', 'A_9']
+    - sample.id='A' files=['work/DUMMY/from_hcp/A_0', 'work/DUMMY/from_hcp/A_1', 'work/DUMMY/from_hcp/A_2', 'work/DUMMY/from_hcp/A_3', 'work/DUMMY/from_hcp/A_4', 'work/DUMMY/from_hcp/A_5', 'work/DUMMY/from_hcp/A_6', 'work/DUMMY/from_hcp/A_7', 'work/DUMMY/from_hcp/A_8', 'work/DUMMY/from_hcp/A_9']
+    - sample.id='B' sample.hcp_remote_keys=['B_0', 'B_1', 'B_2', 'B_3', 'B_4', 'B_5', 'B_6', 'B_7', 'B_8', 'B_9']
+    - sample.id='B' files=['work/DUMMY/from_hcp/B_0', 'work/DUMMY/from_hcp/B_1', 'work/DUMMY/from_hcp/B_2', 'work/DUMMY/from_hcp/B_3', 'work/DUMMY/from_hcp/B_4', 'work/DUMMY/from_hcp/B_5', 'work/DUMMY/from_hcp/B_6', 'work/DUMMY/from_hcp/B_7', 'work/DUMMY/from_hcp/B_8', 'work/DUMMY/from_hcp/B_9']
