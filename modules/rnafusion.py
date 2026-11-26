@@ -118,7 +118,12 @@ def _pipeline_args(config: Config, workdir: Path, nf_samples: Path, /):
         f"--tools_cutoff {config.rnafusion.tools_cutoff}",
         f"--fusioncatcher_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
         f"--fusioninspector_limitSjdbInsertNsj {config.limitSjdbInsertNsj}",
-        "--all",
+        f"--fusioncatcher_ref {config.rnafusion.genomes_base}/GRCh38/gencode_v46/fusioncatcher/",
+        f"--arriba_ref_blacklist {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/blacklist_hg38_GRCh38_v2.5.0.tsv.gz",
+        f"--arriba_ref_cytobands {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/cytobands_hg38_GRCh38_v2.5.0.tsv",
+        f"--arriba_ref_known_fusions {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/known_fusions_hg38_GRCh38_v2.5.0.tsv.gz",
+        f"--arriba_ref_protein_domains {config.rnafusion.genomes_base}/GRCh38/arriba/2.5.0/protein_domains_hg38_GRCh38_v2.5.0.gff3",
+        "--tools all",
     ]
 
 
@@ -135,10 +140,11 @@ def _standalone_arriba_visualisation(
 
     try:
         params_glob = (workdir / "pipeline_info").glob("params_*.json")
-        versions_glob = (workdir / "pipeline_info").glob("software_versions.yml")
+        versions_glob = (workdir / "pipeline_info").glob("nf_core_*_versions.yml")
         params_json = next(params_glob)
         versions_yml = next(versions_glob)
         params = loads(params_json.read_text())
+        genome_params = params.get("genomes", {}).get("GRCh38", {})
         versions = YAML(typ="safe").load(versions_yml)
     except Exception:
         params = {}
@@ -146,10 +152,10 @@ def _standalone_arriba_visualisation(
 
     cytobands, protein_domains, annotation, version = (
         config.rnafusion.arriba_standalone.get("cytobands")
-        or params.get("arriba_ref_cytobands"),
+        or genome_params.get("arriba_ref_cytobands"),
         config.rnafusion.arriba_standalone.get("protein_domains")
-        or params.get("arriba_ref_protein_domains"),
-        config.rnafusion.arriba_standalone.get("annotation") or params.get("gtf"),
+        or genome_params.get("arriba_ref_protein_domains"),
+        config.rnafusion.arriba_standalone.get("annotation") or genome_params.get("gtf"),
         config.rnafusion.arriba_standalone.get("version")
         or versions.get("ARRIBA_VISUALISATION", {}).get("arriba"),
     )
@@ -169,7 +175,7 @@ def _standalone_arriba_visualisation(
             str(root / "scripts" / "arriba_draw_fusions.sh"),
             env={
                 "_ARRIBA_STANDALONE_FUSIONS": f"{workdir}/arriba/{_id}.arriba.fusions.tsv",
-                "_ARRIBA_STANDALONE_BAM": f"{workdir}/star_for_arriba/{_id}.Aligned.out.bam",
+                "_ARRIBA_STANDALONE_BAM": f"{workdir}/star/{_id}.Aligned.sortedByCoord.out.bam",
                 "_ARRIBA_STANDALONE_OUTPUT": f"{workdir}/arriba_visualisation/{_id}_standalone_arriba_visualisation.pdf",
                 "_ARRIBA_STANDALONE_CYTOBANDS": str(cytobands),
                 "_ARRIBA_STANDALONE_PROTEIN_DOMAINS": str(protein_domains),
@@ -199,11 +205,11 @@ def _standalone_arriba_visualisation(
     checkpoint="DUMMY",
 )
 @output(
-    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.cram",
+    "star/{sample.id}.Aligned.sortedByCoord.out.cram",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
 )
 @output(
-    "star_for_starfusion/{sample.id}.Aligned.sortedByCoord.out.cram.crai",
+    "star/{sample.id}.Aligned.sortedByCoord.out.cram.crai",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}",
 )
 # Intermediate outputs
@@ -216,15 +222,15 @@ def _standalone_arriba_visualisation(
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/arriba",
 )
 @output(
-    "fusioncatcher/{sample.id}.fusioncatcher.fusion-genes.txt",
+    "fusioncatcher/{sample.id}.fusion-genes.txt",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioncatcher",
 )
 @output(
-    "fusioninspector/{sample.id}.FusionInspector.fusions.tsv",
+    "fusioninspector/{sample.id}/{sample.id}.FusionInspector.fusions.tsv",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
 )
 @output(
-    "fusioninspector/{sample.id}.FusionInspector.fusions.abridged.tsv.annotated.coding_effect",
+    "fusioninspector/{sample.id}/{sample.id}.FusionInspector.fusions.abridged.tsv",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/fusioninspector",
 )
 @output(
@@ -236,7 +242,7 @@ def _standalone_arriba_visualisation(
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
 )
 @output(
-    "starfusion/{sample.id}.starfusion.abridged.coding_effect.tsv",
+    "starfusion/{sample.id}.starfusion.abridged.tsv",
     dst_dir="{sample.id}_{sample.last_run}_{timestamp}/starfusion",
 )
 # Logs etc
